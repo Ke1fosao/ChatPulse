@@ -11,7 +11,14 @@ def normalize_database_url(database_url: str) -> str:
 
 class Database:
     def __init__(self, database_url: str) -> None:
-        self.engine = create_async_engine(normalize_database_url(database_url), pool_pre_ping=True)
+        normalized_url = normalize_database_url(database_url)
+        engine_kwargs: dict = {"pool_pre_ping": True}
+        if normalized_url.startswith("sqlite"):
+            # Cloud Run may deliver webhook requests close together. A longer
+            # busy timeout prevents short-lived SQLite write locks from failing.
+            engine_kwargs["connect_args"] = {"timeout": 30}
+
+        self.engine = create_async_engine(normalized_url, **engine_kwargs)
         self.session_factory = async_sessionmaker(
             bind=self.engine,
             class_=AsyncSession,
