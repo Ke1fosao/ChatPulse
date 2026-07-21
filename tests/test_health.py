@@ -19,5 +19,5 @@ def test_health_endpoint_returns_service_status() -> None:
     assert response.json() == {
         "status": "ok",
         "service": "chatpulse",
-        "version": "0.2.0",
+        "version": "0.3.0",
     }
