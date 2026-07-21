@@ -7,11 +7,7 @@ from aiogram.types import ChatMemberUpdated, Message
 
 from app.domain import GroupData, MessageActivity, UserData
 from app.repositories.activity import ActivityRepository
-from app.services.stats import (
-    format_group_stats,
-    format_member_stats,
-    format_top_members,
-)
+from app.services.stats import format_group_stats, format_member_stats, format_top_members
 
 router = Router(name="groups")
 GROUP_TYPES = {ChatType.GROUP, ChatType.SUPERGROUP}
@@ -56,15 +52,30 @@ def _user_data(message: Message) -> UserData | None:
     )
 
 
-def _group_data(
-    chat_id: int, title: str | None, username: str | None, timezone: str
-) -> GroupData:
+def _group_data(chat_id: int, title: str | None, username: str | None, timezone: str) -> GroupData:
     return GroupData(
         telegram_chat_id=chat_id,
         title=title or "Telegram group",
         username=username,
         timezone=timezone,
     )
+
+
+async def activate_group(
+    message: Message,
+    repository: ActivityRepository,
+    bot: Bot,
+    default_timezone: str,
+) -> bool:
+    member = await bot.get_chat_member(message.chat.id, bot.id)
+    status = member.status
+    is_active = status in ACTIVE_STATUSES
+    await repository.upsert_group(
+        _group_data(message.chat.id, message.chat.title, message.chat.username, default_timezone),
+        bot_status=status.value,
+        is_active=is_active,
+    )
+    return is_active
 
 
 @router.my_chat_member()
@@ -79,9 +90,7 @@ async def bot_membership_changed(
     status = event.new_chat_member.status
     is_active = status in ACTIVE_STATUSES
     await repository.upsert_group(
-        _group_data(
-            event.chat.id, event.chat.title, event.chat.username, default_timezone
-        ),
+        _group_data(event.chat.id, event.chat.title, event.chat.username, default_timezone),
         bot_status=status.value,
         is_active=is_active,
     )
@@ -99,6 +108,22 @@ async def bot_membership_changed(
             "👋 ChatPulse додано до групи. Призначте мене адміністратором, "
             "щоб я міг бачити повідомлення та вести статистику."
         )
+
+
+@router.message(Command("activate"), F.chat.type.in_(GROUP_TYPES))
+async def activate_command(
+    message: Message,
+    repository: ActivityRepository,
+    default_timezone: str,
+) -> None:
+    if await activate_group(message, repository, message.bot, default_timezone):
+        await message.answer(
+            "✅ Статистику активовано. Тепер напишіть кілька звичайних повідомлень "
+            "і перевірте /stats."
+        )
+        return
+
+    await message.answer("⚠️ Спочатку призначте ChatPulse адміністратором групи.")
 
 
 @router.message(Command("stats"), F.chat.type.in_(GROUP_TYPES))
@@ -125,38 +150,15 @@ async def me_command(message: Message, repository: ActivityRepository) -> None:
 async def group_help_command(message: Message) -> None:
     await message.answer(
         "Команди ChatPulse:\n"
+        "/activate — активувати статистику групи\n"
         "/stats — загальна статистика\n"
         "/top — рейтинг учасників\n"
         "/me — моя статистика"
     )
 
 
-async def _refresh_group_status(
-    message: Message,
-    repository: ActivityRepository,
-    bot: Bot,
-    default_timezone: str,
-) -> bool:
-    member = await bot.get_chat_member(message.chat.id, bot.id)
-    status = member.status
-    is_active = status in ACTIVE_STATUSES
-    await repository.upsert_group(
-        _group_data(
-            message.chat.id, message.chat.title, message.chat.username, default_timezone
-        ),
-        bot_status=status.value,
-        is_active=is_active,
-    )
-    return is_active
-
-
 @router.message(F.chat.type.in_(GROUP_TYPES))
-async def track_group_message(
-    message: Message,
-    repository: ActivityRepository,
-    bot: Bot,
-    default_timezone: str,
-) -> None:
+async def track_group_message(message: Message, repository: ActivityRepository) -> None:
     activity = classify_message(message)
     user = _user_data(message)
     if activity is None or user is None:
@@ -165,18 +167,6 @@ async def track_group_message(
     occurred_at = message.date
     if occurred_at.tzinfo is None:
         occurred_at = occurred_at.replace(tzinfo=UTC)
-
-    recorded = await repository.record_message(
-        chat_id=message.chat.id,
-        user=user,
-        activity=activity,
-        occurred_at=occurred_at,
-    )
-    if recorded:
-        return
-
-    if not await _refresh_group_status(message, repository, bot, default_timezone):
-        return
 
     await repository.record_message(
         chat_id=message.chat.id,
