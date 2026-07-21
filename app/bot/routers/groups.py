@@ -153,10 +153,7 @@ async def stats_callback(callback: CallbackQuery, repository: ActivityRepository
     if callback.message is None:
         return
     await _send_stats(
-        callback.message,
-        repository,
-        _period(callback.data.split(":", 1)[1]),
-        edit=True,
+        callback.message, repository, _period(callback.data.split(":", 1)[1]), edit=True
     )
     await callback.answer()
 
@@ -166,10 +163,7 @@ async def top_callback(callback: CallbackQuery, repository: ActivityRepository) 
     if callback.message is None:
         return
     await _send_top(
-        callback.message,
-        repository,
-        _period(callback.data.split(":", 1)[1]),
-        edit=True,
+        callback.message, repository, _period(callback.data.split(":", 1)[1]), edit=True
     )
     await callback.answer()
 
