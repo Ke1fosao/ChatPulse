@@ -1,10 +1,19 @@
-from aiogram import Dispatcher
+from copy import deepcopy
+
+from aiogram import Dispatcher, Router
 
 from app.bot.routers.groups import router as groups_router
 from app.bot.routers.private import router as private_router
 from app.bot.routers.reactions import router as reactions_router
 from app.bot.routers.settings import router as settings_router
 from app.repositories.activity import ActivityRepository
+
+ROUTER_TEMPLATES: tuple[Router, ...] = (
+    private_router,
+    settings_router,
+    reactions_router,
+    groups_router,
+)
 
 
 def build_dispatcher(
@@ -15,8 +24,6 @@ def build_dispatcher(
     dispatcher = Dispatcher()
     dispatcher["repository"] = repository
     dispatcher["default_timezone"] = default_timezone
-    dispatcher.include_router(private_router)
-    dispatcher.include_router(settings_router)
-    dispatcher.include_router(reactions_router)
-    dispatcher.include_router(groups_router)
+    for router_template in ROUTER_TEMPLATES:
+        dispatcher.include_router(deepcopy(router_template))
     return dispatcher
