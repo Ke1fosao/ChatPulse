@@ -1,5 +1,9 @@
 from app.services.nominations import build_nominations, format_weekly_report
-from app.services.stats import format_group_stats, format_member_stats, format_top_members
+from app.services.stats import (
+    format_group_stats,
+    format_member_stats,
+    format_top_members,
+)
 
 MEMBER = {
     "telegram_user_id": 1,
