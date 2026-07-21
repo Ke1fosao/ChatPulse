@@ -27,10 +27,10 @@
 - Modify: Supabase migration `add_chatpulse_analytics_v2`
 - Test: `tests/test_activity_repository.py`
 
-- [ ] Add report settings, pause flags, reaction counters, photo/voice/night/morning counters, message-author mapping, reaction emoji totals, and processed update IDs.
-- [ ] Add period-aware repository queries for today, seven days, calendar month, and all time.
-- [ ] Add idempotent update claiming and message/reaction recording.
-- [ ] Add indexes for period and leaderboard queries.
+- [x] Add report settings, pause flags, reaction counters, photo/voice/night/morning counters, message-author mapping, reaction emoji totals, and processed update IDs.
+- [x] Add period-aware repository queries for today, seven days, calendar month, and all time.
+- [x] Add idempotent update claiming and message/reaction recording.
+- [x] Add indexes for period and leaderboard queries.
 
 ### Task 2: Period statistics and richer formatting
 
@@ -38,11 +38,11 @@
 - Modify: `app/services/stats.py`
 - Modify: `app/bot/routers/groups.py`
 - Create: `app/bot/keyboards_stats.py`
-- Test: `tests/test_stats_formatting.py`
+- Test: `tests/test_stats_service.py`
 
-- [ ] Implement `/today`, `/week`, `/month`, `/all`.
-- [ ] Make `/stats` and `/top` show inline period selectors.
-- [ ] Include reactions in group, member, and leaderboard output.
+- [x] Implement `/today`, `/week`, `/month`, `/all`.
+- [x] Make `/stats` and `/top` show inline period selectors.
+- [x] Include reactions in group, member, and leaderboard output.
 
 ### Task 3: Reactions and nominations
 
@@ -51,11 +51,11 @@
 - Create: `app/services/nominations.py`
 - Modify: `app/bot/setup.py`
 - Test: `tests/test_reactions.py`
-- Test: `tests/test_nominations.py`
+- Test: `tests/test_stats_service.py`
 
-- [ ] Store message ID to author ID without storing message text.
-- [ ] Process public `message_reaction` updates and apply positive/negative deltas.
-- [ ] Produce weekly nominations for messages, replies, reactions, photos, voices, night activity, and morning activity.
+- [x] Store message ID to author ID without storing message text.
+- [x] Process public and anonymous reaction updates and apply positive/negative deltas.
+- [x] Produce weekly nominations for messages, replies, reactions, photos, voices, night activity, and morning activity.
 
 ### Task 4: Administrator settings
 
@@ -65,9 +65,9 @@
 - Modify: `app/repositories/activity.py`
 - Test: `tests/test_settings.py`
 
-- [ ] Implement `/settings` with inline toggles for pause, weekly reports, timezone, report weekday, and report hour.
-- [ ] Verify administrator status before every settings change.
-- [ ] Add `/resetstats` with explicit confirmation.
+- [x] Implement `/settings` with inline toggles for pause, weekly reports, timezone, report weekday, and report hour.
+- [x] Verify administrator status before every settings change.
+- [x] Add `/resetstats` with explicit confirmation.
 
 ### Task 5: Weekly report delivery
 
@@ -77,9 +77,9 @@
 - Modify: `app/config.py`
 - Test: `tests/test_weekly_reports.py`
 
-- [ ] Add protected `POST /internal/weekly-reports` endpoint using `X-ChatPulse-Scheduler-Secret`.
-- [ ] Select due groups in their configured timezone and avoid duplicate weekly sends.
-- [ ] Send one formatted weekly summary per due group and persist delivery time.
+- [x] Add protected `POST /internal/weekly-reports` endpoint using `X-ChatPulse-Scheduler-Secret`.
+- [x] Select due groups in their configured timezone and avoid duplicate weekly sends.
+- [x] Send one formatted weekly summary per due group and persist delivery time.
 
 ### Task 6: Reliability, documentation, and verification
 
@@ -89,7 +89,7 @@
 - Modify: `.env.example`
 - Test: `tests/test_webhook_security.py`
 
-- [ ] Claim Telegram `update_id` before dispatch and skip duplicates.
-- [ ] Preserve webhook secret validation and structured error logging.
-- [ ] Document Supabase, Cloud Run variables, message reactions, and Google Cloud Scheduler setup.
-- [ ] Run `pytest`, `ruff check`, `ruff format --check`, and `compileall` before merge.
+- [x] Claim Telegram `update_id` before dispatch and skip duplicates.
+- [x] Preserve webhook secret validation and structured error logging.
+- [x] Document Supabase, Cloud Run variables, message reactions, and Google Cloud Scheduler setup.
+- [x] Run `pytest`, `ruff check`, `ruff format --check`, and `compileall` before merge.
