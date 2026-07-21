@@ -9,6 +9,7 @@ def build_settings() -> Settings:
         bot_token="123456:test-token",
         webhook_path_secret="path-secret",
         webhook_header_secret="header-secret",
+        scheduler_secret="scheduler-secret",
         database_url="sqlite+aiosqlite:///:memory:",
     )
 
@@ -24,3 +25,15 @@ def test_webhook_rejects_invalid_secret_header() -> None:
 
     assert response.status_code == 403
     assert response.json() == {"detail": "Invalid webhook secret"}
+
+
+def test_scheduler_endpoint_rejects_invalid_secret() -> None:
+    settings = build_settings()
+    with TestClient(create_app(settings)) as client:
+        response = client.post(
+            "/internal/weekly-reports",
+            headers={"X-ChatPulse-Scheduler-Secret": "wrong-secret"},
+        )
+
+    assert response.status_code == 403
+    assert response.json() == {"detail": "Invalid scheduler secret"}
