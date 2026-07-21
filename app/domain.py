@@ -1,4 +1,7 @@
 from dataclasses import dataclass
+from typing import Literal
+
+StatsPeriod = Literal["today", "week", "month", "all"]
 
 
 @dataclass(frozen=True, slots=True)
@@ -27,3 +30,5 @@ class GroupData:
 class MessageActivity:
     is_media: bool
     is_reply: bool
+    is_photo: bool = False
+    is_voice: bool = False
