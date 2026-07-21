@@ -1,5 +1,5 @@
-from typing import Any
 from collections.abc import Mapping, Sequence
+from typing import Any
 
 MEDALS = ("🥇", "🥈", "🥉")
 
