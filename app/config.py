@@ -11,6 +11,7 @@ class Settings(BaseSettings):
     webhook_base_url: str | None = None
     webhook_path_secret: str = Field(min_length=8)
     webhook_header_secret: str = Field(min_length=8)
+    scheduler_secret: str | None = Field(default=None, min_length=8)
     database_url: str = "sqlite+aiosqlite:///./chatpulse.db"
     default_timezone: str = "Europe/Kyiv"
 
