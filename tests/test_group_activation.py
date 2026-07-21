@@ -3,10 +3,9 @@ from types import SimpleNamespace
 from unittest.mock import AsyncMock
 
 import pytest
-from aiogram.enums import ChatMemberStatus
 from aiogram.types import Message
 
-from app.bot.routers.groups import activate_group
+from app.bot.routers.groups import track_group_message
 
 
 def make_message() -> Message:
@@ -16,31 +15,27 @@ def make_message() -> Message:
             "date": datetime(2026, 7, 21, 19, 0, tzinfo=UTC),
             "chat": {"id": -1001, "type": "supergroup", "title": "Test group"},
             "from": {"id": 101, "is_bot": False, "first_name": "Dmytro"},
-            "text": "/activate",
+            "text": "hello",
         }
     )
 
 
 @pytest.mark.asyncio
-async def test_activate_group_marks_admin_group_active() -> None:
-    repository = SimpleNamespace(upsert_group=AsyncMock())
-    bot = SimpleNamespace(
-        id=999,
-        get_chat_member=AsyncMock(
-            return_value=SimpleNamespace(status=ChatMemberStatus.ADMINISTRATOR)
-        ),
+async def test_first_group_message_activates_group_and_is_recorded() -> None:
+    repository = SimpleNamespace(
+        upsert_group=AsyncMock(),
+        record_message=AsyncMock(return_value=True),
     )
 
-    active = await activate_group(
+    await track_group_message(
         make_message(),
         repository=repository,
-        bot=bot,
         default_timezone="Europe/Kyiv",
     )
 
-    assert active is True
     repository.upsert_group.assert_awaited_once()
     assert repository.upsert_group.await_args.kwargs == {
-        "bot_status": "administrator",
+        "bot_status": "member",
         "is_active": True,
     }
+    repository.record_message.assert_awaited_once()
