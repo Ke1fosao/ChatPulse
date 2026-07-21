@@ -45,8 +45,7 @@ def format_top_members(
         count = int(member["messages_count"])
         reactions = int(member["reactions_received"])
         lines.append(
-            f"{prefix} {member['display_name']} — {count} {_message_word(count)}, "
-            f"❤️ {reactions}"
+            f"{prefix} {member['display_name']} — {count} {_message_word(count)}, ❤️ {reactions}"
         )
     return "\n".join(lines)
 
