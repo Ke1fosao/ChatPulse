@@ -28,6 +28,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         dispatcher = build_dispatcher(
             repository,
             default_timezone=resolved_settings.default_timezone,
+            fingerprint_secret=resolved_settings.webhook_header_secret,
         )
 
         app.state.database = database
@@ -49,12 +50,12 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             await bot.session.close()
             await database.dispose()
 
-    app = FastAPI(title="ChatPulse", version="0.2.0", lifespan=lifespan)
+    app = FastAPI(title="ChatPulse", version="0.3.0", lifespan=lifespan)
     app.state.settings = resolved_settings
 
     @app.get("/health")
     async def health() -> dict[str, str]:
-        return {"status": "ok", "service": "chatpulse", "version": "0.2.0"}
+        return {"status": "ok", "service": "chatpulse", "version": "0.3.0"}
 
     @app.post(resolved_settings.webhook_path)
     async def telegram_webhook(
@@ -65,7 +66,10 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         ),
     ) -> dict[str, bool]:
         expected_secret = resolved_settings.webhook_header_secret
-        if telegram_secret is None or not hmac.compare_digest(telegram_secret, expected_secret):
+        if telegram_secret is None or not hmac.compare_digest(
+            telegram_secret,
+            expected_secret,
+        ):
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="Invalid webhook secret",
@@ -77,7 +81,10 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         repository: ActivityRepository = request.app.state.repository
         update_type = next((key for key in payload if key != "update_id"), "unknown")
         update_id = payload.get("update_id")
-        if isinstance(update_id, int) and not await repository.claim_update(update_id, update_type):
+        if isinstance(update_id, int) and not await repository.claim_update(
+            update_id,
+            update_type,
+        ):
             return {"ok": True, "duplicate": True}
 
         update = Update.model_validate(payload, context={"bot": bot})
@@ -106,7 +113,10 @@ def create_app(settings: Settings | None = None) -> FastAPI:
                 status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
                 detail="Scheduler secret is not configured",
             )
-        if scheduler_secret is None or not hmac.compare_digest(scheduler_secret, expected_secret):
+        if scheduler_secret is None or not hmac.compare_digest(
+            scheduler_secret,
+            expected_secret,
+        ):
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="Invalid scheduler secret",
