@@ -107,9 +107,7 @@ async def settings_callback(
 
     settings = await repository.get_group_settings(message.chat.id)
     if settings is None:
-        await callback.answer(
-            "Спочатку надішліть звичайне повідомлення в групу", show_alert=True
-        )
+        await callback.answer("Спочатку надішліть звичайне повідомлення в групу", show_alert=True)
         return
 
     parts = callback.data.split(":")
