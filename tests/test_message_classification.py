@@ -23,9 +23,7 @@ def test_commands_are_not_counted() -> None:
 
 
 def test_messages_from_bots_are_not_counted() -> None:
-    message = make_message(
-        **{"from": {"id": 202, "is_bot": True, "first_name": "Other bot"}}
-    )
+    message = make_message(**{"from": {"id": 202, "is_bot": True, "first_name": "Other bot"}})
     assert classify_message(message) is None
 
 
@@ -57,6 +55,4 @@ def test_media_reply_is_classified() -> None:
 
 
 def test_regular_message_is_classified() -> None:
-    assert classify_message(make_message()) == MessageActivity(
-        is_media=False, is_reply=False
-    )
+    assert classify_message(make_message()) == MessageActivity(is_media=False, is_reply=False)
