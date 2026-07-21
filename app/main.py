@@ -1,4 +1,3 @@
-import asyncio
 import hmac
 import logging
 from contextlib import asynccontextmanager
@@ -12,6 +11,7 @@ from app.bot.setup import build_dispatcher
 from app.config import Settings, get_settings
 from app.database import Database
 from app.repositories.activity import ActivityRepository
+from app.services.weekly_reports import send_due_weekly_reports
 
 logger = logging.getLogger("chatpulse.webhook")
 
@@ -34,7 +34,6 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         app.state.repository = repository
         app.state.bot = bot
         app.state.dispatcher = dispatcher
-        app.state.update_lock = asyncio.Lock()
 
         if resolved_settings.webhook_url:
             await bot.set_webhook(
@@ -50,12 +49,12 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             await bot.session.close()
             await database.dispose()
 
-    app = FastAPI(title="ChatPulse", version="0.1.1", lifespan=lifespan)
+    app = FastAPI(title="ChatPulse", version="0.2.0", lifespan=lifespan)
     app.state.settings = resolved_settings
 
     @app.get("/health")
     async def health() -> dict[str, str]:
-        return {"status": "ok", "service": "chatpulse"}
+        return {"status": "ok", "service": "chatpulse", "version": "0.2.0"}
 
     @app.post(resolved_settings.webhook_path)
     async def telegram_webhook(
@@ -75,23 +74,47 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         payload: dict[str, Any] = await request.json()
         bot: Bot = request.app.state.bot
         dispatcher: Dispatcher = request.app.state.dispatcher
-        update = Update.model_validate(payload, context={"bot": bot})
-
+        repository: ActivityRepository = request.app.state.repository
         update_type = next((key for key in payload if key != "update_id"), "unknown")
+        update_id = payload.get("update_id")
+        if isinstance(update_id, int) and not await repository.claim_update(update_id, update_type):
+            return {"ok": True, "duplicate": True}
+
+        update = Update.model_validate(payload, context={"bot": bot})
         try:
-            async with request.app.state.update_lock:
-                await dispatcher.feed_update(bot, update)
+            await dispatcher.feed_update(bot, update)
         except Exception:
-            # Telegram retries every non-2xx webhook response. Returning 200 here
-            # prevents one broken update from blocking the whole delivery queue,
-            # while the full exception remains visible in Cloud Run logs.
             logger.exception(
                 "telegram_update_failed update_id=%s update_type=%s",
-                payload.get("update_id"),
+                update_id,
                 update_type,
             )
             return {"ok": False}
-
         return {"ok": True}
+
+    @app.post("/internal/weekly-reports")
+    async def weekly_reports(
+        request: Request,
+        scheduler_secret: str | None = Header(
+            default=None,
+            alias="X-ChatPulse-Scheduler-Secret",
+        ),
+    ) -> dict[str, int | bool]:
+        expected_secret = resolved_settings.scheduler_secret
+        if not expected_secret:
+            raise HTTPException(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                detail="Scheduler secret is not configured",
+            )
+        if scheduler_secret is None or not hmac.compare_digest(scheduler_secret, expected_secret):
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Invalid scheduler secret",
+            )
+        sent = await send_due_weekly_reports(
+            request.app.state.bot,
+            request.app.state.repository,
+        )
+        return {"ok": True, "sent": sent}
 
     return app
