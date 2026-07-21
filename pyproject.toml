@@ -1,0 +1,44 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "chatpulse"
+version = "0.1.0"
+description = "Telegram group activity analytics bot"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+  "aiogram>=3.20,<4",
+  "fastapi>=0.115,<1",
+  "uvicorn[standard]>=0.34,<1",
+  "sqlalchemy[asyncio]>=2.0.40,<3",
+  "aiosqlite>=0.21,<1",
+  "asyncpg>=0.30,<1",
+  "pydantic-settings>=2.8,<3",
+]
+
+[project.optional-dependencies]
+dev = [
+  "pytest>=8.3,<9",
+  "pytest-asyncio>=0.26,<1",
+  "httpx>=0.28,<1",
+  "ruff>=0.11,<1",
+]
+
+[tool.setuptools.packages.find]
+include = ["app*"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+
+[tool.ruff]
+target-version = "py312"
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP"]
+
+[tool.ruff.format]
+quote-style = "double"

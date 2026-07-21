@@ -1,6 +1,6 @@
 # ChatPulse MVP Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Completed steps use checkbox (`- [x]`) syntax for tracking.
 
 **Goal:** Deliver a deployable Telegram group activity bot with automatic registration, activity persistence, and basic rankings.
 
@@ -32,10 +32,10 @@
 **Interfaces:**
 - Produces: `Settings`, `create_app(settings: Settings | None = None) -> FastAPI`.
 
-- [ ] Write a failing API test asserting `GET /health` returns `{"status": "ok", "service": "chatpulse"}`.
-- [ ] Run `pytest tests/test_health.py -v` and confirm failure because the application does not exist.
-- [ ] Add minimal configuration and FastAPI app implementation.
-- [ ] Re-run the test and confirm it passes.
+- [x] Write a failing API test asserting `GET /health` returns `{"status": "ok", "service": "chatpulse"}`.
+- [x] Run `pytest tests/test_health.py -v` and confirm failure because the application does not exist.
+- [x] Add minimal configuration and FastAPI app implementation.
+- [x] Re-run the test and confirm it passes.
 
 ### Task 2: Persistence and activity counters
 
@@ -49,10 +49,10 @@
 **Interfaces:**
 - Produces: `Database`, `ActivityRepository.upsert_user`, `upsert_group`, `record_message`, `get_member_stats`, `get_group_summary`, and `get_top_members`.
 
-- [ ] Write failing async tests for idempotent user/group upserts and message/media/reply counter increments.
-- [ ] Run the repository tests and confirm imports or assertions fail.
-- [ ] Implement SQLAlchemy models, database lifecycle, and repository operations.
-- [ ] Re-run repository tests and confirm they pass.
+- [x] Write failing async tests for idempotent user/group upserts and message/media/reply counter increments.
+- [x] Run the repository tests and confirm imports or assertions fail.
+- [x] Implement SQLAlchemy models, database lifecycle, and repository operations.
+- [x] Re-run repository tests and confirm they pass.
 
 ### Task 3: Statistics formatting
 
@@ -65,10 +65,10 @@
 - Consumes repository summary dictionaries.
 - Produces `format_group_stats`, `format_top_members`, and `format_member_stats`.
 
-- [ ] Write failing formatting tests for normal and empty statistics.
-- [ ] Run the tests and confirm failure.
-- [ ] Implement deterministic Ukrainian text formatting.
-- [ ] Re-run the tests and confirm they pass.
+- [x] Write failing formatting tests for normal and empty statistics.
+- [x] Run the tests and confirm failure.
+- [x] Implement deterministic Ukrainian text formatting.
+- [x] Re-run the tests and confirm they pass.
 
 ### Task 4: Telegram registration and group tracking
 
@@ -86,10 +86,10 @@
 **Interfaces:**
 - Produces: `build_dispatcher(repository) -> Dispatcher`, `classify_message(message) -> MessageActivity | None`, and the secured webhook route.
 
-- [ ] Write failing tests proving commands and bots are ignored and media/replies are classified correctly.
-- [ ] Write a failing API test proving an incorrect webhook secret returns HTTP 403.
-- [ ] Implement routers, keyboards, dispatcher setup, webhook parsing, and secret validation.
-- [ ] Run the focused tests and confirm they pass.
+- [x] Write failing tests proving commands and bots are ignored and media/replies are classified correctly.
+- [x] Write a failing API test proving an incorrect webhook secret returns HTTP 403.
+- [x] Implement routers, keyboards, dispatcher setup, webhook parsing, and secret validation.
+- [x] Run the focused tests and confirm they pass.
 
 ### Task 5: Deployment and documentation
 
@@ -100,9 +100,9 @@
 - Test: full project checks.
 
 **Interfaces:**
-- Produces a Cloud Run-ready container started by `uvicorn app.main:app`.
+- Produces a Cloud Run-ready container started by `uvicorn app.main:create_app --factory`.
 
-- [ ] Add container configuration and complete local/Cloud Run setup instructions.
-- [ ] Run `pytest -q` and confirm zero failures.
-- [ ] Run `ruff check .` and confirm zero errors.
-- [ ] Run `python -m compileall app` and confirm successful compilation.
+- [x] Add container configuration and complete local/Cloud Run setup instructions.
+- [x] Run `pytest -q` and confirm zero failures.
+- [x] Run `ruff check .` and confirm zero errors.
+- [x] Run `python -m compileall app` and confirm successful compilation.
