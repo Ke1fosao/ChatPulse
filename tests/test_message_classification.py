@@ -47,7 +47,11 @@ def test_media_reply_is_classified() -> None:
         },
     )
 
-    assert classify_message(message) == MessageActivity(is_media=True, is_reply=True)
+    assert classify_message(message) == MessageActivity(
+        is_media=True,
+        is_reply=True,
+        is_photo=True,
+    )
 
 
 def test_regular_message_is_classified() -> None:

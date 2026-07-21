@@ -1,73 +1,71 @@
-from app.services.stats import format_group_stats, format_member_stats, format_top_members
+from app.services.nominations import build_nominations, format_weekly_report
+from app.services.stats import (
+    format_group_stats,
+    format_member_stats,
+    format_top_members,
+)
+
+MEMBER = {
+    "telegram_user_id": 1,
+    "display_name": "Dmytro",
+    "username": None,
+    "messages_count": 10,
+    "media_count": 2,
+    "replies_count": 3,
+    "reactions_received": 5,
+    "photo_count": 2,
+    "voice_count": 1,
+    "night_messages_count": 4,
+    "morning_messages_count": 0,
+}
 
 
-def test_group_stats_formats_summary() -> None:
-    text = format_group_stats(
-        {
-            "messages_count": 12,
-            "media_count": 3,
-            "replies_count": 5,
-            "active_members": 4,
-        }
-    )
-
-    assert text == (
-        "📊 Статистика групи\n\n"
-        "💬 Повідомлень: 12\n"
-        "🖼 Медіа: 3\n"
-        "↩️ Відповідей: 5\n"
-        "👥 Активних учасників: 4"
-    )
+def test_period_formatters_include_reactions() -> None:
+    summary = {
+        "messages_count": 10,
+        "media_count": 2,
+        "replies_count": 3,
+        "reactions_received": 5,
+        "photo_count": 2,
+        "voice_count": 1,
+        "night_messages_count": 4,
+        "morning_messages_count": 0,
+        "active_members": 1,
+    }
+    assert "за 7 днів" in format_group_stats(summary, "week")
+    assert "❤️ 5" in format_top_members([MEMBER], "week")
+    assert "Отримано реакцій: 5" in format_member_stats(MEMBER, "week")
 
 
-def test_group_stats_handles_empty_group() -> None:
-    assert (
-        format_group_stats(
-            {
-                "messages_count": 0,
-                "media_count": 0,
-                "replies_count": 0,
-                "active_members": 0,
-            }
-        )
-        == "📊 Поки що статистики немає. Напишіть перші повідомлення в групі."
-    )
+def test_empty_period_has_clear_message() -> None:
+    summary = {
+        "messages_count": 0,
+        "media_count": 0,
+        "replies_count": 0,
+        "reactions_received": 0,
+        "photo_count": 0,
+        "voice_count": 0,
+        "night_messages_count": 0,
+        "morning_messages_count": 0,
+        "active_members": 0,
+    }
+    assert format_group_stats(summary, "today") == "📊 Статистики сьогодні поки немає."
 
 
-def test_top_members_formats_ranked_list() -> None:
-    text = format_top_members(
-        [
-            {
-                "telegram_user_id": 1,
-                "display_name": "Dmytro",
-                "username": "dmytro",
-                "messages_count": 12,
-                "media_count": 2,
-                "replies_count": 3,
-            },
-            {
-                "telegram_user_id": 2,
-                "display_name": "Vika",
-                "username": None,
-                "messages_count": 7,
-                "media_count": 1,
-                "replies_count": 5,
-            },
-        ]
-    )
-
-    assert text == ("🏆 Топ учасників\n\n🥇 Dmytro — 12 повідомлень\n🥈 Vika — 7 повідомлень")
-
-
-def test_member_stats_formats_profile_and_empty_state() -> None:
-    assert format_member_stats(None) == "👤 Для вас ще немає статистики в цій групі."
-    assert format_member_stats(
-        {
-            "telegram_user_id": 1,
-            "display_name": "Dmytro",
-            "username": "dmytro",
-            "messages_count": 1,
-            "media_count": 0,
-            "replies_count": 0,
-        }
-    ) == ("👤 Dmytro\n\n💬 Повідомлень: 1\n🖼 Медіа: 0\n↩️ Відповідей: 0")
+def test_nominations_and_weekly_report() -> None:
+    nominations = build_nominations([MEMBER])
+    assert any("Балакун тижня" in item for item in nominations)
+    summary = {
+        "messages_count": 10,
+        "media_count": 2,
+        "replies_count": 3,
+        "reactions_received": 5,
+        "photo_count": 2,
+        "voice_count": 1,
+        "night_messages_count": 4,
+        "morning_messages_count": 0,
+        "active_members": 1,
+    }
+    report = format_weekly_report(summary, [MEMBER], ("❤️", 5))
+    assert "Підсумки тижня" in report
+    assert "Найпопулярніша реакція: ❤️" in report

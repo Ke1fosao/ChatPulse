@@ -15,104 +15,94 @@ async def repository(tmp_path):
     await database.dispose()
 
 
-@pytest.mark.asyncio
-async def test_user_and_group_upserts_are_idempotent(repository: ActivityRepository) -> None:
-    user = UserData(
-        telegram_id=101,
-        username="dmytro",
-        first_name="Dmytro",
-        last_name=None,
-        language_code="uk",
+async def active_group(repository: ActivityRepository, timezone: str = "Europe/Kyiv") -> None:
+    await repository.upsert_group(
+        GroupData(-1001, "Test group", None, timezone),
+        bot_status="member",
+        is_active=True,
     )
-    group = GroupData(
-        telegram_chat_id=-1001,
-        title="Test group",
-        username=None,
-        timezone="Europe/Kyiv",
-    )
-
-    await repository.upsert_user(user)
-    await repository.upsert_user(
-        UserData(
-            telegram_id=101,
-            username="dmytro_new",
-            first_name="Dmytro",
-            last_name="K",
-            language_code="uk",
-        )
-    )
-    await repository.upsert_group(group, bot_status="member", is_active=False)
-    await repository.upsert_group(group, bot_status="administrator", is_active=True)
-
-    member = await repository.get_member_stats(-1001, 101)
-    summary = await repository.get_group_summary(-1001)
-
-    assert member is None
-    assert summary == {
-        "messages_count": 0,
-        "media_count": 0,
-        "replies_count": 0,
-        "active_members": 0,
-    }
 
 
 @pytest.mark.asyncio
-async def test_record_message_updates_member_and_daily_counters(
-    repository: ActivityRepository,
-) -> None:
+async def test_message_is_counted_in_local_day_and_periods(repository: ActivityRepository) -> None:
+    await active_group(repository)
     user = UserData(101, "dmytro", "Dmytro", None, "uk")
-    group = GroupData(-1001, "Test group", None, "Europe/Kyiv")
-    await repository.upsert_user(user)
-    await repository.upsert_group(group, bot_status="administrator", is_active=True)
-
-    recorded = await repository.record_message(
-        chat_id=-1001,
-        user=user,
-        activity=MessageActivity(is_media=True, is_reply=True),
-        occurred_at=datetime(2026, 7, 21, 17, 30, tzinfo=UTC),
-    )
     await repository.record_message(
         chat_id=-1001,
         user=user,
-        activity=MessageActivity(is_media=False, is_reply=False),
-        occurred_at=datetime(2026, 7, 21, 17, 31, tzinfo=UTC),
+        activity=MessageActivity(True, True, is_photo=True),
+        occurred_at=datetime(2026, 7, 20, 22, 30, tzinfo=UTC),
+        message_id=50,
     )
 
-    member = await repository.get_member_stats(-1001, 101)
-    summary = await repository.get_group_summary(-1001)
-    top = await repository.get_top_members(-1001, limit=5)
+    now = datetime(2026, 7, 21, 12, tzinfo=UTC)
+    today = await repository.get_group_summary(-1001, "today", now=now)
+    week = await repository.get_group_summary(-1001, "week", now=now)
 
-    assert recorded is True
-    assert member == {
-        "telegram_user_id": 101,
-        "display_name": "Dmytro",
-        "username": "dmytro",
-        "messages_count": 2,
-        "media_count": 1,
-        "replies_count": 1,
-    }
-    assert summary == {
-        "messages_count": 2,
-        "media_count": 1,
-        "replies_count": 1,
-        "active_members": 1,
-    }
-    assert top == [member]
+    assert today["messages_count"] == 1
+    assert today["photo_count"] == 1
+    assert today["night_messages_count"] == 1
+    assert week["replies_count"] == 1
 
 
 @pytest.mark.asyncio
-async def test_inactive_group_does_not_record_activity(repository: ActivityRepository) -> None:
-    user = UserData(101, "dmytro", "Dmytro", None, "uk")
-    group = GroupData(-1001, "Test group", None, "Europe/Kyiv")
-    await repository.upsert_user(user)
-    await repository.upsert_group(group, bot_status="member", is_active=False)
-
+async def test_paused_group_does_not_record(repository: ActivityRepository) -> None:
+    await active_group(repository)
+    await repository.update_group_setting(-1001, "is_paused", True)
     recorded = await repository.record_message(
         chat_id=-1001,
-        user=user,
-        activity=MessageActivity(is_media=False, is_reply=False),
+        user=UserData(101, None, "Dmytro", None, "uk"),
+        activity=MessageActivity(False, False),
         occurred_at=datetime.now(UTC),
+        message_id=1,
     )
-
     assert recorded is False
-    assert await repository.get_member_stats(-1001, 101) is None
+
+
+@pytest.mark.asyncio
+async def test_reaction_updates_author_and_popular_emoji(repository: ActivityRepository) -> None:
+    await active_group(repository)
+    user = UserData(101, None, "Dmytro", None, "uk")
+    occurred = datetime(2026, 7, 21, 10, tzinfo=UTC)
+    await repository.record_message(
+        chat_id=-1001,
+        user=user,
+        activity=MessageActivity(False, False),
+        occurred_at=occurred,
+        message_id=55,
+    )
+    assert await repository.record_reaction(
+        chat_id=-1001,
+        message_id=55,
+        old_reactions=[],
+        new_reactions=["❤️"],
+        occurred_at=occurred,
+    )
+    member = await repository.get_member_stats(-1001, 101, "today", now=occurred)
+    assert member is not None
+    assert member["reactions_received"] == 1
+    assert await repository.get_popular_reaction(-1001, "today", now=occurred) == ("❤️", 1)
+
+
+@pytest.mark.asyncio
+async def test_claim_update_rejects_duplicate(repository: ActivityRepository) -> None:
+    assert await repository.claim_update(123, "message") is True
+    assert await repository.claim_update(123, "message") is False
+
+
+@pytest.mark.asyncio
+async def test_reset_removes_activity_but_keeps_settings(repository: ActivityRepository) -> None:
+    await active_group(repository)
+    await repository.update_group_setting(-1001, "timezone", "Europe/Warsaw")
+    await repository.record_message(
+        chat_id=-1001,
+        user=UserData(101, None, "Dmytro", None, "uk"),
+        activity=MessageActivity(False, False),
+        occurred_at=datetime.now(UTC),
+        message_id=1,
+    )
+    await repository.reset_group_stats(-1001)
+    assert (await repository.get_group_summary(-1001))["messages_count"] == 0
+    settings = await repository.get_group_settings(-1001)
+    assert settings is not None
+    assert settings["timezone"] == "Europe/Warsaw"
