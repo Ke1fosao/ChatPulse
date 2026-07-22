@@ -1,6 +1,7 @@
 import {
   Award,
   BellRing,
+  Crown,
   ExternalLink,
   Flame,
   Info,
@@ -29,6 +30,23 @@ export function ProfilePage({
   return (
     <div className="page profile-page">
       <ProfileHero user={data.user} progress={data.global_progress} onShare={onShare} />
+
+      {data.account.is_owner || data.account.is_vip ? (
+        <section className={`account-plan-card ${data.account.is_owner ? "account-plan-card--owner" : "account-plan-card--vip"}`}>
+          <span><Crown size={22} /></span>
+          <div>
+            <p>{data.account.is_owner ? "Owner Access" : "VIP-клієнт"}</p>
+            <strong>{data.account.is_owner ? "Повний контроль ChatPulse" : "Усі premium-функції активні"}</strong>
+            <small>
+              {data.account.is_owner
+                ? "Захищено Telegram ID та серверною перевіркою"
+                : data.account.vip_expires_at
+                  ? `Діє до ${new Intl.DateTimeFormat("uk-UA", { dateStyle: "medium" }).format(new Date(data.account.vip_expires_at))}`
+                  : "Безстроковий VIP-доступ"}
+            </small>
+          </div>
+        </section>
+      ) : null}
 
       <section className="profile-milestones panel">
         <div className="section-heading">
@@ -63,6 +81,13 @@ export function ProfilePage({
       </section>
 
       <section className="profile-actions panel">
+        {data.account.is_owner ? (
+          <button type="button" className="profile-owner-action" onClick={() => window.location.assign("/miniapp/owner")}>
+            <span><Crown size={20} /></span>
+            <div><strong>Owner Panel</strong><small>Користувачі, VIP, групи та аудит</small></div>
+            <ExternalLink size={18} />
+          </button>
+        ) : null}
         <button type="button" onClick={onShare}>
           <span><Share2 size={20} /></span>
           <div><strong>Поділитися профілем</strong><small>Створи преміальну PNG-картку</small></div>
