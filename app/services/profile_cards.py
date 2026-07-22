@@ -76,7 +76,12 @@ def render_profile_card(payload: dict[str, Any]) -> bytes:
     role_label, plan_label, role_accent = _account_style(account)
 
     draw.text((70, 56), "CHATPULSE", font=brand_font, fill=(246, 247, 255))
-    draw.text((70, 103), "TELEGRAM PROFILE ANALYTICS", font=micro_font, fill=(133, 143, 169))
+    draw.text(
+        (70, 103),
+        "TELEGRAM PROFILE ANALYTICS",
+        font=micro_font,
+        fill=(133, 143, 169),
+    )
     draw.rounded_rectangle(
         (930, 62, 1130, 118),
         radius=28,
@@ -104,7 +109,12 @@ def render_profile_card(payload: dict[str, Any]) -> bytes:
     )
     initials_box = draw.textbbox((0, 0), initials, font=heading_font)
     initials_width = initials_box[2] - initials_box[0]
-    draw.text((187 - initials_width / 2, 260), initials, font=heading_font, fill=(255, 255, 255))
+    draw.text(
+        (187 - initials_width / 2, 260),
+        initials,
+        font=heading_font,
+        fill=(255, 255, 255),
+    )
 
     name = _fit(str(user.get("display_name") or "Учасник"), 25)
     username = user.get("username")
@@ -115,7 +125,7 @@ def render_profile_card(payload: dict[str, Any]) -> bytes:
         font=label_font,
         fill=(146, 155, 180),
     )
-    pill_width = _draw_pill(
+    _draw_pill(
         draw,
         (790, 225),
         role_label,
@@ -142,13 +152,22 @@ def render_profile_card(payload: dict[str, Any]) -> bytes:
     level = str(int(progress.get("level", 1)))
     level_box = draw.textbbox((0, 0), level, font=level_font)
     level_width = level_box[2] - level_box[0]
-    draw.text((255 - level_width / 2, 522), level, font=level_font, fill=(255, 255, 255))
+    draw.text(
+        (255 - level_width / 2, 522),
+        level,
+        font=level_font,
+        fill=(255, 255, 255),
+    )
 
     tier = str(progress.get("tier", "Новачок"))
     xp_total = int(progress.get("xp_total", 0))
-    level_progress = int(progress.get("progress", 0))
+    current_progress = int(progress.get("progress", 0))
     level_needed = int(progress.get("needed", 0))
-    ratio = 1.0 if level_needed <= 0 else min(1.0, max(0.0, level_progress / level_needed))
+    ratio = (
+        1.0
+        if level_needed <= 0
+        else min(1.0, max(0.0, current_progress / level_needed))
+    )
 
     draw.text((455, 455), tier, font=heading_font, fill=(207, 196, 255))
     draw.text(
@@ -158,7 +177,7 @@ def render_profile_card(payload: dict[str, Any]) -> bytes:
         fill=(255, 255, 255),
     )
     if level_needed > 0:
-        remaining = max(0, level_needed - level_progress)
+        remaining = max(0, level_needed - current_progress)
         progress_copy = f"Ще {remaining:,} XP до наступного рівня".replace(",", " ")
     else:
         progress_copy = "Максимальний рівень досягнуто"
@@ -170,11 +189,26 @@ def render_profile_card(payload: dict[str, Any]) -> bytes:
         radius=9,
         fill=(124, 99, 255),
     )
-    draw.text((455, 673), "ГЛОБАЛЬНИЙ РЕЙТИНГ", font=micro_font, fill=(123, 132, 157))
+    draw.text(
+        (455, 673),
+        "ГЛОБАЛЬНИЙ РЕЙТИНГ",
+        font=micro_font,
+        fill=(123, 132, 157),
+    )
     rank = int(progress.get("rank", 0))
     percentile = int(progress.get("percentile", 0))
-    draw.text((805, 663), f"#{rank or '—'}", font=heading_font, fill=(255, 255, 255))
-    draw.text((925, 681), f"TOP {max(1, 100 - percentile + 1)}%", font=micro_font, fill=(169, 147, 255))
+    draw.text(
+        (805, 663),
+        f"#{rank or '—'}",
+        font=heading_font,
+        fill=(255, 255, 255),
+    )
+    draw.text(
+        (925, 681),
+        f"TOP {max(1, 100 - percentile + 1)}%",
+        font=micro_font,
+        fill=(169, 147, 255),
+    )
 
     metrics = (
         ("СЕРІЯ", int(quick.get("current_streak", 0)), "днів поспіль"),
@@ -191,9 +225,24 @@ def render_profile_card(payload: dict[str, Any]) -> bytes:
             outline=(48, 56, 79),
             width=2,
         )
-        draw.text((left + 28, top + 20), label, font=micro_font, fill=(130, 140, 165))
-        draw.text((left + 28, top + 52), str(value), font=metric_font, fill=(250, 250, 255))
-        draw.text((left + 120, top + 65), suffix, font=small_font, fill=(139, 148, 171))
+        draw.text(
+            (left + 28, top + 20),
+            label,
+            font=micro_font,
+            fill=(130, 140, 165),
+        )
+        draw.text(
+            (left + 28, top + 52),
+            str(value),
+            font=metric_font,
+            fill=(250, 250, 255),
+        )
+        draw.text(
+            (left + 120, top + 65),
+            suffix,
+            font=small_font,
+            fill=(139, 148, 171),
+        )
 
     draw.text(
         (70, 1110),
