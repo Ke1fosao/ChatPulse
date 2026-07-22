@@ -4,6 +4,7 @@ import { App } from "./App";
 import { OwnerApp } from "./owner/OwnerApp";
 import "./styles/global.css";
 import "./styles/owner.css";
+import "./styles/owner-mobile.css";
 
 const isOwnerRoute = window.location.pathname.replace(/\/+$/, "") === "/miniapp/owner";
 const RootApp = isOwnerRoute ? OwnerApp : App;

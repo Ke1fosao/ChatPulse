@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 import type { ReactNode } from "react";
 import type { OwnerSession, OwnerTab } from "./types";
+import { useOwnerViewport } from "./useOwnerViewport";
 
 interface OwnerShellProps {
   session: OwnerSession;
@@ -32,6 +33,8 @@ export function OwnerShell({
   children,
   busy = false,
 }: OwnerShellProps) {
+  useOwnerViewport();
+
   return (
     <div className="owner-shell">
       <div className="owner-ambient owner-ambient--one" />

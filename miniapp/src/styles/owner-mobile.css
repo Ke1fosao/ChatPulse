@@ -1,0 +1,66 @@
+body.owner-modal-open,
+body.owner-keyboard-open {
+  overscroll-behavior: none;
+}
+
+.owner-nav {
+  transition:
+    opacity 0.18s ease,
+    transform 0.18s ease,
+    visibility 0.18s ease;
+}
+
+body.owner-modal-open .owner-nav,
+body.owner-keyboard-open .owner-nav {
+  visibility: hidden;
+  pointer-events: none;
+  opacity: 0;
+  transform: translateY(110%);
+}
+
+.owner-modal-backdrop {
+  inset: auto 0 auto;
+  top: var(--owner-viewport-offset-top, 0px);
+  height: var(--owner-viewport-height, 100dvh);
+  min-height: 0;
+  padding: 10px 10px max(10px, env(safe-area-inset-bottom));
+  overflow: hidden;
+}
+
+.owner-modal {
+  width: min(100%, 520px);
+  max-height: calc(var(--owner-viewport-height, 100dvh) - 20px);
+  overscroll-behavior: contain;
+  scroll-padding-top: 20px;
+  scroll-padding-bottom: 28px;
+  -webkit-overflow-scrolling: touch;
+  animation: sheet-in 0.2s ease both;
+}
+
+.owner-field input,
+.owner-field textarea {
+  font-size: 16px;
+}
+
+.owner-field textarea {
+  min-height: 96px;
+}
+
+body.owner-keyboard-open .owner-modal-backdrop {
+  padding: 6px;
+  background: rgba(2, 4, 9, 0.6);
+  backdrop-filter: blur(6px);
+}
+
+body.owner-keyboard-open .owner-modal {
+  max-height: calc(var(--owner-viewport-height, 100dvh) - 12px);
+  padding-bottom: 20px;
+  border-radius: 22px 22px 14px 14px;
+}
+
+@media (min-width: 680px) {
+  .owner-field input,
+  .owner-field textarea {
+    font-size: 13px;
+  }
+}
