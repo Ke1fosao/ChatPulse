@@ -15,6 +15,7 @@ from app.repositories.miniapp import MiniAppRepository
 from app.repositories.miniapp_gamification import MiniAppGamificationRepository
 from app.repositories.owner import OwnerRepository
 from app.repositories.owner_panel import OwnerPanelRepository
+from app.services.levels import build_level_catalog
 from app.services.profile_cards import render_profile_card
 from app.services.report_cards import render_weekly_report_card
 from app.services.telegram_access import TelegramAccessService
@@ -69,6 +70,15 @@ async def _require_admin(request: Request, chat_id: int, user_id: int) -> None:
         )
 
 
+async def _account_payload(request: Request, user_id: int) -> dict:
+    is_owner = await _owner_repository(request).is_owner(user_id)
+    account = await _owner_panel_repository(request).get_account_access(
+        user_id,
+        is_owner=is_owner,
+    )
+    return account.to_dict()
+
+
 @router.get("/home")
 async def home(
     request: Request,
@@ -81,13 +91,26 @@ async def home(
             detail="Профіль ChatPulse ще не створено. Напишіть /start боту.",
         )
     payload["user"]["photo_url"] = user.photo_url
-    is_owner = await _owner_repository(request).is_owner(user.telegram_id)
-    account = await _owner_panel_repository(request).get_account_access(
-        user.telegram_id,
-        is_owner=is_owner,
-    )
-    payload["account"] = account.to_dict()
+    payload["account"] = await _account_payload(request, user.telegram_id)
     return payload
+
+
+@router.get("/levels")
+async def levels(
+    request: Request,
+    user: Annotated[TelegramMiniAppUser, Depends(get_miniapp_user)],
+) -> dict:
+    payload = await _repository(request).get_home(user.telegram_id)
+    if payload is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Профіль ChatPulse ще не створено.",
+        )
+    progress = payload["global_progress"]
+    return build_level_catalog(
+        current_level=int(progress["level"]),
+        xp_total=int(progress["xp_total"]),
+    )
 
 
 @router.get("/profile-card")
@@ -101,6 +124,8 @@ async def profile_card(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Профіль ChatPulse ще не створено.",
         )
+    payload["user"]["photo_url"] = user.photo_url
+    payload["account"] = await _account_payload(request, user.telegram_id)
     image = render_profile_card(payload)
     return Response(
         content=image,
