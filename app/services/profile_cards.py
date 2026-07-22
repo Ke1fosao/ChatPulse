@@ -163,11 +163,7 @@ def render_profile_card(payload: dict[str, Any]) -> bytes:
     xp_total = int(progress.get("xp_total", 0))
     current_progress = int(progress.get("progress", 0))
     level_needed = int(progress.get("needed", 0))
-    ratio = (
-        1.0
-        if level_needed <= 0
-        else min(1.0, max(0.0, current_progress / level_needed))
-    )
+    ratio = 1.0 if level_needed <= 0 else min(1.0, max(0.0, current_progress / level_needed))
 
     draw.text((455, 455), tier, font=heading_font, fill=(207, 196, 255))
     draw.text(

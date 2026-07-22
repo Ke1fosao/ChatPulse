@@ -219,9 +219,7 @@ def level_catalog(xp: int) -> dict[str, Any]:
 
     for level in range(1, MAX_LEVEL + 1):
         xp_required = xp_threshold_for_level(level)
-        xp_to_next = (
-            xp_threshold_for_level(level + 1) - xp_required if level < MAX_LEVEL else 0
-        )
+        xp_to_next = xp_threshold_for_level(level + 1) - xp_required if level < MAX_LEVEL else 0
         milestone_label = LEVEL_MILESTONES.get(level)
         levels.append(
             {
