@@ -39,9 +39,7 @@ class User(Base):
 
 class BotOwner(Base):
     __tablename__ = "bot_owner"
-    __table_args__ = (
-        CheckConstraint("owner_key = 'primary'", name="ck_bot_owner_singleton"),
-    )
+    __table_args__ = (CheckConstraint("owner_key = 'primary'", name="ck_bot_owner_singleton"),)
 
     owner_key: Mapped[str] = mapped_column(String(16), primary_key=True, default="primary")
     telegram_user_id: Mapped[int] = mapped_column(BigInteger, unique=True, nullable=False)
