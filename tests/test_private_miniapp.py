@@ -2,7 +2,7 @@ from types import SimpleNamespace
 from unittest.mock import AsyncMock
 
 import pytest
-from aiogram.types import InlineKeyboardMarkup, Message
+from aiogram.types import InlineKeyboardMarkup
 
 from app.bot.keyboards import private_start_keyboard
 from app.bot.routers.private import open_command, private_profile_command
