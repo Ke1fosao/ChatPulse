@@ -50,6 +50,16 @@ async def test_same_owner_claim_is_idempotent(owner_repository) -> None:
 
 
 @pytest.mark.asyncio
+async def test_claimed_owner_keeps_identity_after_username_change(owner_repository) -> None:
+    await owner_repository.claim_owner(101, "veheblya")
+
+    result = await owner_repository.claim_owner(101, "new_username")
+
+    assert result is OwnerClaimResult.ALREADY_OWNER
+    assert await owner_repository.is_owner(101) is True
+
+
+@pytest.mark.asyncio
 async def test_other_account_cannot_replace_claimed_owner(owner_repository) -> None:
     await owner_repository.claim_owner(101, "veheblya")
 
