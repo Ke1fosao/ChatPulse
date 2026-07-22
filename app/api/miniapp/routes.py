@@ -1,6 +1,6 @@
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response, status
 
 from app.api.miniapp.auth import TelegramMiniAppUser
 from app.api.miniapp.dependencies import get_miniapp_user
@@ -13,7 +13,10 @@ from app.api.miniapp.schemas import (
 from app.repositories.activity import ActivityRepository
 from app.repositories.gamification import GamificationRepository
 from app.repositories.miniapp import MiniAppRepository
+from app.services.profile_cards import render_profile_card
+from app.services.report_cards import render_weekly_report_card
 from app.services.telegram_access import TelegramAccessService
+from app.services.weekly_payload import build_weekly_payload
 
 router = APIRouter(prefix="/api/miniapp/v1", tags=["miniapp"])
 
@@ -71,6 +74,25 @@ async def home(
     return payload
 
 
+@router.get("/profile-card")
+async def profile_card(
+    request: Request,
+    user: Annotated[TelegramMiniAppUser, Depends(get_miniapp_user)],
+) -> Response:
+    payload = await _repository(request).get_home(user.telegram_id)
+    if payload is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Профіль ChatPulse ще не створено.",
+        )
+    image = render_profile_card(payload)
+    return Response(
+        content=image,
+        media_type="image/png",
+        headers={"Content-Disposition": "inline; filename=chatpulse-profile.png"},
+    )
+
+
 @router.get("/groups")
 async def groups(
     request: Request,
@@ -103,6 +125,36 @@ async def group_dashboard(
         else False
     }
     return payload
+
+
+@router.get("/groups/{chat_id}/weekly-card")
+async def weekly_card(
+    chat_id: int,
+    request: Request,
+    user: Annotated[TelegramMiniAppUser, Depends(get_miniapp_user)],
+) -> Response:
+    membership = await _repository(request).get_group_dashboard(
+        user.telegram_id,
+        chat_id,
+        "week",
+    )
+    if membership is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Групу не знайдено або доступ відсутній.",
+        )
+    await _require_current_member(request, chat_id, user.telegram_id)
+    payload = await build_weekly_payload(
+        _activity_repository(request),
+        _gamification_repository(request),
+        chat_id,
+    )
+    image = render_weekly_report_card(payload, str(payload["theme"]))
+    return Response(
+        content=image,
+        media_type="image/png",
+        headers={"Content-Disposition": "inline; filename=chatpulse-weekly.png"},
+    )
 
 
 @router.get("/groups/{chat_id}/rankings")
