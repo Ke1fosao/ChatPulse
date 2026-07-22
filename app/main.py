@@ -15,8 +15,8 @@ from app.bot.setup import build_dispatcher
 from app.config import Settings, get_settings
 from app.database import Database
 from app.repositories.activity import ActivityRepository
-from app.repositories.gamification import GamificationRepository
 from app.repositories.miniapp import MiniAppRepository
+from app.repositories.miniapp_gamification import MiniAppGamificationRepository
 from app.services.telegram_access import TelegramAccessService
 from app.services.weekly_reports import send_due_weekly_reports
 
@@ -46,7 +46,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         database = Database(resolved_settings.database_url)
         await database.create_schema()
         repository = ActivityRepository(database.session_factory)
-        gamification_repository = GamificationRepository(database.session_factory)
+        gamification_repository = MiniAppGamificationRepository(database.session_factory)
         miniapp_repository = MiniAppRepository(database.session_factory)
         bot = Bot(resolved_settings.bot_token)
         telegram_access_service = TelegramAccessService(bot)
