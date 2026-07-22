@@ -1,0 +1,58 @@
+=== ruff check ===
+E501 Line too long (102 > 100)
+   --> app/repositories/owner_panel.py:171:101
+    |
+169 |         async with self._session_factory() as session:
+170 |             users_total = int(await session.scalar(select(func.count()).select_from(User)) or 0)
+171 |             groups_total = int(await session.scalar(select(func.count()).select_from(ChatGroup)) or 0)
+    |                                                                                                     ^^
+172 |             active_groups = int(
+173 |                 await session.scalar(
+    |
+
+E501 Line too long (106 > 100)
+   --> app/repositories/owner_panel.py:242:101
+    |
+240 |             query_statement = query_statement.where(active_vip)
+241 |         elif vip_filter == "inactive":
+242 |             query_statement = query_statement.where(or_(VipGrant.telegram_user_id.is_(None), ~active_vip))
+    |                                                                                                     ^^^^^^
+243 |
+244 |         async with self._session_factory() as session:
+    |
+
+E501 Line too long (109 > 100)
+   --> app/repositories/owner_panel.py:335:101
+    |
+333 |             ).all()
+334 |             return {
+335 |                 "items": [self._serialize_group(group, int(members_count)) for group, members_count in rows],
+    |                                                                                                     ^^^^^^^^^
+336 |                 "total": total,
+337 |             }
+    |
+
+Found 3 errors.
+=== ruff format ===
+Would reformat: app/repositories/owner_panel.py
+1 file would be reformatted, 71 files already formatted
+=== pytest ===
+........................................................................ [ 83%]
+..............                                                           [100%]
+=============================== warnings summary ===============================
+../../../../../opt/hostedtoolcache/Python/3.12.13/x64/lib/python3.12/site-packages/fastapi/testclient.py:1
+  /opt/hostedtoolcache/Python/3.12.13/x64/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+86 passed, 1 warning in 9.13s
+=== compileall ===
+Listing 'app'...
+Listing 'app/api'...
+Listing 'app/api/miniapp'...
+Listing 'app/api/owner'...
+Listing 'app/bot'...
+Listing 'app/bot/routers'...
+Listing 'app/repositories'...
+Listing 'app/services'...
+Compiling 'app/services/miniapp_admin.py'...

@@ -1,0 +1,27 @@
+=== tests ===
+npm error code ENOENT
+npm error syscall open
+npm error path /home/runner/work/ChatPulse/ChatPulse/package.json
+npm error errno -2
+npm error enoent Could not read package.json: Error: ENOENT: no such file or directory, open '/home/runner/work/ChatPulse/ChatPulse/package.json'
+npm error enoent This is related to npm not being able to find a file.
+npm error enoent
+npm error A complete log of this run can be found in: /home/runner/.npm/_logs/2026-07-22T08_33_54_015Z-debug-0.log
+=== typecheck ===
+npm error code ENOENT
+npm error syscall open
+npm error path /home/runner/work/ChatPulse/ChatPulse/package.json
+npm error errno -2
+npm error enoent Could not read package.json: Error: ENOENT: no such file or directory, open '/home/runner/work/ChatPulse/ChatPulse/package.json'
+npm error enoent This is related to npm not being able to find a file.
+npm error enoent
+npm error A complete log of this run can be found in: /home/runner/.npm/_logs/2026-07-22T08_33_54_127Z-debug-0.log
+=== build ===
+npm error code ENOENT
+npm error syscall open
+npm error path /home/runner/work/ChatPulse/ChatPulse/package.json
+npm error errno -2
+npm error enoent Could not read package.json: Error: ENOENT: no such file or directory, open '/home/runner/work/ChatPulse/ChatPulse/package.json'
+npm error enoent This is related to npm not being able to find a file.
+npm error enoent
+npm error A complete log of this run can be found in: /home/runner/.npm/_logs/2026-07-22T08_33_54_228Z-debug-0.log
