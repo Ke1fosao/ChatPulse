@@ -1,10 +1,11 @@
-from datetime import datetime
+from datetime import UTC, datetime, timedelta
 
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from app.achievements.engine import AchievementEvent, AchievementSnapshot
 from app.domain import AchievementEarned
-from app.models import GroupMember, User
+from app.models import ChatGroup, DailyActivity, GroupMember, User, utc_now
 from app.repositories.achievements import AchievementRepository
 from app.repositories.gamification import GamificationRepository
 
@@ -26,23 +27,7 @@ class AchievementGamificationRepository(GamificationRepository):
         if user is None:
             return []
 
-        snapshot = AchievementSnapshot(
-            values={
-                "messages_count": int(member.messages_count),
-                "media_count": int(member.media_count),
-                "replies_count": int(member.replies_count),
-                "reactions_received": int(member.reactions_received),
-                "photo_count": int(member.photo_count),
-                "voice_count": int(member.voice_count),
-                "night_messages_count": int(member.night_messages_count),
-                "morning_messages_count": int(member.morning_messages_count),
-                "xp_total": int(member.xp_total),
-                "level": int(member.level),
-                "current_streak": int(member.current_streak),
-                "global_xp_total": int(user.global_xp_total),
-                "global_level": int(user.global_level),
-            }
-        )
+        snapshot = self._live_snapshot(member, user)
         events = tuple(
             AchievementEvent(
                 trigger=trigger,
@@ -63,4 +48,125 @@ class AchievementGamificationRepository(GamificationRepository):
             session,
             events=events,
             snapshot=snapshot,
+        )
+
+    async def evaluate_weekly_achievements(
+        self,
+        chat_id: int,
+        *,
+        now: datetime | None = None,
+    ) -> int:
+        timestamp = (now or utc_now()).astimezone(UTC)
+        start_date = timestamp.date() - timedelta(days=6)
+        unlocked = 0
+
+        async with self._session_factory() as session, session.begin():
+            rows = (
+                await session.execute(
+                    select(GroupMember, User)
+                    .join(User, User.telegram_id == GroupMember.telegram_user_id)
+                    .where(GroupMember.telegram_chat_id == chat_id)
+                    .order_by(GroupMember.telegram_user_id.asc())
+                )
+            ).all()
+            for row in rows:
+                member = row.GroupMember
+                user = row.User
+                rank = (
+                    int(
+                        await session.scalar(
+                            select(func.count())
+                            .select_from(GroupMember)
+                            .where(
+                                GroupMember.telegram_chat_id == chat_id,
+                                GroupMember.xp_total > member.xp_total,
+                            )
+                        )
+                        or 0
+                    )
+                    + 1
+                )
+                groups_count = int(
+                    await session.scalar(
+                        select(func.count())
+                        .select_from(GroupMember)
+                        .join(
+                            ChatGroup,
+                            ChatGroup.telegram_chat_id == GroupMember.telegram_chat_id,
+                        )
+                        .where(
+                            GroupMember.telegram_user_id == member.telegram_user_id,
+                            ChatGroup.is_active.is_(True),
+                        )
+                    )
+                    or 0
+                )
+                active_days_total = int(
+                    await session.scalar(
+                        select(func.count(func.distinct(DailyActivity.activity_date))).where(
+                            DailyActivity.telegram_user_id == member.telegram_user_id,
+                            DailyActivity.xp_earned > 0,
+                        )
+                    )
+                    or 0
+                )
+                xp_7d = int(
+                    await session.scalar(
+                        select(func.coalesce(func.sum(DailyActivity.xp_earned), 0)).where(
+                            DailyActivity.telegram_chat_id == chat_id,
+                            DailyActivity.telegram_user_id == member.telegram_user_id,
+                            DailyActivity.activity_date >= start_date,
+                        )
+                    )
+                    or 0
+                )
+                values = dict(self._live_snapshot(member, user).values)
+                values.update(
+                    {
+                        "rank": rank,
+                        "groups_count": groups_count,
+                        "active_days_total": active_days_total,
+                        "xp_7d": xp_7d,
+                    }
+                )
+                events = (
+                    AchievementEvent(
+                        trigger="weekly_report_created",
+                        telegram_user_id=member.telegram_user_id,
+                        telegram_chat_id=chat_id,
+                        occurred_at=timestamp,
+                    ),
+                    AchievementEvent(
+                        trigger="ranking_calculated",
+                        telegram_user_id=member.telegram_user_id,
+                        telegram_chat_id=chat_id,
+                        occurred_at=timestamp,
+                    ),
+                )
+                earned = await self._achievement_v2.record_events(
+                    session,
+                    events=events,
+                    snapshot=AchievementSnapshot(values=values),
+                )
+                unlocked += len(earned)
+        return unlocked
+
+    @staticmethod
+    def _live_snapshot(member: GroupMember, user: User) -> AchievementSnapshot:
+        return AchievementSnapshot(
+            values={
+                "messages_count": int(member.messages_count),
+                "media_count": int(member.media_count),
+                "replies_count": int(member.replies_count),
+                "reactions_received": int(member.reactions_received),
+                "photo_count": int(member.photo_count),
+                "voice_count": int(member.voice_count),
+                "night_messages_count": int(member.night_messages_count),
+                "morning_messages_count": int(member.morning_messages_count),
+                "xp_total": int(member.xp_total),
+                "level": int(member.level),
+                "current_streak": int(member.current_streak),
+                "global_xp_total": int(user.global_xp_total),
+                "global_level": int(user.global_level),
+            }
         )
