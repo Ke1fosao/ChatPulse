@@ -1,16 +1,18 @@
 import { Check, ChevronRight, Crown, LockKeyhole, Sparkles, X } from "lucide-react";
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
+import { api } from "../api/client";
 import type { LevelsPayload } from "../api/levels";
 
 interface LevelsDialogProps {
   open: boolean;
-  data: LevelsPayload | null;
-  loading: boolean;
   onClose(): void;
 }
 
-export function LevelsDialog({ open, data, loading, onClose }: LevelsDialogProps) {
+export function LevelsDialog({ open, onClose }: LevelsDialogProps) {
+  const [data, setData] = useState<LevelsPayload | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
   const current = useMemo(
     () => data?.levels.find((level) => level.is_current) ?? null,
     [data],
@@ -19,15 +21,22 @@ export function LevelsDialog({ open, data, loading, onClose }: LevelsDialogProps
   useEffect(() => {
     if (!open) return;
     document.body.classList.add("levels-dialog-open");
+    if (!data) {
+      setLoading(true);
+      setError("");
+      void api.levels()
+        .then(setData)
+        .catch((reason) => setError(reason instanceof Error ? reason.message : "Не вдалося завантажити рівні."))
+        .finally(() => setLoading(false));
+    }
     return () => document.body.classList.remove("levels-dialog-open");
-  }, [open]);
+  }, [data, open]);
 
   useEffect(() => {
     if (!open || !current) return;
     window.setTimeout(() => {
-      document.querySelector(`[data-level="${current.level}"]`)?.scrollIntoView({
-        block: "center",
-      });
+      const element = document.querySelector(`[data-level="${current.level}"]`);
+      if (element && "scrollIntoView" in element) element.scrollIntoView({ block: "center" });
     }, 80);
   }, [current, open]);
 
@@ -53,9 +62,11 @@ export function LevelsDialog({ open, data, loading, onClose }: LevelsDialogProps
           </button>
         </header>
 
-        {loading || !data ? (
+        {loading ? (
           <div className="levels-loading"><Sparkles className="spin" /> Завантажуємо рівні…</div>
-        ) : (
+        ) : error ? (
+          <div className="levels-loading levels-loading--error">{error}</div>
+        ) : data ? (
           <>
             <section className="levels-current-card">
               <div className="levels-current-card__number">
@@ -87,10 +98,7 @@ export function LevelsDialog({ open, data, loading, onClose }: LevelsDialogProps
                     {level.is_current ? <Sparkles size={18} /> : level.is_unlocked ? <Check size={17} /> : <LockKeyhole size={15} />}
                   </div>
                   <div className="level-row__main">
-                    <div>
-                      <strong>Рівень {level.level}</strong>
-                      <span>{level.tier}</span>
-                    </div>
+                    <div><strong>Рівень {level.level}</strong><span>{level.tier}</span></div>
                     <p>{level.xp_required.toLocaleString("uk-UA")} XP потрібно</p>
                     {level.rewards.length > 0 ? (
                       <div className="level-row__rewards">
@@ -106,7 +114,7 @@ export function LevelsDialog({ open, data, loading, onClose }: LevelsDialogProps
               ))}
             </div>
           </>
-        )}
+        ) : null}
       </section>
     </div>,
     document.body,
