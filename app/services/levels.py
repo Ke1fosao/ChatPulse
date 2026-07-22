@@ -21,7 +21,9 @@ def build_level_catalog(*, current_level: int, xp_total: int) -> dict[str, Any]:
     for level in range(1, MAX_LEVEL + 1):
         tier = level_tier(level)
         threshold = xp_threshold_for_level(level)
-        next_threshold = xp_threshold_for_level(level + 1) if level < MAX_LEVEL else None
+        next_threshold = (
+            xp_threshold_for_level(level + 1) if level < MAX_LEVEL else None
+        )
         tier_changed = tier != previous_tier
         rewards = list(_TIER_REWARDS[tier]) if tier_changed else []
         levels.append(
@@ -29,7 +31,9 @@ def build_level_catalog(*, current_level: int, xp_total: int) -> dict[str, Any]:
                 "level": level,
                 "tier": tier,
                 "xp_required": threshold,
-                "xp_to_next": None if next_threshold is None else next_threshold - threshold,
+                "xp_to_next": (
+                    None if next_threshold is None else next_threshold - threshold
+                ),
                 "is_unlocked": level <= safe_level,
                 "is_current": level == safe_level,
                 "rewards": rewards,
