@@ -1,13 +1,16 @@
+import logging
 from datetime import datetime
 
 from aiogram import Bot
 from aiogram.types import BufferedInputFile, InlineKeyboardButton, InlineKeyboardMarkup
 
 from app.repositories.activity import ActivityRepository
-from app.repositories.gamification import GamificationRepository
+from app.repositories.gamification_v2 import AchievementGamificationRepository
 from app.services.nominations import format_weekly_report
 from app.services.report_cards import render_weekly_report_card
 from app.services.weekly_payload import build_weekly_payload
+
+logger = logging.getLogger("chatpulse.weekly_reports")
 
 
 def _message_link_keyboard(payload: dict) -> InlineKeyboardMarkup | None:
@@ -64,7 +67,7 @@ async def send_due_weekly_reports(
         return await _send_legacy_text_reports(bot, repository, now=now)
 
     sent = 0
-    gamification_repository = GamificationRepository(repository._session_factory)
+    gamification_repository = AchievementGamificationRepository(repository._session_factory)
     for group in await repository.list_due_weekly_reports(now=now):
         chat_id = int(group["telegram_chat_id"])
         payload = await build_weekly_payload(
@@ -95,5 +98,12 @@ async def send_due_weekly_reports(
             except Exception:
                 continue
         await repository.mark_weekly_report_sent(chat_id, sent_at=now)
+        try:
+            await gamification_repository.evaluate_weekly_achievements(
+                chat_id,
+                now=now,
+            )
+        except Exception:
+            logger.exception("weekly_achievement_evaluation_failed chat_id=%s", chat_id)
         sent += 1
     return sent
