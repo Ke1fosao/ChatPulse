@@ -48,6 +48,26 @@ def _access_service(request: Request) -> TelegramAccessService:
     return request.app.state.telegram_access_service
 
 
+async def _is_current_admin(request: Request, chat_id: int, user_id: int) -> bool:
+    if not request.app.state.settings.webhook_base_url:
+        return False
+    return await _access_service(request).check_admin(chat_id, user_id)
+
+
+async def _with_live_admin_flags(
+    request: Request,
+    user_id: int,
+    groups: list[dict],
+) -> list[dict]:
+    for group in groups:
+        group["is_admin"] = await _is_current_admin(
+            request,
+            int(group["telegram_chat_id"]),
+            user_id,
+        )
+    return groups
+
+
 async def _require_current_member(
     request: Request,
     chat_id: int,
@@ -63,7 +83,7 @@ async def _require_current_member(
 
 
 async def _require_admin(request: Request, chat_id: int, user_id: int) -> None:
-    if not await _access_service(request).check_admin(chat_id, user_id):
+    if not await _is_current_admin(request, chat_id, user_id):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Ця дія доступна лише адміністраторам групи.",
@@ -92,6 +112,11 @@ async def home(
         )
     payload["user"]["photo_url"] = user.photo_url
     payload["account"] = await _account_payload(request, user.telegram_id)
+    payload["groups"] = await _with_live_admin_flags(
+        request,
+        user.telegram_id,
+        payload["groups"],
+    )
     return payload
 
 
@@ -139,7 +164,14 @@ async def groups(
     request: Request,
     user: Annotated[TelegramMiniAppUser, Depends(get_miniapp_user)],
 ) -> dict[str, list[dict]]:
-    return {"groups": await _repository(request).list_groups(user.telegram_id)}
+    items = await _repository(request).list_groups(user.telegram_id)
+    return {
+        "groups": await _with_live_admin_flags(
+            request,
+            user.telegram_id,
+            items,
+        )
+    }
 
 
 @router.get("/groups/{chat_id}")
@@ -161,9 +193,7 @@ async def group_dashboard(
         )
     await _require_current_member(request, chat_id, user.telegram_id)
     payload["capabilities"] = {
-        "is_admin": await _access_service(request).check_admin(chat_id, user.telegram_id)
-        if request.app.state.settings.webhook_base_url
-        else False
+        "is_admin": await _is_current_admin(request, chat_id, user.telegram_id)
     }
     return payload
 
