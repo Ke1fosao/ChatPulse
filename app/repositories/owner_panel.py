@@ -2,7 +2,7 @@ import json
 from datetime import UTC, datetime, timedelta
 from typing import Any, Literal
 
-from sqlalchemy import func, or_, select
+from sqlalchemy import String, and_, cast, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from app.models import (
@@ -32,6 +32,13 @@ def _as_utc(value: datetime) -> datetime:
     if value.tzinfo is None:
         return value.replace(tzinfo=UTC)
     return value.astimezone(UTC)
+
+
+def _active_vip_clause(current: datetime):
+    return and_(
+        VipGrant.is_active.is_(True),
+        or_(VipGrant.expires_at.is_(None), VipGrant.expires_at > current),
+    )
 
 
 class OwnerPanelRepository:
@@ -70,6 +77,9 @@ class OwnerPanelRepository:
     ) -> dict[str, Any]:
         current = _as_utc(now or utc_now())
         normalized_expiry = _as_utc(expires_at) if expires_at else None
+        normalized_reason = reason.strip()
+        if len(normalized_reason) < 3:
+            raise ValueError("VIP reason is too short")
         if normalized_expiry is not None and normalized_expiry <= current:
             raise ValueError("VIP expiry must be in the future")
 
@@ -77,33 +87,25 @@ class OwnerPanelRepository:
             owner = await self._require_owner(session, owner_user_id)
             if int(owner.telegram_user_id) == target_user_id:
                 raise ValueError("owner cannot be targeted by VIP mutations")
-            target = await session.get(User, target_user_id)
-            if target is None:
+            if await session.get(User, target_user_id) is None:
                 raise LookupError("User is not registered")
 
             grant = await session.get(VipGrant, target_user_id)
             if grant is None:
                 grant = VipGrant(
                     telegram_user_id=target_user_id,
-                    is_active=True,
-                    starts_at=current,
-                    expires_at=normalized_expiry,
-                    granted_by_owner_id=owner_user_id,
-                    grant_reason=reason,
                     created_at=current,
-                    updated_at=current,
                 )
                 session.add(grant)
-            else:
-                grant.is_active = True
-                grant.starts_at = current
-                grant.expires_at = normalized_expiry
-                grant.granted_by_owner_id = owner_user_id
-                grant.grant_reason = reason
-                grant.revoked_at = None
-                grant.revoked_by_owner_id = None
-                grant.revoke_reason = None
-                grant.updated_at = current
+            grant.is_active = True
+            grant.starts_at = current
+            grant.expires_at = normalized_expiry
+            grant.granted_by_owner_id = owner_user_id
+            grant.grant_reason = normalized_reason
+            grant.revoked_at = None
+            grant.revoked_by_owner_id = None
+            grant.revoke_reason = None
+            grant.updated_at = current
 
             session.add(
                 self._audit_entry(
@@ -114,7 +116,7 @@ class OwnerPanelRepository:
                     metadata={
                         "mode": "until" if normalized_expiry else "permanent",
                         "expires_at": normalized_expiry.isoformat() if normalized_expiry else None,
-                        "reason": reason,
+                        "reason": normalized_reason,
                     },
                     created_at=current,
                 )
@@ -131,6 +133,10 @@ class OwnerPanelRepository:
         now: datetime | None = None,
     ) -> dict[str, Any]:
         current = _as_utc(now or utc_now())
+        normalized_reason = reason.strip()
+        if len(normalized_reason) < 3:
+            raise ValueError("VIP revoke reason is too short")
+
         async with self._session_factory() as session, session.begin():
             owner = await self._require_owner(session, owner_user_id)
             if int(owner.telegram_user_id) == target_user_id:
@@ -142,7 +148,7 @@ class OwnerPanelRepository:
             grant.is_active = False
             grant.revoked_at = current
             grant.revoked_by_owner_id = owner_user_id
-            grant.revoke_reason = reason
+            grant.revoke_reason = normalized_reason
             grant.updated_at = current
             session.add(
                 self._audit_entry(
@@ -150,7 +156,7 @@ class OwnerPanelRepository:
                     action="vip.revoked",
                     target_type="user",
                     target_id=str(target_user_id),
-                    metadata={"reason": reason},
+                    metadata={"reason": normalized_reason},
                     created_at=current,
                 )
             )
@@ -171,12 +177,7 @@ class OwnerPanelRepository:
             )
             vip_total = int(
                 await session.scalar(
-                    select(func.count())
-                    .select_from(VipGrant)
-                    .where(
-                        VipGrant.is_active.is_(True),
-                        or_(VipGrant.expires_at.is_(None), VipGrant.expires_at > current),
-                    )
+                    select(func.count()).select_from(VipGrant).where(_active_vip_clause(current))
                 )
                 or 0
             )
@@ -207,72 +208,83 @@ class OwnerPanelRepository:
     ) -> dict[str, Any]:
         current = _as_utc(now or utc_now())
         normalized_query = (query or "").strip().casefold()
+        member_counts = (
+            select(
+                GroupMember.telegram_user_id.label("user_id"),
+                func.count().label("groups_count"),
+            )
+            .group_by(GroupMember.telegram_user_id)
+            .subquery()
+        )
+        active_vip = _active_vip_clause(current)
+        query_statement = (
+            select(
+                User,
+                VipGrant,
+                func.coalesce(member_counts.c.groups_count, 0).label("groups_count"),
+            )
+            .outerjoin(VipGrant, VipGrant.telegram_user_id == User.telegram_id)
+            .outerjoin(member_counts, member_counts.c.user_id == User.telegram_id)
+        )
+        if normalized_query:
+            pattern = f"%{normalized_query}%"
+            query_statement = query_statement.where(
+                or_(
+                    func.lower(User.first_name).like(pattern),
+                    func.lower(func.coalesce(User.last_name, "")).like(pattern),
+                    func.lower(func.coalesce(User.username, "")).like(pattern),
+                    cast(User.telegram_id, String).like(pattern),
+                )
+            )
+        if vip_filter == "active":
+            query_statement = query_statement.where(active_vip)
+        elif vip_filter == "inactive":
+            query_statement = query_statement.where(or_(VipGrant.telegram_user_id.is_(None), ~active_vip))
+
         async with self._session_factory() as session:
-            users_query = select(User).order_by(User.last_activity_at.desc(), User.telegram_id.desc())
-            if normalized_query:
-                pattern = f"%{normalized_query}%"
-                users_query = users_query.where(
-                    or_(
-                        func.lower(User.first_name).like(pattern),
-                        func.lower(func.coalesce(User.last_name, "")).like(pattern),
-                        func.lower(func.coalesce(User.username, "")).like(pattern),
-                        func.cast(User.telegram_id, type_=User.telegram_id.type).like(pattern),
-                    )
+            count_statement = select(func.count()).select_from(
+                query_statement.order_by(None).subquery()
+            )
+            total = int(await session.scalar(count_statement) or 0)
+            rows = (
+                await session.execute(
+                    query_statement
+                    .order_by(User.last_activity_at.desc(), User.telegram_id.desc())
+                    .limit(limit)
+                    .offset(offset)
                 )
-            users = list((await session.scalars(users_query)).all())
-
-            items: list[dict[str, Any]] = []
-            for user in users:
-                grant = await session.get(VipGrant, int(user.telegram_id))
-                active_vip = bool(
-                    grant
-                    and grant.is_active
-                    and (grant.expires_at is None or _as_utc(grant.expires_at) > current)
-                )
-                if vip_filter == "active" and not active_vip:
-                    continue
-                if vip_filter == "inactive" and active_vip:
-                    continue
-                groups_count = int(
-                    await session.scalar(
-                        select(func.count())
-                        .select_from(GroupMember)
-                        .where(GroupMember.telegram_user_id == user.telegram_id)
-                    )
-                    or 0
-                )
-                display_name = " ".join(
-                    part for part in (user.first_name, user.last_name) if part
-                ).strip()
-                items.append(
-                    {
-                        "telegram_id": int(user.telegram_id),
-                        "display_name": display_name or str(user.telegram_id),
-                        "username": user.username,
-                        "global_xp_total": int(user.global_xp_total),
-                        "groups_count": groups_count,
-                        "is_vip": active_vip,
-                        "vip_expires_at": (
-                            _as_utc(grant.expires_at).isoformat()
-                            if active_vip and grant and grant.expires_at
-                            else None
-                        ),
-                        "last_activity_at": _as_utc(user.last_activity_at).isoformat(),
-                    }
-                )
-
-            total = len(items)
-            return {"items": items[offset : offset + limit], "total": total}
+            ).all()
+            return {
+                "items": [
+                    self._serialize_user(user, grant, int(groups_count), current)
+                    for user, grant, groups_count in rows
+                ],
+                "total": total,
+            }
 
     async def get_user(self, user_id: int, *, now: datetime | None = None) -> dict[str, Any] | None:
-        result = await self.list_users(
-            query=str(user_id),
-            vip_filter="all",
-            limit=100,
-            offset=0,
-            now=now,
-        )
-        return next((item for item in result["items"] if item["telegram_id"] == user_id), None)
+        current = _as_utc(now or utc_now())
+        async with self._session_factory() as session:
+            row = (
+                await session.execute(
+                    select(
+                        User,
+                        VipGrant,
+                        select(func.count())
+                        .select_from(GroupMember)
+                        .where(GroupMember.telegram_user_id == User.telegram_id)
+                        .correlate(User)
+                        .scalar_subquery()
+                        .label("groups_count"),
+                    )
+                    .outerjoin(VipGrant, VipGrant.telegram_user_id == User.telegram_id)
+                    .where(User.telegram_id == user_id)
+                )
+            ).first()
+            if row is None:
+                return None
+            user, grant, groups_count = row
+            return self._serialize_user(user, grant, int(groups_count or 0), current)
 
     async def list_groups(
         self,
@@ -282,42 +294,47 @@ class OwnerPanelRepository:
         offset: int,
     ) -> dict[str, Any]:
         normalized_query = (query or "").strip().casefold()
+        member_counts = (
+            select(
+                GroupMember.telegram_chat_id.label("chat_id"),
+                func.count().label("members_count"),
+            )
+            .group_by(GroupMember.telegram_chat_id)
+            .subquery()
+        )
+        statement = (
+            select(
+                ChatGroup,
+                func.coalesce(member_counts.c.members_count, 0).label("members_count"),
+            )
+            .outerjoin(member_counts, member_counts.c.chat_id == ChatGroup.telegram_chat_id)
+        )
+        if normalized_query:
+            pattern = f"%{normalized_query}%"
+            statement = statement.where(
+                or_(
+                    func.lower(ChatGroup.title).like(pattern),
+                    func.lower(func.coalesce(ChatGroup.username, "")).like(pattern),
+                    cast(ChatGroup.telegram_chat_id, String).like(pattern),
+                )
+            )
+
         async with self._session_factory() as session:
-            groups_query = select(ChatGroup).order_by(ChatGroup.updated_at.desc())
-            if normalized_query:
-                pattern = f"%{normalized_query}%"
-                groups_query = groups_query.where(
-                    or_(
-                        func.lower(ChatGroup.title).like(pattern),
-                        func.lower(func.coalesce(ChatGroup.username, "")).like(pattern),
-                    )
+            total = int(
+                await session.scalar(
+                    select(func.count()).select_from(statement.order_by(None).subquery())
                 )
-            groups = list((await session.scalars(groups_query)).all())
-            items: list[dict[str, Any]] = []
-            for group in groups:
-                members_count = int(
-                    await session.scalar(
-                        select(func.count())
-                        .select_from(GroupMember)
-                        .where(GroupMember.telegram_chat_id == group.telegram_chat_id)
-                    )
-                    or 0
+                or 0
+            )
+            rows = (
+                await session.execute(
+                    statement.order_by(ChatGroup.updated_at.desc()).limit(limit).offset(offset)
                 )
-                items.append(
-                    {
-                        "telegram_chat_id": int(group.telegram_chat_id),
-                        "title": group.title,
-                        "username": group.username,
-                        "is_active": bool(group.is_active),
-                        "is_paused": bool(group.is_paused),
-                        "weekly_reports_enabled": bool(group.weekly_reports_enabled),
-                        "report_card_theme": group.report_card_theme,
-                        "members_count": members_count,
-                        "updated_at": _as_utc(group.updated_at).isoformat(),
-                    }
-                )
-            total = len(items)
-            return {"items": items[offset : offset + limit], "total": total}
+            ).all()
+            return {
+                "items": [self._serialize_group(group, int(members_count)) for group, members_count in rows],
+                "total": total,
+            }
 
     async def update_group(
         self,
@@ -354,14 +371,7 @@ class OwnerPanelRepository:
                 )
             )
             await session.flush()
-            return {
-                "telegram_chat_id": int(group.telegram_chat_id),
-                "title": group.title,
-                "is_active": bool(group.is_active),
-                "is_paused": bool(group.is_paused),
-                "weekly_reports_enabled": bool(group.weekly_reports_enabled),
-                "report_card_theme": group.report_card_theme,
-            }
+            return self._serialize_group(group, members_count=0)
 
     async def list_audit(self, *, limit: int = 50) -> list[dict[str, Any]]:
         async with self._session_factory() as session:
@@ -401,6 +411,50 @@ class OwnerPanelRepository:
             metadata_json=json.dumps(metadata, ensure_ascii=False, sort_keys=True),
             created_at=created_at,
         )
+
+    @staticmethod
+    def _serialize_user(
+        user: User,
+        grant: VipGrant | None,
+        groups_count: int,
+        current: datetime,
+    ) -> dict[str, Any]:
+        active_vip = bool(
+            grant
+            and grant.is_active
+            and (grant.expires_at is None or _as_utc(grant.expires_at) > current)
+        )
+        display_name = " ".join(
+            part for part in (user.first_name, user.last_name) if part
+        ).strip()
+        return {
+            "telegram_id": int(user.telegram_id),
+            "display_name": display_name or str(user.telegram_id),
+            "username": user.username,
+            "global_xp_total": int(user.global_xp_total),
+            "groups_count": groups_count,
+            "is_vip": active_vip,
+            "vip_expires_at": (
+                _as_utc(grant.expires_at).isoformat()
+                if active_vip and grant and grant.expires_at
+                else None
+            ),
+            "last_activity_at": _as_utc(user.last_activity_at).isoformat(),
+        }
+
+    @staticmethod
+    def _serialize_group(group: ChatGroup, members_count: int) -> dict[str, Any]:
+        return {
+            "telegram_chat_id": int(group.telegram_chat_id),
+            "title": group.title,
+            "username": group.username,
+            "is_active": bool(group.is_active),
+            "is_paused": bool(group.is_paused),
+            "weekly_reports_enabled": bool(group.weekly_reports_enabled),
+            "report_card_theme": group.report_card_theme,
+            "members_count": members_count,
+            "updated_at": _as_utc(group.updated_at).isoformat(),
+        }
 
     @staticmethod
     def _serialize_grant(grant: VipGrant) -> dict[str, Any]:
