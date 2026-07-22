@@ -10,6 +10,7 @@ from app.api.miniapp.schemas import (
     RankingMetric,
     ResetGroupRequest,
 )
+from app.repositories.achievements import AchievementRepository
 from app.repositories.activity import ActivityRepository
 from app.repositories.miniapp import MiniAppRepository
 from app.repositories.miniapp_gamification import MiniAppGamificationRepository
@@ -26,6 +27,10 @@ router = APIRouter(prefix="/api/miniapp/v1", tags=["miniapp"])
 
 def _repository(request: Request) -> MiniAppRepository:
     return request.app.state.miniapp_repository
+
+
+def _achievement_repository(request: Request) -> AchievementRepository:
+    return request.app.state.achievement_repository
 
 
 def _activity_repository(request: Request) -> ActivityRepository:
@@ -270,6 +275,47 @@ async def achievements(
     if chat_id is not None:
         await _require_current_member(request, chat_id, user.telegram_id)
     return {"achievements": payload}
+
+
+@router.get("/achievement-events")
+async def achievement_events(
+    request: Request,
+    user: Annotated[TelegramMiniAppUser, Depends(get_miniapp_user)],
+    limit: Annotated[int, Query(ge=1, le=25)] = 10,
+) -> dict[str, list[dict]]:
+    events = await _achievement_repository(request).list_pending_events(
+        user.telegram_id,
+        limit=limit,
+    )
+    return {"events": events}
+
+
+@router.post("/achievement-events/{event_id}/seen")
+async def mark_achievement_event_seen(
+    event_id: int,
+    request: Request,
+    user: Annotated[TelegramMiniAppUser, Depends(get_miniapp_user)],
+) -> dict[str, bool]:
+    if not await _achievement_repository(request).mark_seen(user.telegram_id, event_id):
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Подію досягнення не знайдено.",
+        )
+    return {"ok": True}
+
+
+@router.post("/achievement-events/{event_id}/shared")
+async def mark_achievement_event_shared(
+    event_id: int,
+    request: Request,
+    user: Annotated[TelegramMiniAppUser, Depends(get_miniapp_user)],
+) -> dict[str, bool]:
+    if not await _achievement_repository(request).mark_shared(user.telegram_id, event_id):
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Подію досягнення не знайдено.",
+        )
+    return {"ok": True}
 
 
 @router.patch("/groups/{chat_id}/settings")
