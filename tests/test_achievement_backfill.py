@@ -96,16 +96,9 @@ async def test_backfill_is_idempotent_and_creates_one_summary_event(tmp_path) ->
             ).all()
         )
         event_count = int(
-            await session.scalar(
-                select(func.count()).select_from(AchievementEventRecord)
-            )
-            or 0
+            await session.scalar(select(func.count()).select_from(AchievementEventRecord)) or 0
         )
-        event_types = set(
-            (
-                await session.scalars(select(AchievementEventRecord.event_type))
-            ).all()
-        )
+        event_types = set((await session.scalars(select(AchievementEventRecord.event_type))).all())
 
     assert "first_steps" in codes
     assert "messages_100" in codes

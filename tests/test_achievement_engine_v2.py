@@ -1,13 +1,12 @@
 from datetime import UTC, datetime
 
 from app.achievements.catalog import (
-    ACHIEVEMENTS,
     ACHIEVEMENT_BY_CODE,
+    ACHIEVEMENTS,
     AchievementRarity,
     definitions_for_trigger,
 )
 from app.achievements.engine import AchievementEvent, AchievementSnapshot, evaluate_event
-
 
 LEGACY_CODES = {
     "first_steps",

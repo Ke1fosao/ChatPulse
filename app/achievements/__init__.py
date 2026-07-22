@@ -1,6 +1,6 @@
 from app.achievements.catalog import (
-    ACHIEVEMENTS,
     ACHIEVEMENT_BY_CODE,
+    ACHIEVEMENTS,
     AchievementDefinition,
     AchievementRarity,
     definitions_for_trigger,

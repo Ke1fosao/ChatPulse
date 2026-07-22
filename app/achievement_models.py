@@ -79,9 +79,7 @@ class AchievementEventRecord(Base):
 
 class AchievementProgress(Base):
     __tablename__ = "achievement_progress"
-    __table_args__ = (
-        Index("ix_achievement_progress_user", "telegram_user_id", "updated_at"),
-    )
+    __table_args__ = (Index("ix_achievement_progress_user", "telegram_user_id", "updated_at"),)
 
     telegram_user_id: Mapped[int] = mapped_column(
         BigInteger,

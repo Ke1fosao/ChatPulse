@@ -143,13 +143,11 @@ class AchievementRepository:
                     )
                     .outerjoin(
                         AchievementUnlockRecord,
-                        AchievementUnlockRecord.id
-                        == AchievementEventRecord.achievement_unlock_id,
+                        AchievementUnlockRecord.id == AchievementEventRecord.achievement_unlock_id,
                     )
                     .outerjoin(
                         ChatGroup,
-                        ChatGroup.telegram_chat_id
-                        == AchievementUnlockRecord.telegram_chat_id,
+                        ChatGroup.telegram_chat_id == AchievementUnlockRecord.telegram_chat_id,
                     )
                     .where(
                         AchievementEventRecord.telegram_user_id == user_id,
@@ -174,9 +172,7 @@ class AchievementRepository:
                 }
                 if event.event_type == "collection_update":
                     payload = self._safe_payload(event.payload_json)
-                    rarest_codes = [
-                        str(code) for code in payload.get("rarest_codes", [])[:3]
-                    ]
+                    rarest_codes = [str(code) for code in payload.get("rarest_codes", [])[:3]]
                     achievements = []
                     for code in rarest_codes:
                         definition = ACHIEVEMENT_BY_CODE.get(code)
@@ -211,9 +207,7 @@ class AchievementRepository:
                             earned=True,
                             progress=int(unlock.final_progress),
                             earned_at=unlock.earned_at.isoformat(),
-                            group_title=(
-                                str(group_title) if group_title is not None else None
-                            ),
+                            group_title=(str(group_title) if group_title is not None else None),
                         ),
                     }
                 )

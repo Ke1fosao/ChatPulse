@@ -133,9 +133,7 @@ class AchievementBackfillService:
         ).all()
         recalculated = 0
         for member, user in rows:
-            values = dict(
-                AchievementGamificationRepository._live_snapshot(member, user).values
-            )
+            values = dict(AchievementGamificationRepository._live_snapshot(member, user).values)
             values.update(
                 await self._extended_metrics(
                     session,
@@ -265,9 +263,7 @@ class AchievementBackfillService:
                 continue
             rarest_codes = sorted(
                 unique_codes,
-                key=lambda code: RARITY_WEIGHT[
-                    ACHIEVEMENT_BY_CODE[code].rarity
-                ],
+                key=lambda code: RARITY_WEIGHT[ACHIEVEMENT_BY_CODE[code].rarity],
                 reverse=True,
             )[:3]
             self._achievement_repository.add_collection_update_event(

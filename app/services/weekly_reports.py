@@ -67,9 +67,7 @@ async def send_due_weekly_reports(
         return await _send_legacy_text_reports(bot, repository, now=now)
 
     sent = 0
-    gamification_repository = AchievementGamificationRepository(
-        repository._session_factory
-    )
+    gamification_repository = AchievementGamificationRepository(repository._session_factory)
     for group in await repository.list_due_weekly_reports(now=now):
         chat_id = int(group["telegram_chat_id"])
         payload = await build_weekly_payload(

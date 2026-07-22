@@ -1,8 +1,8 @@
 from __future__ import annotations
 
+from collections.abc import Mapping
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Mapping
 
 from app.achievements.catalog import (
     AchievementDefinition,
@@ -70,9 +70,7 @@ def evaluate_event(
                 definition=definition,
                 progress=progress,
                 telegram_user_id=event.telegram_user_id,
-                telegram_chat_id=(
-                    event.telegram_chat_id if definition.scope == "group" else None
-                ),
+                telegram_chat_id=(event.telegram_chat_id if definition.scope == "group" else None),
                 occurred_at=event.occurred_at,
             )
         )
