@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "chatpulse"
-version = "0.3.0"
-description = "Telegram group activity analytics bot"
+version = "0.4.0"
+description = "Telegram group analytics and gamification bot with a premium Mini App"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
