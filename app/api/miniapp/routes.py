@@ -314,11 +314,7 @@ async def achievement_event_card(
     return Response(
         content=image,
         media_type="image/png",
-        headers={
-            "Content-Disposition": (
-                f"inline; filename=chatpulse-achievement-{event_id}.png"
-            )
-        },
+        headers={"Content-Disposition": (f"inline; filename=chatpulse-achievement-{event_id}.png")},
     )
 
 

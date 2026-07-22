@@ -139,7 +139,8 @@ class AchievementRepository:
         async with self._session_factory() as session, session.begin():
             rows = (
                 await session.execute(
-                    self._event_query().where(
+                    self._event_query()
+                    .where(
                         AchievementEventRecord.telegram_user_id == user_id,
                         AchievementEventRecord.seen_at.is_(None),
                     )
@@ -252,13 +253,11 @@ class AchievementRepository:
             )
             .outerjoin(
                 AchievementUnlockRecord,
-                AchievementUnlockRecord.id
-                == AchievementEventRecord.achievement_unlock_id,
+                AchievementUnlockRecord.id == AchievementEventRecord.achievement_unlock_id,
             )
             .outerjoin(
                 ChatGroup,
-                ChatGroup.telegram_chat_id
-                == AchievementUnlockRecord.telegram_chat_id,
+                ChatGroup.telegram_chat_id == AchievementUnlockRecord.telegram_chat_id,
             )
         )
 
@@ -276,9 +275,7 @@ class AchievementRepository:
         }
         if event.event_type == "collection_update":
             raw_payload = cls._safe_payload(event.payload_json)
-            rarest_codes = [
-                str(code) for code in raw_payload.get("rarest_codes", [])[:3]
-            ]
+            rarest_codes = [str(code) for code in raw_payload.get("rarest_codes", [])[:3]]
             achievements = []
             for code in rarest_codes:
                 definition = ACHIEVEMENT_BY_CODE.get(code)
