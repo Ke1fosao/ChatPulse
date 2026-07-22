@@ -11,8 +11,8 @@ from app.api.miniapp.schemas import (
     ResetGroupRequest,
 )
 from app.repositories.activity import ActivityRepository
-from app.repositories.gamification import GamificationRepository
 from app.repositories.miniapp import MiniAppRepository
+from app.repositories.miniapp_gamification import MiniAppGamificationRepository
 from app.services.profile_cards import render_profile_card
 from app.services.report_cards import render_weekly_report_card
 from app.services.telegram_access import TelegramAccessService
@@ -29,7 +29,7 @@ def _activity_repository(request: Request) -> ActivityRepository:
     return request.app.state.repository
 
 
-def _gamification_repository(request: Request) -> GamificationRepository:
+def _gamification_repository(request: Request) -> MiniAppGamificationRepository:
     return request.app.state.gamification_repository
 
 
@@ -207,6 +207,7 @@ async def update_group_settings(
     await _require_admin(request, chat_id, user.telegram_id)
     values = payload.model_dump(exclude_none=True)
     report_time = values.pop("report_time", None)
+    report_theme = values.pop("report_card_theme", None)
     if report_time is not None:
         hour, minute = (int(piece) for piece in report_time.split(":"))
         await _gamification_repository(request).update_report_time(
@@ -214,6 +215,8 @@ async def update_group_settings(
             hour=hour,
             minute=minute,
         )
+    if report_theme is not None:
+        await _gamification_repository(request).update_report_theme(chat_id, report_theme)
 
     for field, value in values.items():
         await _activity_repository(request).update_group_setting(chat_id, field, value)
