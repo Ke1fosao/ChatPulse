@@ -111,12 +111,27 @@ export interface Achievement {
   season_key?: string | null;
 }
 
-export interface AchievementEventPayload {
+interface AchievementEventBase {
   event_id: number;
-  event_type: "unlock" | "collection_update";
   created_at: string;
+}
+
+export interface AchievementUnlockEventPayload extends AchievementEventBase {
+  event_type: "unlock";
   achievement: Achievement;
 }
+
+export interface AchievementCollectionUpdateEventPayload extends AchievementEventBase {
+  event_type: "collection_update";
+  summary: {
+    count: number;
+    achievements: Achievement[];
+  };
+}
+
+export type AchievementEventPayload =
+  | AchievementUnlockEventPayload
+  | AchievementCollectionUpdateEventPayload;
 
 export interface RecentAchievement {
   code: string;
