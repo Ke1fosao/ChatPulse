@@ -252,8 +252,7 @@ class OwnerPanelRepository:
             total = int(await session.scalar(count_statement) or 0)
             rows = (
                 await session.execute(
-                    query_statement
-                    .order_by(User.last_activity_at.desc(), User.telegram_id.desc())
+                    query_statement.order_by(User.last_activity_at.desc(), User.telegram_id.desc())
                     .limit(limit)
                     .offset(offset)
                 )
@@ -306,13 +305,10 @@ class OwnerPanelRepository:
             .group_by(GroupMember.telegram_chat_id)
             .subquery()
         )
-        statement = (
-            select(
-                ChatGroup,
-                func.coalesce(member_counts.c.members_count, 0).label("members_count"),
-            )
-            .outerjoin(member_counts, member_counts.c.chat_id == ChatGroup.telegram_chat_id)
-        )
+        statement = select(
+            ChatGroup,
+            func.coalesce(member_counts.c.members_count, 0).label("members_count"),
+        ).outerjoin(member_counts, member_counts.c.chat_id == ChatGroup.telegram_chat_id)
         if normalized_query:
             pattern = f"%{normalized_query}%"
             statement = statement.where(
@@ -431,9 +427,7 @@ class OwnerPanelRepository:
             and grant.is_active
             and (grant.expires_at is None or _as_utc(grant.expires_at) > current)
         )
-        display_name = " ".join(
-            part for part in (user.first_name, user.last_name) if part
-        ).strip()
+        display_name = " ".join(part for part in (user.first_name, user.last_name) if part).strip()
         return {
             "telegram_id": int(user.telegram_id),
             "display_name": display_name or str(user.telegram_id),
