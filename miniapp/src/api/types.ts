@@ -105,6 +105,7 @@ export interface Achievement {
   group_title?: string | null;
   progress: number;
   threshold: number;
+  comparator?: "gte" | "lte";
   chain?: AchievementChain | null;
   reward_xp: number;
   version: number;
