@@ -15,6 +15,7 @@ from app.repositories.miniapp import MiniAppRepository
 from app.repositories.miniapp_gamification import MiniAppGamificationRepository
 from app.repositories.owner import OwnerRepository
 from app.repositories.owner_panel import OwnerPanelRepository
+from app.services.gamification import level_catalog
 from app.services.profile_cards import render_profile_card
 from app.services.report_cards import render_weekly_report_card
 from app.services.telegram_access import TelegramAccessService
@@ -45,6 +46,23 @@ def _owner_panel_repository(request: Request) -> OwnerPanelRepository:
 
 def _access_service(request: Request) -> TelegramAccessService:
     return request.app.state.telegram_access_service
+
+
+async def _decorate_home_payload(
+    request: Request,
+    user: TelegramMiniAppUser,
+    payload: dict,
+) -> dict:
+    payload.setdefault("user", {})["photo_url"] = user.photo_url
+    is_owner = await _owner_repository(request).is_owner(user.telegram_id)
+    account = await _owner_panel_repository(request).get_account_access(
+        user.telegram_id,
+        is_owner=is_owner,
+    )
+    payload["account"] = account.to_dict()
+    progress = payload.get("global_progress", {})
+    payload["level_catalog"] = level_catalog(int(progress.get("xp_total", 0)))
+    return payload
 
 
 async def _require_current_member(
@@ -80,14 +98,7 @@ async def home(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Профіль ChatPulse ще не створено. Напишіть /start боту.",
         )
-    payload["user"]["photo_url"] = user.photo_url
-    is_owner = await _owner_repository(request).is_owner(user.telegram_id)
-    account = await _owner_panel_repository(request).get_account_access(
-        user.telegram_id,
-        is_owner=is_owner,
-    )
-    payload["account"] = account.to_dict()
-    return payload
+    return await _decorate_home_payload(request, user, payload)
 
 
 @router.get("/profile-card")
@@ -101,7 +112,8 @@ async def profile_card(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Профіль ChatPulse ще не створено.",
         )
-    image = render_profile_card(payload)
+    decorated = await _decorate_home_payload(request, user, payload)
+    image = render_profile_card(decorated)
     return Response(
         content=image,
         media_type="image/png",
