@@ -1,5 +1,6 @@
 import type {
   Achievement,
+  AchievementEventPayload,
   ApiErrorBody,
   GroupCardData,
   GroupDashboard,
@@ -74,6 +75,18 @@ export const api = {
     return (await request<{ achievements: Achievement[] }>(`/achievements${query}`))
       .achievements;
   },
+  achievementEvents: async (limit = 10) =>
+    (await request<{ events: AchievementEventPayload[] }>(
+      `/achievement-events?limit=${limit}`,
+    )).events,
+  markAchievementSeen: (eventId: number) =>
+    request<{ ok: boolean }>(`/achievement-events/${eventId}/seen`, {
+      method: "POST",
+    }),
+  markAchievementShared: (eventId: number) =>
+    request<{ ok: boolean }>(`/achievement-events/${eventId}/shared`, {
+      method: "POST",
+    }),
   updateSettings: (chatId: number, settings: Partial<GroupSettings>) =>
     request<GroupSettings>(`/groups/${chatId}/settings`, {
       method: "PATCH",
