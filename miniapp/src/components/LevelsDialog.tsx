@@ -19,24 +19,36 @@ export function LevelsDialog({ open, onClose }: LevelsDialogProps) {
   );
 
   useEffect(() => {
-    if (!open) return;
+    if (!open) return undefined;
     document.body.classList.add("levels-dialog-open");
     if (!data) {
       setLoading(true);
       setError("");
       void api.levels()
         .then(setData)
-        .catch((reason) => setError(reason instanceof Error ? reason.message : "Не вдалося завантажити рівні."))
+        .catch((reason) => {
+          setError(
+            reason instanceof Error
+              ? reason.message
+              : "Не вдалося завантажити рівні.",
+          );
+        })
         .finally(() => setLoading(false));
     }
-    return () => document.body.classList.remove("levels-dialog-open");
+    return () => {
+      document.body.classList.remove("levels-dialog-open");
+    };
   }, [data, open]);
 
   useEffect(() => {
     if (!open || !current) return;
     window.setTimeout(() => {
-      const element = document.querySelector(`[data-level="${current.level}"]`);
-      if (element && "scrollIntoView" in element) element.scrollIntoView({ block: "center" });
+      const element = document.querySelector<HTMLElement>(
+        `[data-level="${current.level}"]`,
+      );
+      if (typeof element?.scrollIntoView === "function") {
+        element.scrollIntoView({ block: "center" });
+      }
     }, 80);
   }, [current, open]);
 
@@ -63,7 +75,9 @@ export function LevelsDialog({ open, onClose }: LevelsDialogProps) {
         </header>
 
         {loading ? (
-          <div className="levels-loading"><Sparkles className="spin" /> Завантажуємо рівні…</div>
+          <div className="levels-loading">
+            <Sparkles className="spin" /> Завантажуємо рівні…
+          </div>
         ) : error ? (
           <div className="levels-loading levels-loading--error">{error}</div>
         ) : data ? (
@@ -95,7 +109,13 @@ export function LevelsDialog({ open, onClose }: LevelsDialogProps) {
                   className={`level-row ${level.is_current ? "is-current" : ""} ${level.is_unlocked ? "is-unlocked" : "is-locked"}`}
                 >
                   <div className="level-row__marker">
-                    {level.is_current ? <Sparkles size={18} /> : level.is_unlocked ? <Check size={17} /> : <LockKeyhole size={15} />}
+                    {level.is_current ? (
+                      <Sparkles size={18} />
+                    ) : level.is_unlocked ? (
+                      <Check size={17} />
+                    ) : (
+                      <LockKeyhole size={15} />
+                    )}
                   </div>
                   <div className="level-row__main">
                     <div><strong>Рівень {level.level}</strong><span>{level.tier}</span></div>
@@ -107,7 +127,9 @@ export function LevelsDialog({ open, onClose }: LevelsDialogProps) {
                     ) : null}
                   </div>
                   <div className="level-row__next">
-                    {level.xp_to_next === null ? "MAX" : `+${level.xp_to_next.toLocaleString("uk-UA")}`}
+                    {level.xp_to_next === null
+                      ? "MAX"
+                      : `+${level.xp_to_next.toLocaleString("uk-UA")}`}
                     <ChevronRight size={15} />
                   </div>
                 </article>
