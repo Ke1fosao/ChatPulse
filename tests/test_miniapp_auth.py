@@ -81,7 +81,11 @@ def test_validate_init_data_rejects_malformed_user_json() -> None:
     }
     data_check_string = "\n".join(f"{key}={values[key]}" for key in sorted(values))
     secret_key = hmac.new(b"WebAppData", b"123456:test-token", hashlib.sha256).digest()
-    values["hash"] = hmac.new(secret_key, data_check_string.encode(), hashlib.sha256).hexdigest()
+    values["hash"] = hmac.new(
+        secret_key,
+        data_check_string.encode(),
+        hashlib.sha256,
+    ).hexdigest()
 
     with pytest.raises(MiniAppAuthError, match="користувача"):
         validate_init_data(urlencode(values), "123456:test-token", now=now)
