@@ -49,9 +49,13 @@ def _access_service(request: Request) -> TelegramAccessService:
 
 
 async def _is_current_admin(request: Request, chat_id: int, user_id: int) -> bool:
+    return await _access_service(request).check_admin(chat_id, user_id)
+
+
+async def _admin_display_flag(request: Request, chat_id: int, user_id: int) -> bool:
     if not request.app.state.settings.webhook_base_url:
         return False
-    return await _access_service(request).check_admin(chat_id, user_id)
+    return await _is_current_admin(request, chat_id, user_id)
 
 
 async def _with_live_admin_flags(
@@ -60,7 +64,7 @@ async def _with_live_admin_flags(
     groups: list[dict],
 ) -> list[dict]:
     for group in groups:
-        group["is_admin"] = await _is_current_admin(
+        group["is_admin"] = await _admin_display_flag(
             request,
             int(group["telegram_chat_id"]),
             user_id,
@@ -193,7 +197,7 @@ async def group_dashboard(
         )
     await _require_current_member(request, chat_id, user.telegram_id)
     payload["capabilities"] = {
-        "is_admin": await _is_current_admin(request, chat_id, user.telegram_id)
+        "is_admin": await _admin_display_flag(request, chat_id, user.telegram_id)
     }
     return payload
 
