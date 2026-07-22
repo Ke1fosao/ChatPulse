@@ -1,0 +1,26 @@
+name: Export Mini App dependency lock
+
+on:
+  pull_request:
+    branches: [main]
+
+jobs:
+  lock:
+    if: github.head_ref == 'feat/miniapp-dashboard'
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: miniapp
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - run: npm install --no-audit --no-fund
+      - run: npm list --depth=0 --json > npm-tree.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: miniapp-dependency-lock
+          path: |
+            miniapp/package-lock.json
+            miniapp/npm-tree.json
