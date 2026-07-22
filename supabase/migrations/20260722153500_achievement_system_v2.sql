@@ -2,7 +2,7 @@
 -- Durable unlocks, celebration delivery, future progress, and profile pins.
 
 create table if not exists public.achievement_unlocks (
-    id bigserial primary key,
+    id serial primary key,
     telegram_user_id bigint not null references public.users(telegram_id) on delete cascade,
     telegram_chat_id bigint null references public.chat_groups(telegram_chat_id) on delete cascade,
     scope varchar(16) not null,
@@ -27,9 +27,9 @@ create index if not exists ix_achievement_unlock_group_earned
     on public.achievement_unlocks (telegram_chat_id, earned_at);
 
 create table if not exists public.achievement_events (
-    id bigserial primary key,
+    id serial primary key,
     telegram_user_id bigint not null references public.users(telegram_id) on delete cascade,
-    achievement_unlock_id bigint null unique references public.achievement_unlocks(id) on delete cascade,
+    achievement_unlock_id integer null unique references public.achievement_unlocks(id) on delete cascade,
     event_type varchar(32) not null default 'unlock',
     payload_json text not null default '{}',
     created_at timestamptz not null default now(),
