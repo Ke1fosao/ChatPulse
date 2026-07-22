@@ -106,7 +106,7 @@ async def group_dashboard(
     chat_id: int,
     request: Request,
     user: Annotated[TelegramMiniAppUser, Depends(get_miniapp_user)],
-    period: MiniAppPeriod = Query(default="week"),
+    period: Annotated[MiniAppPeriod, Query()] = "week",
 ) -> dict:
     payload = await _repository(request).get_group_dashboard(
         user.telegram_id,
@@ -162,8 +162,8 @@ async def rankings(
     chat_id: int,
     request: Request,
     user: Annotated[TelegramMiniAppUser, Depends(get_miniapp_user)],
-    metric: RankingMetric = Query(default="xp"),
-    period: MiniAppPeriod = Query(default="week"),
+    metric: Annotated[RankingMetric, Query()] = "xp",
+    period: Annotated[MiniAppPeriod, Query()] = "week",
 ) -> dict:
     payload = await _repository(request).get_rankings(
         user.telegram_id,
@@ -184,7 +184,7 @@ async def rankings(
 async def achievements(
     request: Request,
     user: Annotated[TelegramMiniAppUser, Depends(get_miniapp_user)],
-    chat_id: int | None = Query(default=None),
+    chat_id: Annotated[int | None, Query()] = None,
 ) -> dict[str, list[dict]]:
     payload = await _repository(request).get_achievements(user.telegram_id, chat_id)
     if payload is None:
