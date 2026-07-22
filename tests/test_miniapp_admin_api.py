@@ -51,6 +51,7 @@ def test_admin_can_update_exact_report_time_and_theme() -> None:
     )
     gamification = SimpleNamespace(
         update_report_time=AsyncMock(),
+        update_report_theme=AsyncMock(),
         get_group_extras=AsyncMock(
             return_value={
                 "report_card_theme": "telegram_wave",
@@ -75,11 +76,8 @@ def test_admin_can_update_exact_report_time_and_theme() -> None:
     assert response.status_code == 200
     assert response.json()["report_time"] == "00:15"
     gamification.update_report_time.assert_awaited_once_with(-1001, hour=0, minute=15)
-    repository.update_group_setting.assert_any_await(
-        -1001,
-        "report_card_theme",
-        "telegram_wave",
-    )
+    gamification.update_report_theme.assert_awaited_once_with(-1001, "telegram_wave")
+    repository.update_group_setting.assert_awaited_once_with(-1001, "is_paused", True)
 
 
 def test_non_admin_cannot_update_group_settings() -> None:
