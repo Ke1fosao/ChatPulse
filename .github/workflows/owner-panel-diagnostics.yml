@@ -1,6 +1,6 @@
 name: Owner Panel Diagnostics
 
-# One-time owner panel verification workflow.
+# One-time owner panel verification workflow, final pass.
 on:
   push:
     branches:
