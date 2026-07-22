@@ -1,3 +1,4 @@
+import type { CSSProperties } from "react";
 import type { HeatmapPoint } from "../api/types";
 
 const weekdays = ["Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Нд"];
@@ -42,7 +43,7 @@ export function Heatmap({ data }: HeatmapProps) {
                 <span
                   className="heatmap__cell"
                   key={`${day}-${bucket}`}
-                  style={{ "--heat": intensity } as React.CSSProperties}
+                  style={{ "--heat": intensity } as CSSProperties}
                   title={`${day}, ${bucketLabels[bucket]}: ${value}`}
                   aria-label={`${day}, ${bucketLabels[bucket]}: ${value}`}
                 />
