@@ -15,6 +15,15 @@ STREAK_XP_THRESHOLD = 10
 MONTHLY_PROTECTION_DAYS = 3
 XP_COOLDOWN_SECONDS = 5
 BURST_WINDOW_MINUTES = 10
+MAX_LEVEL = 50
+LEVEL_MILESTONES: dict[int, str] = {
+    1: "Старт",
+    5: "Бронза",
+    10: "Срібло",
+    20: "Золото",
+    35: "Діамант",
+    50: "Легенда",
+}
 
 _WORD_RE = re.compile(r"[\w']+", flags=re.UNICODE)
 _SPACE_RE = re.compile(r"\s+")
@@ -172,7 +181,8 @@ def xp_threshold_for_level(level: int) -> int:
 def level_for_xp(xp: int) -> int:
     safe_xp = max(0, xp)
     level = max(1, int((1 + math.sqrt(1 + 0.08 * safe_xp)) / 2))
-    while xp_threshold_for_level(level + 1) <= safe_xp:
+    level = min(level, MAX_LEVEL)
+    while level < MAX_LEVEL and xp_threshold_for_level(level + 1) <= safe_xp:
         level += 1
     while level > 1 and xp_threshold_for_level(level) > safe_xp:
         level -= 1
@@ -180,6 +190,8 @@ def level_for_xp(xp: int) -> int:
 
 
 def level_tier(level: int) -> str:
+    if level >= 50:
+        return "Легенда"
     if level >= 35:
         return "Діамант"
     if level >= 20:
@@ -193,9 +205,53 @@ def level_tier(level: int) -> str:
 
 def level_progress(xp: int) -> tuple[int, int, int]:
     level = level_for_xp(xp)
+    if level >= MAX_LEVEL:
+        return MAX_LEVEL, 0, 0
     current_floor = xp_threshold_for_level(level)
     next_floor = xp_threshold_for_level(level + 1)
-    return level, xp - current_floor, next_floor - current_floor
+    return level, max(0, xp - current_floor), next_floor - current_floor
+
+
+def level_catalog(xp: int) -> dict[str, Any]:
+    safe_xp = max(0, int(xp))
+    current_level = level_for_xp(safe_xp)
+    levels: list[dict[str, Any]] = []
+
+    for level in range(1, MAX_LEVEL + 1):
+        xp_required = xp_threshold_for_level(level)
+        xp_to_next = (
+            xp_threshold_for_level(level + 1) - xp_required if level < MAX_LEVEL else 0
+        )
+        milestone_label = LEVEL_MILESTONES.get(level)
+        levels.append(
+            {
+                "level": level,
+                "tier": level_tier(level),
+                "xp_required": xp_required,
+                "xp_to_next": xp_to_next,
+                "unlocked": level <= current_level,
+                "is_current": level == current_level,
+                "is_milestone": milestone_label is not None,
+                "milestone_label": milestone_label,
+            }
+        )
+
+    next_tier = None
+    for milestone_level, milestone_tier in LEVEL_MILESTONES.items():
+        if milestone_level > current_level:
+            next_tier = {
+                "level": milestone_level,
+                "tier": milestone_tier,
+                "xp_required": xp_threshold_for_level(milestone_level),
+            }
+            break
+
+    return {
+        "max_level": MAX_LEVEL,
+        "current_level": current_level,
+        "next_tier": next_tier,
+        "levels": levels,
+    }
 
 
 def parse_report_time(value: str) -> time:
