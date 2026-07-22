@@ -7,6 +7,7 @@ from app.achievements.catalog import (
     definitions_for_trigger,
 )
 from app.achievements.engine import AchievementEvent, AchievementSnapshot, evaluate_event
+from app.achievements.presentation import achievement_progress_payload
 
 LEGACY_CODES = {
     "first_steps",
@@ -93,6 +94,20 @@ def test_secret_definition_masks_locked_payload() -> None:
     assert masked["threshold"] == 0
     assert revealed["title"] == secret.title
     assert revealed["threshold"] == secret.threshold
+
+
+def test_inverse_ranking_payload_keeps_actual_rank_and_comparator() -> None:
+    rank_one = ACHIEVEMENT_BY_CODE["rank_1"]
+
+    payload = achievement_progress_payload(
+        rank_one,
+        progress=3,
+        earned=False,
+    )
+
+    assert payload["progress"] == 3
+    assert payload["threshold"] == 1
+    assert payload["comparator"] == "lte"
 
 
 def test_trigger_lookup_is_indexed_and_stable() -> None:

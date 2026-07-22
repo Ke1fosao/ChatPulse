@@ -1,6 +1,7 @@
 import { CheckCircle2, ChevronRight } from "lucide-react";
 import type { Achievement } from "../api/types";
 import { AchievementIcon, rarityLabel } from "../features/achievements/AchievementVisual";
+import { achievementProgressPercent } from "../features/achievements/progress";
 
 interface AchievementCardProps {
   achievement: Achievement;
@@ -9,12 +10,7 @@ interface AchievementCardProps {
 
 export function AchievementCard({ achievement, onOpen }: AchievementCardProps) {
   const lockedSecret = achievement.hidden && !achievement.earned;
-  const progress = lockedSecret
-    ? 0
-    : Math.min(
-        100,
-        Math.round((achievement.progress / Math.max(achievement.threshold, 1)) * 100),
-      );
+  const progress = achievementProgressPercent(achievement);
   const nearComplete = !achievement.earned && !lockedSecret && progress >= 70;
 
   return (
@@ -32,7 +28,14 @@ export function AchievementCard({ achievement, onOpen }: AchievementCardProps) {
       <div className="achievement-card__body">
         <div className="achievement-card__title">
           <strong>{achievement.title}</strong>
-          <em>{rarityLabel[achievement.rarity]}</em>
+          <span className="achievement-card__badges">
+            {nearComplete ? (
+              <em className="achievement-card__badge achievement-card__badge--near">МАЙЖЕ</em>
+            ) : null}
+            <em className="achievement-card__badge achievement-card__badge--rarity">
+              {rarityLabel[achievement.rarity]}
+            </em>
+          </span>
         </div>
         <p>{achievement.description}</p>
 

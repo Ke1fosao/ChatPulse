@@ -1,0 +1,53 @@
+.achievement-list--v2 .achievement-card.is-near::after {
+  display: none;
+  content: none;
+}
+
+.achievement-list--v2 .achievement-card__title {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px;
+  align-items: start;
+}
+
+.achievement-list--v2 .achievement-card__title strong {
+  min-width: 0;
+}
+
+.achievement-list--v2 .achievement-card__badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  justify-content: flex-end;
+  max-width: 94px;
+}
+
+.achievement-list--v2 .achievement-card__badge {
+  flex: 0 0 auto;
+  padding: 3px 5px;
+  border-radius: 6px;
+  font-size: 6px;
+  font-style: normal;
+  font-weight: 900;
+  letter-spacing: 0.07em;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.achievement-list--v2 .achievement-card__badge--rarity {
+  border: 1px solid color-mix(in srgb, var(--achievement-accent) 28%, transparent);
+  background: color-mix(in srgb, var(--achievement-accent) 7%, transparent);
+  color: color-mix(in srgb, var(--achievement-accent) 78%, white);
+}
+
+.achievement-list--v2 .achievement-card__badge--near {
+  border: 1px solid rgba(255, 191, 99, 0.26);
+  background: rgba(255, 191, 99, 0.1);
+  color: #ffd08b;
+}
+
+@media (max-width: 360px) {
+  .achievement-list--v2 .achievement-card__badges {
+    max-width: 82px;
+  }
+}

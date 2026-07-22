@@ -12,6 +12,7 @@ import type { Achievement, AchievementRarity } from "../../api/types";
 import { AchievementCard } from "../../components/AchievementCard";
 import { EmptyState } from "../../components/EmptyState";
 import { AchievementDetailsDialog } from "./AchievementDetailsDialog";
+import { achievementProgressPercent } from "./progress";
 
 interface AchievementsPageProps {
   achievements: Achievement[];
@@ -59,14 +60,6 @@ const rarityWeight: Record<AchievementRarity, number> = {
   secret: 6,
 };
 
-function progressPercent(achievement: Achievement): number {
-  if (achievement.hidden && !achievement.earned) return 0;
-  return Math.min(
-    100,
-    Math.round((achievement.progress / Math.max(achievement.threshold, 1)) * 100),
-  );
-}
-
 export function AchievementsPage({
   achievements,
   loading,
@@ -89,13 +82,20 @@ export function AchievementsPage({
           if (statusFilter === "locked") return !item.earned;
           if (statusFilter === "secret") return item.hidden;
           if (statusFilter === "near") {
-            return !item.earned && !item.hidden && progressPercent(item) >= 70;
+            return (
+              !item.earned &&
+              !item.hidden &&
+              achievementProgressPercent(item) >= 70
+            );
           }
           return true;
         })
         .sort((left, right) => {
-          if (left.earned !== right.earned) return Number(right.earned) - Number(left.earned);
-          const progressDifference = progressPercent(right) - progressPercent(left);
+          if (left.earned !== right.earned) {
+            return Number(right.earned) - Number(left.earned);
+          }
+          const progressDifference =
+            achievementProgressPercent(right) - achievementProgressPercent(left);
           if (progressDifference !== 0) return progressDifference;
           return rarityWeight[right.rarity] - rarityWeight[left.rarity];
         }),
@@ -111,7 +111,10 @@ export function AchievementsPage({
   ).length;
   const secret = achievements.filter((item) => item.earned && item.hidden).length;
   const near = achievements.filter(
-    (item) => !item.earned && !item.hidden && progressPercent(item) >= 70,
+    (item) =>
+      !item.earned &&
+      !item.hidden &&
+      achievementProgressPercent(item) >= 70,
   ).length;
 
   return (

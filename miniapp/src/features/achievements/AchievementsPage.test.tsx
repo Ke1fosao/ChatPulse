@@ -1,4 +1,4 @@
-import { cleanup, render, screen } from "@testing-library/react";
+import { cleanup, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { Achievement } from "../../api/types";
@@ -24,7 +24,20 @@ const nearAchievement: Achievement = {
   reward_xp: 10,
   version: 2,
   season_key: null,
-};
+} as Achievement;
+
+const inverseRankingAchievement = {
+  ...nearAchievement,
+  code: "rank_1",
+  title: "Номер один",
+  description: "Посісти перше місце у груповому рейтингу",
+  category: "ranking",
+  rarity: "legendary",
+  progress: 3,
+  threshold: 1,
+  comparator: "lte",
+  chain: { key: "ranking", stage: 3, total: 3 },
+} as Achievement;
 
 const secretAchievement: Achievement = {
   code: "secret_night_owl",
@@ -46,7 +59,7 @@ const secretAchievement: Achievement = {
   reward_xp: 35,
   version: 2,
   season_key: null,
-};
+} as Achievement;
 
 afterEach(cleanup);
 
@@ -82,5 +95,35 @@ describe("AchievementsPage", () => {
     expect(screen.getByText("Перша сотня")).toBeInTheDocument();
     expect(screen.queryByText("???")).not.toBeInTheDocument();
     expect(screen.getByText("1 результатів")).toBeInTheDocument();
+  });
+
+  it("shows inverse ranking progress from the actual rank", () => {
+    render(
+      <AchievementsPage
+        achievements={[inverseRankingAchievement]}
+        loading={false}
+        onRefresh={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByLabelText("Прогрес 33%")).toBeInTheDocument();
+    expect(screen.queryByText("МАЙЖЕ")).not.toBeInTheDocument();
+    expect(screen.getByText("3 / 1")).toBeInTheDocument();
+  });
+
+  it("keeps near and rarity labels in the same badge container", () => {
+    render(
+      <AchievementsPage
+        achievements={[nearAchievement]}
+        loading={false}
+        onRefresh={vi.fn()}
+      />,
+    );
+
+    const near = screen.getByText("МАЙЖЕ");
+    const badgeContainer = near.parentElement;
+
+    expect(badgeContainer).not.toBeNull();
+    expect(within(badgeContainer as HTMLElement).getByText("НЕЗВИЧАЙНЕ")).toBeInTheDocument();
   });
 });
