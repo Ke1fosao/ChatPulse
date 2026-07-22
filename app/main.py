@@ -7,10 +7,12 @@ from aiogram import Bot, Dispatcher
 from aiogram.types import Update
 from fastapi import FastAPI, Header, HTTPException, Request, status
 
+from app.api.miniapp.routes import router as miniapp_router
 from app.bot.setup import build_dispatcher
 from app.config import Settings, get_settings
 from app.database import Database
 from app.repositories.activity import ActivityRepository
+from app.repositories.miniapp import MiniAppRepository
 from app.services.weekly_reports import send_due_weekly_reports
 
 logger = logging.getLogger("chatpulse.webhook")
@@ -24,6 +26,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         database = Database(resolved_settings.database_url)
         await database.create_schema()
         repository = ActivityRepository(database.session_factory)
+        miniapp_repository = MiniAppRepository(database.session_factory)
         bot = Bot(resolved_settings.bot_token)
         dispatcher = build_dispatcher(
             repository,
@@ -33,6 +36,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
 
         app.state.database = database
         app.state.repository = repository
+        app.state.miniapp_repository = miniapp_repository
         app.state.bot = bot
         app.state.dispatcher = dispatcher
 
@@ -50,12 +54,13 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             await bot.session.close()
             await database.dispose()
 
-    app = FastAPI(title="ChatPulse", version="0.3.0", lifespan=lifespan)
+    app = FastAPI(title="ChatPulse", version="0.4.0", lifespan=lifespan)
     app.state.settings = resolved_settings
+    app.include_router(miniapp_router)
 
     @app.get("/health")
     async def health() -> dict[str, str]:
-        return {"status": "ok", "service": "chatpulse", "version": "0.3.0"}
+        return {"status": "ok", "service": "chatpulse", "version": "0.4.0"}
 
     @app.post(resolved_settings.webhook_path)
     async def telegram_webhook(
