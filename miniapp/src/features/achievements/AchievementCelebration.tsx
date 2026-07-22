@@ -1,60 +1,14 @@
-import {
-  Award,
-  Crown,
-  Eye,
-  Flame,
-  Heart,
-  Image,
-  LockKeyhole,
-  MessageCircle,
-  Mic,
-  Share2,
-  Sparkles,
-  Trophy,
-  Zap,
-} from "lucide-react";
-import type { CSSProperties, ReactNode } from "react";
+import { Share2, Sparkles, Trophy } from "lucide-react";
+import type { CSSProperties } from "react";
 import { useEffect } from "react";
 import { createPortal } from "react-dom";
-import type { Achievement, AchievementRarity } from "../../api/types";
+import type { AchievementRarity } from "../../api/types";
 import { haptic, notify } from "../../telegram/sdk";
+import { AchievementIcon, rarityLabel } from "./AchievementVisual";
 import { useAchievementCelebrations } from "./useAchievementCelebrations";
 
 interface AchievementCelebrationLayerProps {
   onOpenCollection(): void;
-}
-
-const rarityLabel: Record<AchievementRarity, string> = {
-  common: "ЗВИЧАЙНЕ",
-  uncommon: "НЕЗВИЧАЙНЕ",
-  rare: "РІДКІСНЕ",
-  epic: "ЕПІЧНЕ",
-  legendary: "ЛЕГЕНДАРНЕ",
-  secret: "СЕКРЕТНЕ",
-};
-
-const iconByName: Record<string, ReactNode> = {
-  "message-circle": <MessageCircle />,
-  reply: <MessageCircle />,
-  heart: <Heart />,
-  image: <Image />,
-  mic: <Mic />,
-  "audio-lines": <Mic />,
-  zap: <Zap />,
-  flame: <Flame />,
-  trophy: <Trophy />,
-  crown: <Crown />,
-  medal: <Award />,
-  sparkles: <Sparkles />,
-  "moon-star": <Eye />,
-  sunrise: <Sparkles />,
-  orbit: <Sparkles />,
-};
-
-function achievementIcon(achievement: Achievement): ReactNode {
-  if (achievement.rarity === "secret") return <LockKeyhole />;
-  if (achievement.rarity === "legendary") return <Crown />;
-  return iconByName[achievement.icon] ?? <Award />;
 }
 
 function celebrationHaptic(rarity: AchievementRarity): void {
@@ -106,6 +60,13 @@ export function AchievementCelebrationLayer({
     onOpenCollection();
   };
 
+  const summaryTitle = celebrations.historicalSummary
+    ? "Колекцію оновлено"
+    : `Ще ${celebrations.summaryCount} нових досягнень`;
+  const summaryDescription = celebrations.historicalSummary
+    ? `Ми знайшли ${celebrations.summaryCount} досягнень, які ти вже виконав раніше. Найцінніші з них уже в колекції.`
+    : "Ми додали їх до твоєї колекції, щоб не показувати забагато анімацій поспіль.";
+
   return createPortal(
     <div
       className={`achievement-celebration ${
@@ -127,7 +88,7 @@ export function AchievementCelebrationLayer({
             <div className="achievement-celebration__icon-wrap">
               <span className="achievement-celebration__orbit" />
               <span className="achievement-celebration__icon">
-                {achievementIcon(current.achievement)}
+                <AchievementIcon achievement={current.achievement} size={40} />
               </span>
             </div>
             <div className="achievement-celebration__copy">
@@ -181,16 +142,18 @@ export function AchievementCelebrationLayer({
       ) : (
         <section className="achievement-celebration__card achievement-celebration__summary-card">
           <span className="achievement-celebration__summary-icon"><Sparkles /></span>
-          <p className="achievement-celebration__eyebrow">КОЛЕКЦІЯ ПОПОВНИЛАСЯ</p>
-          <h2>Ще {celebrations.summaryCount} нових досягнень</h2>
-          <p>Ми додали їх до твоєї колекції, щоб не показувати забагато анімацій поспіль.</p>
+          <p className="achievement-celebration__eyebrow">
+            {celebrations.historicalSummary ? "ІСТОРІЮ ВРАХОВАНО" : "КОЛЕКЦІЯ ПОПОВНИЛАСЯ"}
+          </p>
+          <h2>{summaryTitle}</h2>
+          <p>{summaryDescription}</p>
           <div className="achievement-celebration__summary-list">
-            {celebrations.summaryItems.map((event) => (
-              <article key={event.event_id}>
-                <span>{achievementIcon(event.achievement)}</span>
+            {celebrations.summaryItems.map((achievement) => (
+              <article key={achievement.code}>
+                <span><AchievementIcon achievement={achievement} size={22} /></span>
                 <div>
-                  <strong>{event.achievement.title}</strong>
-                  <small>{rarityLabel[event.achievement.rarity]}</small>
+                  <strong>{achievement.title}</strong>
+                  <small>{rarityLabel[achievement.rarity]}</small>
                 </div>
               </article>
             ))}
