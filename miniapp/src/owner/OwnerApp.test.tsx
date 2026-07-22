@@ -1,10 +1,18 @@
-import { render, screen } from "@testing-library/react";
+import { cleanup, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { OwnerApp } from "./OwnerApp";
 import { ownerApi } from "./ownerApi";
 
 vi.mock("./ownerApi", () => ({
+  OwnerApiError: class OwnerApiError extends Error {
+    constructor(
+      message: string,
+      public readonly status: number,
+    ) {
+      super(message);
+    }
+  },
   ownerApi: {
     session: vi.fn(),
     overview: vi.fn(),
@@ -67,16 +75,20 @@ describe("OwnerApp", () => {
     primeOwnerApi();
   });
 
+  afterEach(() => cleanup());
+
   it("renders the isolated owner dashboard after server authorization", async () => {
     render(<OwnerApp />);
 
-    expect(await screen.findByText("Owner Control")).toBeInTheDocument();
+    expect(await screen.findByText("Головний огляд")).toBeInTheDocument();
     expect(screen.getByText("12")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Користувачі" })).toBeInTheDocument();
   });
 
   it("shows a closed screen when the server rejects owner access", async () => {
-    mockedApi.session.mockRejectedValueOnce(Object.assign(new Error("Доступ заборонено"), { status: 403 }));
+    mockedApi.session.mockRejectedValueOnce(
+      Object.assign(new Error("Доступ заборонено"), { status: 403 }),
+    );
 
     render(<OwnerApp />);
 
@@ -86,17 +98,21 @@ describe("OwnerApp", () => {
   it("grants VIP only after explicit confirmation", async () => {
     const user = userEvent.setup();
     render(<OwnerApp />);
-    await screen.findByText("Owner Control");
+    await screen.findByText("Головний огляд");
 
     await user.click(screen.getByRole("button", { name: "Користувачі" }));
-    await user.click(await screen.findByRole("button", { name: "Керувати VIP для VIP Client" }));
+    await user.click(
+      await screen.findByRole("button", { name: "Керувати VIP для VIP Client" }),
+    );
     await user.type(screen.getByLabelText("Причина"), "Партнерський клієнт");
     await user.click(screen.getByRole("button", { name: "Видати VIP" }));
 
-    expect(mockedApi.grantVip).toHaveBeenCalledWith(202, {
-      mode: "permanent",
-      reason: "Партнерський клієнт",
-      confirmation: "ВИДАТИ VIP",
+    await waitFor(() => {
+      expect(mockedApi.grantVip).toHaveBeenCalledWith(202, {
+        mode: "permanent",
+        reason: "Партнерський клієнт",
+        confirmation: "ВИДАТИ VIP",
+      });
     });
   });
 });
