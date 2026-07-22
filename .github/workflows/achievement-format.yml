@@ -25,16 +25,16 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - name: Format final files
+      - name: Format all changed Python files
         run: |
           pip install -q ruff
-          FILES="app/repositories/achievements.py app/api/miniapp/routes.py app/services/achievement_cards.py tests/test_miniapp_achievement_events.py"
+          FILES="app/achievement_models.py app/achievements app/api/internal_achievements.py app/api/miniapp/routes.py app/bot/setup.py app/database.py app/main.py app/repositories/achievements.py app/repositories/gamification_v2.py app/repositories/miniapp_v2.py app/services/achievement_backfill.py app/services/achievement_cards.py app/services/weekly_reports.py tests/test_achievement_backfill.py tests/test_achievement_engine_v2.py tests/test_achievement_repository_v2.py tests/test_miniapp_achievement_events.py"
           ruff check --fix $FILES
           ruff format $FILES
       - name: Commit formatting
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add app/repositories/achievements.py app/api/miniapp/routes.py app/services/achievement_cards.py tests/test_miniapp_achievement_events.py
-          git commit -m "style: format achievement PNG sharing" || exit 0
+          git add app/achievement_models.py app/achievements app/api/internal_achievements.py app/api/miniapp/routes.py app/bot/setup.py app/database.py app/main.py app/repositories/achievements.py app/repositories/gamification_v2.py app/repositories/miniapp_v2.py app/services/achievement_backfill.py app/services/achievement_cards.py app/services/weekly_reports.py tests/test_achievement_backfill.py tests/test_achievement_engine_v2.py tests/test_achievement_repository_v2.py tests/test_miniapp_achievement_events.py
+          git commit -m "style: format achievement system v2" || exit 0
           git push origin HEAD:feat/achievement-system-v2
