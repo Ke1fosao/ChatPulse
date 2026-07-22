@@ -13,4 +13,14 @@ jobs:
           python-version: "3.12"
           cache: pip
       - run: pip install -q -e ".[dev]"
-      - run: pytest -q tests/test_owner_repository.py tests/test_owner_access.py tests/test_claimadmin_command.py
+      - name: Run focused owner tests
+        shell: bash
+        run: |
+          set -o pipefail
+          pytest -q tests/test_owner_repository.py tests/test_owner_access.py tests/test_claimadmin_command.py 2>&1 | tee owner-test-output.txt
+      - name: Upload focused test output
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: owner-test-output
+          path: owner-test-output.txt
