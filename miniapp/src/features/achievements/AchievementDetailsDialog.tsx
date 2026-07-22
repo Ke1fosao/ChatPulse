@@ -4,6 +4,7 @@ import { createPortal } from "react-dom";
 import type { Achievement } from "../../api/types";
 import { haptic } from "../../telegram/sdk";
 import { AchievementIcon, rarityLabel } from "./AchievementVisual";
+import { achievementProgressPercent } from "./progress";
 
 interface AchievementDetailsDialogProps {
   achievement: Achievement | null;
@@ -44,12 +45,7 @@ export function AchievementDetailsDialog({
   if (!achievement) return null;
 
   const lockedSecret = achievement.hidden && !achievement.earned;
-  const progress = lockedSecret
-    ? 0
-    : Math.min(
-        100,
-        Math.round((achievement.progress / Math.max(achievement.threshold, 1)) * 100),
-      );
+  const progress = achievementProgressPercent(achievement);
   const earnedAt = formatEarnedAt(achievement.earned_at);
 
   return createPortal(
