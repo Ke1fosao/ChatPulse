@@ -168,7 +168,9 @@ class OwnerPanelRepository:
         seven_days_ago = current.date() - timedelta(days=6)
         async with self._session_factory() as session:
             users_total = int(await session.scalar(select(func.count()).select_from(User)) or 0)
-            groups_total = int(await session.scalar(select(func.count()).select_from(ChatGroup)) or 0)
+            groups_total = int(
+                await session.scalar(select(func.count()).select_from(ChatGroup)) or 0
+            )
             active_groups = int(
                 await session.scalar(
                     select(func.count()).select_from(ChatGroup).where(ChatGroup.is_active.is_(True))
@@ -239,7 +241,9 @@ class OwnerPanelRepository:
         if vip_filter == "active":
             query_statement = query_statement.where(active_vip)
         elif vip_filter == "inactive":
-            query_statement = query_statement.where(or_(VipGrant.telegram_user_id.is_(None), ~active_vip))
+            query_statement = query_statement.where(
+                or_(VipGrant.telegram_user_id.is_(None), ~active_vip)
+            )
 
         async with self._session_factory() as session:
             count_statement = select(func.count()).select_from(
@@ -332,7 +336,10 @@ class OwnerPanelRepository:
                 )
             ).all()
             return {
-                "items": [self._serialize_group(group, int(members_count)) for group, members_count in rows],
+                "items": [
+                    self._serialize_group(group, int(members_count))
+                    for group, members_count in rows
+                ],
                 "total": total,
             }
 
