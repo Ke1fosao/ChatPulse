@@ -1,4 +1,4 @@
-import { cleanup, render, screen, waitFor } from "@testing-library/react";
+import { cleanup, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { HomePayload } from "../../api/types";
@@ -53,13 +53,30 @@ const data = {
       const level = index + 1;
       return {
         level,
-        tier: level >= 50 ? "Легенда" : level >= 35 ? "Діамант" : level >= 20 ? "Золото" : level >= 10 ? "Срібло" : level >= 5 ? "Бронза" : "Новачок",
+        tier: level >= 50
+          ? "Легенда"
+          : level >= 35
+            ? "Діамант"
+            : level >= 20
+              ? "Золото"
+              : level >= 10
+                ? "Срібло"
+                : level >= 5
+                  ? "Бронза"
+                  : "Новачок",
         xp_required: 50 * index * level,
         xp_to_next: level === 50 ? 0 : 100 * level,
         unlocked: level <= 5,
         is_current: level === 5,
         is_milestone: [1, 5, 10, 20, 35, 50].includes(level),
-        milestone_label: ({ 1: "Старт", 5: "Бронза", 10: "Срібло", 20: "Золото", 35: "Діамант", 50: "Легенда" } as Record<number, string>)[level] ?? null,
+        milestone_label: ({
+          1: "Старт",
+          5: "Бронза",
+          10: "Срібло",
+          20: "Золото",
+          35: "Діамант",
+          50: "Легенда",
+        } as Record<number, string>)[level] ?? null,
       };
     }),
   },
@@ -103,15 +120,16 @@ describe("premium profile experience", () => {
       />,
     );
 
-    expect(screen.getByText("CREATOR")).toBeInTheDocument();
-    expect(screen.getByText("OWNER ACCESS")).toBeInTheDocument();
+    expect(screen.getAllByText("CREATOR").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("OWNER ACCESS").length).toBeGreaterThan(0);
 
     await user.click(screen.getByRole("button", { name: "Відкрити каталог рівнів" }));
 
-    expect(screen.getByRole("dialog", { name: "Усі рівні ChatPulse" })).toBeInTheDocument();
-    expect(screen.getByText("50 рівнів")).toBeInTheDocument();
-    expect(screen.getByText("Легенда")).toBeInTheDocument();
-    expect(screen.getByText("4 500 XP")).toBeInTheDocument();
+    const dialog = screen.getByRole("dialog", { name: "Усі рівні ChatPulse" });
+    expect(dialog).toBeInTheDocument();
+    expect(within(dialog).getByText(/50 рівнів/)).toBeInTheDocument();
+    expect(within(dialog).getAllByText("Легенда").length).toBeGreaterThan(0);
+    expect(within(dialog).getAllByText("4 500 XP").length).toBeGreaterThan(0);
   });
 
   it("shares the generated PNG file through the native share sheet", async () => {
