@@ -1,0 +1,32 @@
+name: Achievement Pytest Diagnostics
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - .github/workflows/achievement-pytest-diagnostics.yml
+
+permissions:
+  contents: read
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feat/achievement-system-v2
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Capture pytest output
+        run: |
+          pip install -q -e ".[dev]"
+          set +e
+          pytest -q > achievement-pytest.log 2>&1
+          exit 0
+      - uses: actions/upload-artifact@v4
+        with:
+          name: achievement-pytest-diagnostics
+          path: achievement-pytest.log
