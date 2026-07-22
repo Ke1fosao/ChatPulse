@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { api } from "../../api/client";
+import { api, downloadBlob } from "../../api/client";
 import type {
   Achievement,
   AchievementEventPayload,
@@ -114,7 +114,7 @@ export function useAchievementCelebrations() {
   }, [individualShown, queue.length]);
 
   const shareCurrent = useCallback(async () => {
-    if (!current) return;
+    if (!current || busy) return;
     const text = [
       "🏆 Нове досягнення в ChatPulse!",
       current.achievement.title,
@@ -123,18 +123,31 @@ export function useAchievementCelebrations() {
         ? `Група: ${current.achievement.group_title}`
         : "Глобальне досягнення",
     ].join("\n");
+    const filename = `chatpulse-${current.achievement.code}.png`;
 
+    setBusy(true);
     try {
-      if (navigator.share) {
-        await navigator.share({ title: current.achievement.title, text });
+      const blob = await api.achievementCard(current.event_id);
+      const file = new File([blob], filename, { type: "image/png" });
+      const fileShare = { files: [file], title: current.achievement.title, text };
+
+      if (navigator.share && navigator.canShare?.({ files: [file] })) {
+        await navigator.share(fileShare);
       } else {
-        await navigator.clipboard.writeText(text);
+        downloadBlob(blob, filename);
+        try {
+          await navigator.clipboard.writeText(text);
+        } catch {
+          // PNG download is still a successful fallback when clipboard is blocked.
+        }
       }
       await api.markAchievementShared(current.event_id);
     } catch {
-      // A cancelled native share should not close or acknowledge the celebration.
+      // A cancelled native share or failed download keeps the celebration open.
+    } finally {
+      setBusy(false);
     }
-  }, [current]);
+  }, [busy, current]);
 
   return {
     active: queue.length > 0,
