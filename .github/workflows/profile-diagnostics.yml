@@ -8,13 +8,15 @@ on:
       - .github/workflows/profile-diagnostics.yml
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   diagnostics:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: feat/profile-levels-share-v06
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
@@ -52,10 +54,11 @@ jobs:
             npm run build
           } > ../frontend-profile-diagnostics.txt 2>&1
           exit 0
-      - uses: actions/upload-artifact@v4
-        with:
-          name: profile-redesign-diagnostics
-          path: |
-            backend-profile-diagnostics.txt
-            frontend-profile-diagnostics.txt
-          retention-days: 1
+      - name: Commit exact diagnostics
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add backend-profile-diagnostics.txt frontend-profile-diagnostics.txt miniapp/package-lock.json
+          git commit -m "test: capture exact profile redesign failures" || exit 0
+          git push origin HEAD:feat/profile-levels-share-v06
