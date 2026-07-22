@@ -13,7 +13,7 @@ import type {
   TabId,
 } from "./api/types";
 import { AppShell } from "./components/AppShell";
-import { EmptyState } from "./components/EmptyState";
+import { LevelsDialog } from "./components/LevelsDialog";
 import { ShareCardDialog } from "./components/ShareCardDialog";
 import { AchievementsPage } from "./features/achievements/AchievementsPage";
 import { GroupDashboardPage } from "./features/groups/GroupDashboardPage";
@@ -44,6 +44,7 @@ export function App() {
   const [secondaryLoading, setSecondaryLoading] = useState(false);
   const [error, setError] = useState("");
   const [shareOpen, setShareOpen] = useState(false);
+  const [levelsOpen, setLevelsOpen] = useState(false);
 
   const loadCore = useCallback(async () => {
     setLoading(true);
@@ -195,6 +196,7 @@ export function App() {
         <ProfilePage
           data={home}
           onShare={() => setShareOpen(true)}
+          onOpenLevels={() => setLevelsOpen(true)}
           onOpenAchievements={() => setActiveTab("achievements")}
           onOpenGroups={() => setActiveTab("groups")}
         />
@@ -278,6 +280,7 @@ export function App() {
         {renderedPage}
       </AppShell>
       <ShareCardDialog data={home} open={shareOpen} onClose={() => setShareOpen(false)} />
+      <LevelsDialog open={levelsOpen} onClose={() => setLevelsOpen(false)} />
     </>
   );
 }
