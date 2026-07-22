@@ -1,8 +1,6 @@
-name: Commit formatted Mini App backend
+name: Stage formatted Mini App backend
 
 on:
-  push:
-    branches: [feat/miniapp-dashboard]
   pull_request:
     branches: [main]
 
@@ -11,12 +9,13 @@ permissions:
 
 jobs:
   format:
-    if: github.head_ref == 'feat/miniapp-dashboard' || github.ref == 'refs/heads/feat/miniapp-dashboard'
+    if: github.head_ref == 'feat/miniapp-dashboard'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
         with:
           ref: feat/miniapp-dashboard
+          fetch-depth: 0
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
@@ -39,14 +38,20 @@ jobs:
           PY
           ruff check --fix . || true
           ruff format .
-      - name: Commit formatted Python files
+      - name: Create staging commit
         shell: bash
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add app tests
           if git diff --cached --quiet; then
-            exit 0
+            git rev-parse HEAD > formatted-commit.txt
+          else
+            git commit -m "style: format Mini App backend"
+            git rev-parse HEAD > formatted-commit.txt
           fi
-          git commit -m "style: format Mini App backend"
-          git push origin HEAD:feat/miniapp-dashboard
+          git push --force origin HEAD:refs/heads/format-miniapp-backend
+      - uses: actions/upload-artifact@v4
+        with:
+          name: formatted-commit
+          path: formatted-commit.txt
