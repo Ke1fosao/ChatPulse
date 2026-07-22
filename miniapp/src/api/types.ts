@@ -31,6 +31,28 @@ export interface GlobalProgress {
   percentile: number;
 }
 
+export interface LevelCatalogEntry {
+  level: number;
+  tier: string;
+  xp_required: number;
+  xp_to_next: number;
+  unlocked: boolean;
+  is_current: boolean;
+  is_milestone: boolean;
+  milestone_label: string | null;
+}
+
+export interface LevelCatalog {
+  max_level: number;
+  current_level: number;
+  next_tier: {
+    level: number;
+    tier: string;
+    xp_required: number;
+  } | null;
+  levels: LevelCatalogEntry[];
+}
+
 export interface QuickStats {
   xp_today: number;
   current_streak: number;
@@ -103,6 +125,7 @@ export interface HomePayload {
   user: UserSummary;
   account: AccountAccess;
   global_progress: GlobalProgress;
+  level_catalog: LevelCatalog;
   quick_stats: QuickStats;
   activity_series: ActivityPoint[];
   recent_achievements: RecentAchievement[];
