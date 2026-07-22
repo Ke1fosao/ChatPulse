@@ -1,0 +1,34 @@
+name: Achievement Final Format
+
+on:
+  push:
+    branches:
+      - feat/achievement-system-v2
+    paths:
+      - .github/workflows/achievement-format.yml
+
+permissions:
+  contents: write
+
+jobs:
+  format:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feat/achievement-system-v2
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Format final files
+        run: |
+          pip install -q ruff
+          ruff format app/repositories/achievements.py app/api/miniapp/routes.py app/services/achievement_cards.py tests/test_miniapp_achievement_events.py
+          ruff check --fix app/repositories/achievements.py app/api/miniapp/routes.py app/services/achievement_cards.py tests/test_miniapp_achievement_events.py
+      - name: Commit formatting
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add app/repositories/achievements.py app/api/miniapp/routes.py app/services/achievement_cards.py tests/test_miniapp_achievement_events.py
+          git commit -m "style: format achievement PNG sharing" || exit 0
+          git push origin HEAD:feat/achievement-system-v2
