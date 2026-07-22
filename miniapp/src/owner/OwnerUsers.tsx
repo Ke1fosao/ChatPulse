@@ -71,7 +71,9 @@ export function OwnerUsers({
   const revealField = (event: FocusEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const field = event.currentTarget;
     window.setTimeout(() => {
-      field.scrollIntoView({ behavior: "smooth", block: "center" });
+      if (typeof field.scrollIntoView === "function") {
+        field.scrollIntoView({ behavior: "smooth", block: "center" });
+      }
     }, 120);
   };
 
@@ -156,7 +158,7 @@ export function OwnerUsers({
               className={mode === "permanent" ? "is-active" : ""}
               onClick={() => setMode("permanent")}
             >
-              <Crown size={18} /><strong>Безстроково</strong><small>Поки ти не відкличеш</small>
+              <Crown size={18} /><strong>Безстроково</strong><small>Поки ти не відключиш</small>
             </button>
             <button
               type="button"
