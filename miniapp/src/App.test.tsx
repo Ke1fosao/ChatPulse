@@ -78,8 +78,10 @@ describe("App", () => {
 
     await user.click(screen.getByRole("button", { name: "Профіль" }));
     expect(await screen.findByText("Твій прогрес")).toBeInTheDocument();
-    await user.click(screen.getByRole("button", { name: "Усі рівні ChatPulse" }));
-    expect(await screen.findByRole("dialog", { name: "Усі рівні ChatPulse" })).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: /Усі рівні ChatPulse/ }));
+    expect(
+      await screen.findByRole("dialog", { name: "Усі рівні ChatPulse" }),
+    ).toBeInTheDocument();
     expect(screen.getByText("50")).toBeInTheDocument();
   });
 });
