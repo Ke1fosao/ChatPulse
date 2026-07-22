@@ -16,6 +16,7 @@ from app.repositories.miniapp import MiniAppRepository
 from app.repositories.miniapp_gamification import MiniAppGamificationRepository
 from app.repositories.owner import OwnerRepository
 from app.repositories.owner_panel import OwnerPanelRepository
+from app.services.achievement_cards import render_achievement_card
 from app.services.levels import build_level_catalog
 from app.services.profile_cards import render_profile_card
 from app.services.report_cards import render_weekly_report_card
@@ -288,6 +289,37 @@ async def achievement_events(
         limit=limit,
     )
     return {"events": events}
+
+
+@router.get("/achievement-events/{event_id}/card")
+async def achievement_event_card(
+    event_id: int,
+    request: Request,
+    user: Annotated[TelegramMiniAppUser, Depends(get_miniapp_user)],
+) -> Response:
+    event = await _achievement_repository(request).get_unlock_event(
+        user.telegram_id,
+        event_id,
+    )
+    if event is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Досягнення для поширення не знайдено.",
+        )
+    image = render_achievement_card(
+        event,
+        display_name=user.display_name,
+        username=user.username,
+    )
+    return Response(
+        content=image,
+        media_type="image/png",
+        headers={
+            "Content-Disposition": (
+                f"inline; filename=chatpulse-achievement-{event_id}.png"
+            )
+        },
+    )
 
 
 @router.post("/achievement-events/{event_id}/seen")
