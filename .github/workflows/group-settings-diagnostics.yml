@@ -6,6 +6,11 @@ on:
       - feat/group-settings-ux
     paths:
       - .github/workflows/group-settings-diagnostics.yml
+  pull_request:
+    branches:
+      - main
+    paths:
+      - .github/workflows/group-settings-diagnostics.yml
 
 permissions:
   contents: read
