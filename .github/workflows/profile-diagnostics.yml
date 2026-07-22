@@ -1,0 +1,61 @@
+name: Profile Redesign Diagnostics
+
+on:
+  push:
+    branches:
+      - feat/profile-levels-share-v06
+    paths:
+      - .github/workflows/profile-diagnostics.yml
+
+permissions:
+  contents: read
+
+jobs:
+  diagnostics:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+      - name: Capture backend diagnostics
+        shell: bash
+        run: |
+          set +e
+          pip install -q -e ".[dev]"
+          {
+            echo '=== ruff check ==='
+            ruff check .
+            echo '=== ruff format ==='
+            ruff format --check .
+            echo '=== pytest ==='
+            pytest -q
+            echo '=== compileall ==='
+            python -m compileall app
+          } > backend-profile-diagnostics.txt 2>&1
+          exit 0
+      - name: Capture frontend diagnostics
+        shell: bash
+        run: |
+          set +e
+          cd miniapp
+          npm install --no-audit --no-fund
+          {
+            echo '=== tests ==='
+            npm test -- --run
+            echo '=== typecheck ==='
+            npm run typecheck
+            echo '=== build ==='
+            npm run build
+          } > ../frontend-profile-diagnostics.txt 2>&1
+          exit 0
+      - uses: actions/upload-artifact@v4
+        with:
+          name: profile-redesign-diagnostics
+          path: |
+            backend-profile-diagnostics.txt
+            frontend-profile-diagnostics.txt
+          retention-days: 1
