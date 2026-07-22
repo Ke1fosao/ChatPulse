@@ -8,17 +8,15 @@ import {
   MessageCircle,
   Reply,
   Send,
+  Settings2,
   Shield,
+  ShieldCheck,
   Trophy,
   Users,
   Zap,
 } from "lucide-react";
 import { useState } from "react";
-import type {
-  GroupDashboard,
-  GroupSettings,
-  Period,
-} from "../../api/types";
+import type { GroupDashboard, GroupSettings, Period } from "../../api/types";
 import { ActivityChart } from "../../components/ActivityChart";
 import { Heatmap } from "../../components/Heatmap";
 import { Leaderboard } from "../../components/Leaderboard";
@@ -47,9 +45,25 @@ export function GroupDashboardPage({
   onSaveSettings,
   onReset,
 }: GroupDashboardPageProps) {
-  const [chartMetric, setChartMetric] = useState<"xp" | "messages" | "reactions" | "replies">("messages");
+  const [chartMetric, setChartMetric] = useState<"xp" | "messages" | "reactions" | "replies">(
+    "messages",
+  );
   const [showSettings, setShowSettings] = useState(false);
   const summary = data.overview.current;
+  const isAdmin = Boolean(data.capabilities?.is_admin);
+
+  if (showSettings && isAdmin) {
+    return (
+      <div className="page group-dashboard group-dashboard--settings">
+        <GroupSettingsPanel
+          settings={data.settings}
+          onSave={onSaveSettings}
+          onReset={onReset}
+          onBack={() => setShowSettings(false)}
+        />
+      </div>
+    );
+  }
 
   return (
     <div className="page group-dashboard">
@@ -63,16 +77,21 @@ export function GroupDashboardPage({
           <h2>{data.group.title}</h2>
           <span>{data.group.timezone}</span>
         </div>
-        {data.capabilities?.is_admin ? (
-          <button
-            className={`admin-trigger ${showSettings ? "is-active" : ""}`}
-            type="button"
-            onClick={() => setShowSettings((value) => !value)}
-          >
-            <Shield size={17} /> Admin
-          </button>
-        ) : null}
       </header>
+
+      {isAdmin ? (
+        <section className="group-admin-banner">
+          <span className="group-admin-banner__icon"><ShieldCheck size={21} /></span>
+          <div>
+            <p className="eyebrow">Ваш доступ</p>
+            <strong>Ви адміністратор цієї групи</strong>
+            <small>Можете керувати звітами, збором даних та оформленням.</small>
+          </div>
+          <button type="button" onClick={() => setShowSettings(true)}>
+            <Settings2 size={17} /> Керувати групою
+          </button>
+        </section>
+      ) : null}
 
       <div className="segmented-control" aria-label="Період статистики">
         {periods.map((period) => (
@@ -86,14 +105,6 @@ export function GroupDashboardPage({
           </button>
         ))}
       </div>
-
-      {showSettings && data.capabilities?.is_admin ? (
-        <GroupSettingsPanel
-          settings={data.settings}
-          onSave={onSaveSettings}
-          onReset={onReset}
-        />
-      ) : null}
 
       <section className="stats-grid">
         <StatCard

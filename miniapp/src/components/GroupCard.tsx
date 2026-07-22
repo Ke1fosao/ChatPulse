@@ -1,4 +1,10 @@
-import { ChevronRight, Flame, MessageCircle, Trophy } from "lucide-react";
+import {
+  ChevronRight,
+  Flame,
+  MessageCircle,
+  ShieldCheck,
+  Trophy,
+} from "lucide-react";
 import type { GroupCardData } from "../api/types";
 import { haptic } from "../telegram/sdk";
 
@@ -10,7 +16,7 @@ interface GroupCardProps {
 export function GroupCard({ group, onOpen }: GroupCardProps) {
   return (
     <button
-      className="group-card"
+      className={`group-card ${group.is_admin ? "group-card--admin" : ""}`}
       type="button"
       onClick={() => {
         haptic("medium");
@@ -21,8 +27,15 @@ export function GroupCard({ group, onOpen }: GroupCardProps) {
       <span className="group-card__main">
         <span className="group-card__title-row">
           <strong>{group.title}</strong>
-          {group.is_admin ? <em>ADMIN</em> : null}
+          {group.is_admin ? (
+            <em>
+              <ShieldCheck size={10} /> Ви адміністратор
+            </em>
+          ) : null}
         </span>
+        {group.is_admin ? (
+          <span className="group-card__admin-hint">Доступне керування групою</span>
+        ) : null}
         <span className="group-card__meta">
           <span>
             <Trophy size={14} /> #{group.rank ?? "—"}
