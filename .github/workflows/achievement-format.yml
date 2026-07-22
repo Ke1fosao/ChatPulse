@@ -6,6 +6,11 @@ on:
       - feat/achievement-system-v2
     paths:
       - .github/workflows/achievement-format.yml
+  pull_request:
+    branches:
+      - main
+    paths:
+      - .github/workflows/achievement-format.yml
 
 permissions:
   contents: write
@@ -23,8 +28,9 @@ jobs:
       - name: Format final files
         run: |
           pip install -q ruff
-          ruff format app/repositories/achievements.py app/api/miniapp/routes.py app/services/achievement_cards.py tests/test_miniapp_achievement_events.py
-          ruff check --fix app/repositories/achievements.py app/api/miniapp/routes.py app/services/achievement_cards.py tests/test_miniapp_achievement_events.py
+          FILES="app/repositories/achievements.py app/api/miniapp/routes.py app/services/achievement_cards.py tests/test_miniapp_achievement_events.py"
+          ruff check --fix $FILES
+          ruff format $FILES
       - name: Commit formatting
         run: |
           git config user.name "github-actions[bot]"
