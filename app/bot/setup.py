@@ -9,6 +9,7 @@ from app.bot.routers.settings import router as settings_router
 from app.repositories.activity import ActivityRepository
 from app.repositories.gamification import GamificationRepository
 from app.repositories.miniapp import MiniAppRepository
+from app.repositories.owner import OwnerRepository
 
 ROUTER_TEMPLATES: tuple[Router, ...] = (
     private_router,
@@ -24,11 +25,14 @@ def build_dispatcher(
     default_timezone: str,
     fingerprint_secret: str = "chatpulse-local-fingerprint",
     miniapp_url: str | None = None,
+    owner_repository: OwnerRepository | None = None,
 ) -> Dispatcher:
     dispatcher = Dispatcher()
+    resolved_owner_repository = owner_repository or OwnerRepository(repository._session_factory)
     dispatcher["repository"] = repository
     dispatcher["gamification_repository"] = GamificationRepository(repository._session_factory)
     dispatcher["miniapp_repository"] = MiniAppRepository(repository._session_factory)
+    dispatcher["owner_repository"] = resolved_owner_repository
     dispatcher["default_timezone"] = default_timezone
     dispatcher["fingerprint_secret"] = fingerprint_secret
     dispatcher["miniapp_url"] = miniapp_url
