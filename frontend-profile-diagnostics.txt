@@ -1,0 +1,262 @@
+=== tests ===
+
+> chatpulse-miniapp@0.5.0 test
+> vitest --run
+
+
+[1m[30m[46m RUN [49m[39m[22m [36mv4.1.10 [39m[90m/home/runner/work/ChatPulse/ChatPulse/miniapp[39m
+
+ [31m❯[39m src/features/profile/ProfileExperience.test.tsx [2m([22m[2m2 tests[22m[2m | [22m[31m1 failed[39m[2m)[22m[33m 313[2mms[22m[39m
+[31m     [31m×[31m shows creator status and opens the complete 50-level roadmap[39m[32m 92[2mms[22m[39m
+     [32m✓[39m shares the generated PNG file through the native share sheet[32m 220[2mms[22m[39m
+ [32m✓[39m src/App.test.tsx [2m([22m[2m1 test[22m[2m)[22m[33m 351[2mms[22m[39m
+     [33m[2m✓[22m[39m renders five Ukrainian navigation tabs and changes active page [33m 350[2mms[22m[39m
+ [32m✓[39m src/owner/OwnerApp.test.tsx [2m([22m[2m4 tests[22m[2m)[22m[33m 630[2mms[22m[39m
+
+[31m⎯⎯⎯⎯⎯⎯⎯[39m[1m[41m Failed Tests 1 [49m[22m[31m⎯⎯⎯⎯⎯⎯⎯[39m
+
+[41m[1m FAIL [22m[49m src/features/profile/ProfileExperience.test.tsx[2m > [22mpremium profile experience[2m > [22mshows creator status and opens the complete 50-level roadmap
+[31m[1mTestingLibraryElementError[22m[39m: Found multiple elements with the text: CREATOR
+
+Here are the matching elements:
+
+Ignored nodes: comments, script, style
+[36m<span[39m
+  [33mclass[39m=[32m"profile-status-badge profile-status-badge--owner"[39m
+[36m>[39m
+  [36m<svg[39m
+    [33maria-hidden[39m=[32m"true"[39m
+    [33mclass[39m=[32m"lucide lucide-crown"[39m
+    [33mfill[39m=[32m"none"[39m
+    [33mheight[39m=[32m"13"[39m
+    [33mstroke[39m=[32m"currentColor"[39m
+    [33mstroke-linecap[39m=[32m"round"[39m
+    [33mstroke-linejoin[39m=[32m"round"[39m
+    [33mstroke-width[39m=[32m"2"[39m
+    [33mviewBox[39m=[32m"0 0 24 24"[39m
+    [33mwidth[39m=[32m"13"[39m
+    [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+  [36m>[39m
+    [36m<path[39m
+      [33md[39m=[32m"M11.562 3.266a.5.5 0 0 1 .876 0L15.39 8.87a1 1 0 0 0 1.516.294L21.183 5.5a.5.5 0 0 1 .798.519l-2.834 10.246a1 1 0 0 1-.956.734H5.81a1 1 0 0 1-.957-.734L2.02 6.02a.5.5 0 0 1 .798-.519l4.276 3.664a1 1 0 0 0 1.516-.294z"[39m
+    [36m/>[39m
+    [36m<path[39m
+      [33md[39m=[32m"M5 21h14"[39m
+    [36m/>[39m
+  [36m</svg>[39m
+  [0m [0m
+  [0mCREATOR[0m
+[36m</span>[39m
+
+Ignored nodes: comments, script, style
+[36m<strong>[39m
+  [0mCREATOR[0m
+[36m</strong>[39m
+
+(If this is intentional, then use the `*AllBy*` variant of the query (like `queryAllByText`, `getAllByText`, or `findAllByText`)).
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"page profile-page"[39m
+    [36m>[39m
+      [36m<section[39m
+        [33mclass[39m=[32m"profile-hero profile-hero--v2 profile-hero--owner"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"profile-hero__glow"[39m
+        [36m/>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"profile-hero__top"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"profile-avatar"[39m
+          [36m>[39m
+            [36m<span>[39m
+              [0mД[0m
+            [36m</span>[39m
+            [36m<i>[39m
+              [36m<svg[39m
+                [33maria-hidden[39m=[32m"true"[39m
+                [33mclass[39m=[32m"lucide lucide-shield-check"[39m
+                [33mfill[39m=[32m"none"[39m
+                [33mheight[39m=[32m"13"[39m
+                [33mstroke[39m=[32m"currentColor"[39m
+                [33mstroke-linecap[39m=[32m"round"[39m
+                [33mstroke-linejoin[39m=[32m"round"[39m
+                [33mstroke-width[39m=[32m"2"[39m
+                [33mviewBox[39m=[32m"0 0 24 24"[39m
+                [33mwidth[39m=[32m"13"[39m
+                [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+              [36m>[39m
+                [36m<path[39m
+                  [33md[39m=[32m"M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"[39m
+                [36m/>[39m
+                [36m<path[39m
+                  [33md[39m=[32m"m9 12 2 2 4-4"[39m
+                [36m/>[39m
+              [36m</svg>[39m
+            [36m</i>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"profile-hero__identity"[39m
+          [36m>[39m
+            [36m<p>[39m
+              [0mТвій ChatPulse[0m
+            [36m</p>[39m
+            [36m<h2>[39m
+              [0mДіма[0m
+            [36m</h2>[39m
+            [36m<span>[39m
+              [0m@veheblya[0m
+            [36m</span>[39m
+          [36m</div>[39m
+          [36m<button[39m
+            [33maria-label[39m=[32m"Поділитися"[39m
+            [33mclass[39m=[32m"icon-button"[39m
+            [33mtype[39m=[32m"button"[39m
+          [36m>[39m
+            [36m<svg[39m
+              [33maria-hidden[39m=[32m"true"[39m
+              [33mclass[39m=[32m"lucide lucide-arrow-up-right"[39m
+              [33mfill[39m=[32m"none"[39m
+              [33mheight[39m=[32m"20"[39m
+              [33mstroke[39m=[32m"currentColor"[39m
+              [33mstroke-linecap[39m=[32m"round"[39m
+              [33mstroke-linejoin[39m=[32m"round"[39m
+              [33mstroke-width[39m=[32m"2"[39m
+              [33mviewBox[39m=[32m"0 0 24 24"[39m
+              [33mwidth[39m=[32m"20"[39m
+              [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+            [36m>[39m
+              [36m<path[39m
+                [33md[39m=[32m"M7 7h10v10"[39m
+              [36m/>[39m
+              [36m<path[39m
+                [33md[39m=[32m"M7 17 17 7"[39m
+              [36m/>[39m
+            [36m</svg>[39m
+          [36m</button>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33maria-label[39m=[32m"Статус акаунта"[39m
+          [33mclass[39m=[32m"profile-status-badges"[39m
+        [36m>[39m
+          [36m<span[39m
+            [33mclass[39m=[32m"profile-status-badge profile-status-badge--owner"[39m
+          [36m>[39m
+            [36m<svg[39m
+              [33maria-hidden[39m=[32m"true"[39m
+              [33mclass[39m=[32m"lucide lucide-crown"[39m
+              [33mfill[39m=[32m"none"[39m
+              [33mheight[39m=[32m"13"[39m
+              [33mstroke[39m=[32m"currentColor"[39m
+              [33mstroke-linecap[39m=[32m"round"[39m
+              [33mstroke-linejoin[39m=[32m"round"[39m
+              [33mstroke-width[39m=[32m"2"[39m
+              [33mviewBox[39m=[32m"0 0 24 24"[39m
+              [33mwidth[39m=[32m"13"[39m
+              [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+            [36m>[39m
+              [36m<path[39m
+                [33md[39m=[32m"M11.562 3.266a.5.5 0 0 1 .876 0L15.39 8.87a1 1 0 0 0 1.516.294L21.183 5.5a.5.5 0 0 1 .798.519l-2.834 10.246a1 1 0 0 1-.956.734H5.81a1 1 0 0 1-.957-.734L2.02 6.02a.5.5 0 0 1 .798-.519l4.276 3.664a1 1 0 0 0 1.516-.294z"[39m
+              [36m/>[39m
+              [36m<path[39m
+                [33md[39m=[32m"M5 21h14"[39m
+              [36m/>[39m
+            [36m</svg>[39m
+            [0m [0m
+            [0mCREATOR[0m
+          [36m</span>[39m
+          [36m<span[39m
+            [33mclass[39m=[32m"profile-status-badge profile-status-badge--plan"[39m
+          [36m>[39m
+            [36m<svg[39m
+              [33maria-hidden[39m=[32m"true"[39m
+              [33mclass[39m=[32m"lucide lucide-sparkles"[39m
+              [33mfill[39m=[32m"none"[39m
+              [33mheight[39m=[32m"13"[39m
+              [33mstroke[39m=[32m"currentColor"[39m
+              [33mstroke-linecap[39m=[32m"round"[39m
+              [33mstroke-linejoin[39m=[32m"round"[39m
+              [33mstroke-width[39m=[32m"2"[39m
+              [33mviewBox[39m=[32m"0 0 24 24"[39m
+              [33mwidth[39m=[32m"13"[39m
+              [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+            [36m>[39m
+              [36m<path[39m
+                [33md[39m=[32m"M11.017 2.814a1 1 0 0 1 1.966 0l1.051 5.558a2 2 0 0 0 1.594 1.594l5.558 1.051a1 1 0 0 1 0 1.966l-5.558 1.051a2 2 0 0 0-1.594 1.594l-1.051 5.558a1 1 0 0 1-1.966 0l-1.051-5.558a2 2 0 0 0-1.594-1.594l-5.558-1.051a1 1 0 0 1 0-1.966l5.558-1.051a2 2 0 0 0 1.594-1.594z"[39m
+              [36m/>[39m
+              [36m<path[39m
+                [33md[39m=[32m"M20 2v4"[39m
+              [36m/>[39m
+              [36m<path[39m
+                [33md[39m=[32m"M22 4h-4"[39m
+              [36m/>[39m
+              [36m<circle[39m
+                [33mcx[39m=[32m"4"[39m
+                [33mcy[39m=[32m"20"[39m
+                [33mr[39m=[32m"2"[39m
+              [36m/>[39m
+            [36m</svg>[39m
+            [0m [0m
+            [0mOWNER ACCESS[0m
+          [36m</span>[39m
+          [36m<small>[39m
+            [0mНазавжди[0m
+          [36m</small>[39m
+        [36m</div>[39m
+        [36m<button[39m
+          [33maria-label[39m=[32m"Відкрити каталог рівнів"[39m
+          [33mclass[39m=[32m"profile-level-card"[39m
+          [33mtype[39m=[32m"button"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"profile-level-card__orb"[39m
+          [36m>[39m
+            [36m<small>[39m
+              [0mLEVEL[0m
+   ...
+[90m [2m❯[22m Object.getElementError node_modules/@testing-library/dom/dist/config.js:[2m37:19[22m[39m
+[90m [2m❯[22m getElementError node_modules/@testing-library/dom/dist/query-helpers.js:[2m20:35[22m[39m
+[90m [2m❯[22m getMultipleElementsFoundError node_modules/@testing-library/dom/dist/query-helpers.js:[2m23:10[22m[39m
+[90m [2m❯[22m node_modules/@testing-library/dom/dist/query-helpers.js:[2m55:13[22m[39m
+[90m [2m❯[22m node_modules/@testing-library/dom/dist/query-helpers.js:[2m95:19[22m[39m
+[36m [2m❯[22m src/features/profile/ProfileExperience.test.tsx:[2m106:19[22m[39m
+    [90m104|[39m     )[33m;[39m
+    [90m105|[39m
+    [90m106|[39m     [34mexpect[39m(screen[33m.[39m[34mgetByText[39m([32m"CREATOR"[39m))[33m.[39m[34mtoBeInTheDocument[39m()[33m;[39m
+    [90m   |[39m                   [31m^[39m
+    [90m107|[39m     [34mexpect[39m(screen[33m.[39m[34mgetByText[39m([32m"OWNER ACCESS"[39m))[33m.[39m[34mtoBeInTheDocument[39m()[33m;[39m
+    [90m108|[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯[22m[39m
+
+
+[2m Test Files [22m [1m[31m1 failed[39m[22m[2m | [22m[1m[32m2 passed[39m[22m[90m (3)[39m
+[2m      Tests [22m [1m[31m1 failed[39m[22m[2m | [22m[1m[32m6 passed[39m[22m[90m (7)[39m
+[2m   Start at [22m 10:47:12
+[2m   Duration [22m 1.83s[2m (transform 436ms, setup 235ms, import 1.05s, tests 1.29s, environment 1.94s)[22m
+
+
+::error file=/home/runner/work/ChatPulse/ChatPulse/miniapp/src/features/profile/ProfileExperience.test.tsx,title=src/features/profile/ProfileExperience.test.tsx > premium profile experience > shows creator status and opens the complete 50-level roadmap,line=106,column=19::TestingLibraryElementError: Found multiple elements with the text: CREATOR%0A%0AHere are the matching elements:%0A%0AIgnored nodes: comments, script, style%0A<span%0A  class="profile-status-badge profile-status-badge--owner"%0A>%0A  <svg%0A    aria-hidden="true"%0A    class="lucide lucide-crown"%0A    fill="none"%0A    height="13"%0A    stroke="currentColor"%0A    stroke-linecap="round"%0A    stroke-linejoin="round"%0A    stroke-width="2"%0A    viewBox="0 0 24 24"%0A    width="13"%0A    xmlns="http://www.w3.org/2000/svg"%0A  >%0A    <path%0A      d="M11.562 3.266a.5.5 0 0 1 .876 0L15.39 8.87a1 1 0 0 0 1.516.294L21.183 5.5a.5.5 0 0 1 .798.519l-2.834 10.246a1 1 0 0 1-.956.734H5.81a1 1 0 0 1-.957-.734L2.02 6.02a.5.5 0 0 1 .798-.519l4.276 3.664a1 1 0 0 0 1.516-.294z"%0A    />%0A    <path%0A      d="M5 21h14"%0A    />%0A  </svg>%0A   %0A  CREATOR%0A</span>%0A%0AIgnored nodes: comments, script, style%0A<strong>%0A  CREATOR%0A</strong>%0A%0A(If this is intentional, then use the `*AllBy*` variant of the query (like `queryAllByText`, `getAllByText`, or `findAllByText`)).%0A%0AIgnored nodes: comments, script, style%0A<body>%0A  <div>%0A    <div%0A      class="page profile-page"%0A    >%0A      <section%0A        class="profile-hero profile-hero--v2 profile-hero--owner"%0A      >%0A        <div%0A          class="profile-hero__glow"%0A        />%0A        <div%0A          class="profile-hero__top"%0A        >%0A          <div%0A            class="profile-avatar"%0A          >%0A            <span>%0A              Д%0A            </span>%0A            <i>%0A              <svg%0A                aria-hidden="true"%0A                class="lucide lucide-shield-check"%0A                fill="none"%0A                height="13"%0A                stroke="currentColor"%0A                stroke-linecap="round"%0A                stroke-linejoin="round"%0A                stroke-width="2"%0A                viewBox="0 0 24 24"%0A                width="13"%0A                xmlns="http://www.w3.org/2000/svg"%0A              >%0A                <path%0A                  d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"%0A                />%0A                <path%0A                  d="m9 12 2 2 4-4"%0A                />%0A              </svg>%0A            </i>%0A          </div>%0A          <div%0A            class="profile-hero__identity"%0A          >%0A            <p>%0A              Твій ChatPulse%0A            </p>%0A            <h2>%0A              Діма%0A            </h2>%0A            <span>%0A              @veheblya%0A            </span>%0A          </div>%0A          <button%0A            aria-label="Поділитися"%0A            class="icon-button"%0A            type="button"%0A          >%0A            <svg%0A              aria-hidden="true"%0A              class="lucide lucide-arrow-up-right"%0A              fill="none"%0A              height="20"%0A              stroke="currentColor"%0A              stroke-linecap="round"%0A              stroke-linejoin="round"%0A              stroke-width="2"%0A              viewBox="0 0 24 24"%0A              width="20"%0A              xmlns="http://www.w3.org/2000/svg"%0A            >%0A              <path%0A                d="M7 7h10v10"%0A              />%0A              <path%0A                d="M7 17 17 7"%0A              />%0A            </svg>%0A          </button>%0A        </div>%0A        <div%0A          aria-label="Статус акаунта"%0A          class="profile-status-badges"%0A        >%0A          <span%0A            class="profile-status-badge profile-status-badge--owner"%0A          >%0A            <svg%0A              aria-hidden="true"%0A              class="lucide lucide-crown"%0A              fill="none"%0A              height="13"%0A              stroke="currentColor"%0A              stroke-linecap="round"%0A              stroke-linejoin="round"%0A              stroke-width="2"%0A              viewBox="0 0 24 24"%0A              width="13"%0A              xmlns="http://www.w3.org/2000/svg"%0A            >%0A              <path%0A                d="M11.562 3.266a.5.5 0 0 1 .876 0L15.39 8.87a1 1 0 0 0 1.516.294L21.183 5.5a.5.5 0 0 1 .798.519l-2.834 10.246a1 1 0 0 1-.956.734H5.81a1 1 0 0 1-.957-.734L2.02 6.02a.5.5 0 0 1 .798-.519l4.276 3.664a1 1 0 0 0 1.516-.294z"%0A              />%0A              <path%0A                d="M5 21h14"%0A              />%0A            </svg>%0A             %0A            CREATOR%0A          </span>%0A          <span%0A            class="profile-status-badge profile-status-badge--plan"%0A          >%0A            <svg%0A              aria-hidden="true"%0A              class="lucide lucide-sparkles"%0A              fill="none"%0A              height="13"%0A              stroke="currentColor"%0A              stroke-linecap="round"%0A              stroke-linejoin="round"%0A              stroke-width="2"%0A              viewBox="0 0 24 24"%0A              width="13"%0A              xmlns="http://www.w3.org/2000/svg"%0A            >%0A              <path%0A                d="M11.017 2.814a1 1 0 0 1 1.966 0l1.051 5.558a2 2 0 0 0 1.594 1.594l5.558 1.051a1 1 0 0 1 0 1.966l-5.558 1.051a2 2 0 0 0-1.594 1.594l-1.051 5.558a1 1 0 0 1-1.966 0l-1.051-5.558a2 2 0 0 0-1.594-1.594l-5.558-1.051a1 1 0 0 1 0-1.966l5.558-1.051a2 2 0 0 0 1.594-1.594z"%0A              />%0A              <path%0A                d="M20 2v4"%0A              />%0A              <path%0A                d="M22 4h-4"%0A              />%0A              <circle%0A                cx="4"%0A                cy="20"%0A                r="2"%0A              />%0A            </svg>%0A             %0A            OWNER ACCESS%0A          </span>%0A          <small>%0A            Назавжди%0A          </small>%0A        </div>%0A        <button%0A          aria-label="Відкрити каталог рівнів"%0A          class="profile-level-card"%0A          type="button"%0A        >%0A          <div%0A            class="profile-level-card__orb"%0A          >%0A            <small>%0A              LEVEL%0A   ...%0A ❯ Object.getElementError node_modules/@testing-library/dom/dist/config.js:37:19%0A ❯ getElementError node_modules/@testing-library/dom/dist/query-helpers.js:20:35%0A ❯ getMultipleElementsFoundError node_modules/@testing-library/dom/dist/query-helpers.js:23:10%0A ❯ node_modules/@testing-library/dom/dist/query-helpers.js:55:13%0A ❯ node_modules/@testing-library/dom/dist/query-helpers.js:95:19%0A ❯ src/features/profile/ProfileExperience.test.tsx:106:19%0A%0A
+=== typecheck ===
+
+> chatpulse-miniapp@0.5.0 typecheck
+> tsc -b --pretty false
+
+=== build ===
+
+> chatpulse-miniapp@0.5.0 build
+> tsc -b && vite build
+
+[36mvite v8.1.5 [32mbuilding client environment for production...[36m[39m
+[2Ktransforming...✓ 1809 modules transformed.
+rendering chunks...
+computing gzip size...
+dist/index.html                   0.60 kB │ gzip:  0.34 kB
+dist/assets/index-BQTY5B0L.css   57.61 kB │ gzip: 11.71 kB
+dist/assets/index-Cu1lo1x4.js   277.71 kB │ gzip: 83.41 kB
+
+[32m✓ built in 183ms[39m
