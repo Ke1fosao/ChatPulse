@@ -1,26 +1,78 @@
-name: Export Mini App dependency lock
+name: Stage Mini App dependency hardening
 
 on:
   pull_request:
     branches: [main]
 
+permissions:
+  contents: write
+
 jobs:
-  lock:
+  harden:
     if: github.head_ref == 'feat/miniapp-dashboard'
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: miniapp
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: feat/miniapp-dashboard
+          fetch-depth: 0
       - uses: actions/setup-node@v4
         with:
           node-version: "22"
-      - run: npm install --no-audit --no-fund
-      - run: npm list --depth=0 --json > npm-tree.json
+      - name: Pin dependencies and remove external font
+        shell: bash
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          package_path = Path("miniapp/package.json")
+          package = json.loads(package_path.read_text())
+          package["dependencies"] = {
+              "@vitejs/plugin-react": "6.0.3",
+              "lucide-react": "1.25.0",
+              "react": "19.2.8",
+              "react-dom": "19.2.8",
+              "vite": "8.1.5",
+          }
+          package["devDependencies"] = {
+              "@testing-library/jest-dom": "7.0.0",
+              "@testing-library/react": "16.3.2",
+              "@testing-library/user-event": "14.6.1",
+              "@types/react": "19.2.17",
+              "@types/react-dom": "19.2.3",
+              "jsdom": "29.1.1",
+              "typescript": "7.0.2",
+              "vitest": "4.1.10",
+          }
+          package_path.write_text(json.dumps(package, ensure_ascii=False, indent=2) + "\n")
+
+          css_path = Path("miniapp/src/styles/global.css")
+          css = css_path.read_text()
+          css = css.replace(
+              '@import url("https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap");\n\n',
+              "",
+          )
+          css = css.replace(
+              'font-family: "Manrope", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;',
+              'font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;',
+          )
+          css_path.write_text(css)
+          PY
+          cd miniapp
+          npm install --package-lock-only --ignore-scripts --no-audit --no-fund
+          cd ..
+          git rm .github/workflows/export-npm-lock.yml
+      - name: Create staging commit
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add miniapp/package.json miniapp/package-lock.json miniapp/src/styles/global.css
+          git commit -m "build: pin Mini App dependencies and remove external font"
+          git rev-parse HEAD > hardened-commit.txt
+          git push --force origin HEAD:refs/heads/review-miniapp-hardening
       - uses: actions/upload-artifact@v4
         with:
-          name: miniapp-dependency-lock
-          path: |
-            miniapp/package-lock.json
-            miniapp/npm-tree.json
+          name: hardened-commit
+          path: hardened-commit.txt
