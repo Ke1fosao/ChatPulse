@@ -207,6 +207,7 @@ export function App() {
         data={home}
         onOpenGroup={openGroup}
         onOpenAchievements={() => setActiveTab("achievements")}
+        onOpenLevels={() => setLevelsOpen(true)}
         onShareProfile={() => setShareOpen(true)}
       />
     );
