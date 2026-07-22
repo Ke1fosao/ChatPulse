@@ -106,9 +106,6 @@ export function AchievementCelebrationLayer({
                     Етап {current.achievement.chain.stage} з {current.achievement.chain.total}
                   </span>
                 ) : null}
-                {current.achievement.reward_xp > 0 ? (
-                  <strong>+{current.achievement.reward_xp} бонусних XP</strong>
-                ) : null}
               </div>
             </div>
             <div className="achievement-celebration__actions">
