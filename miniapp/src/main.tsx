@@ -3,6 +3,7 @@ import { createRoot } from "react-dom/client";
 import { App } from "./App";
 import { OwnerApp } from "./owner/OwnerApp";
 import "./styles/global.css";
+import "./styles/group-settings.css";
 import "./styles/owner.css";
 import "./styles/owner-mobile.css";
 import "./styles/profile-experience.css";
