@@ -18,9 +18,31 @@ jobs:
           cache: npm
           cache-dependency-path: miniapp/package.json
       - run: npm install --no-audit --no-fund
-      - run: npm test -- --run
-      - run: npm run typecheck
-      - run: npm run build
+      - name: Run frontend diagnostics
+        id: frontend-checks
+        shell: bash
+        run: |
+          set +e
+          npm test -- --run > frontend-test.log 2>&1
+          TEST_STATUS=$?
+          npm run typecheck > frontend-typecheck.log 2>&1
+          TYPE_STATUS=$?
+          npm run build > frontend-build.log 2>&1
+          BUILD_STATUS=$?
+          cat frontend-test.log
+          cat frontend-typecheck.log
+          cat frontend-build.log
+          if [ "$TEST_STATUS" -ne 0 ] || [ "$TYPE_STATUS" -ne 0 ] || [ "$BUILD_STATUS" -ne 0 ]; then
+            exit 1
+          fi
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: frontend-diagnostics
+          path: |
+            miniapp/frontend-test.log
+            miniapp/frontend-typecheck.log
+            miniapp/frontend-build.log
 
   backend:
     runs-on: ubuntu-latest
@@ -31,7 +53,32 @@ jobs:
           python-version: "3.12"
           cache: pip
       - run: pip install -q -e ".[dev]"
-      - run: ruff check .
-      - run: ruff format --check .
-      - run: pytest -q
-      - run: python -m compileall app
+      - name: Run backend diagnostics
+        id: backend-checks
+        shell: bash
+        run: |
+          set +e
+          ruff check . > ruff-check.log 2>&1
+          RUFF_STATUS=$?
+          ruff format --check . > ruff-format.log 2>&1
+          FORMAT_STATUS=$?
+          pytest -q > pytest.log 2>&1
+          TEST_STATUS=$?
+          python -m compileall app > compileall.log 2>&1
+          COMPILE_STATUS=$?
+          cat ruff-check.log
+          cat ruff-format.log
+          cat pytest.log
+          cat compileall.log
+          if [ "$RUFF_STATUS" -ne 0 ] || [ "$FORMAT_STATUS" -ne 0 ] || [ "$TEST_STATUS" -ne 0 ] || [ "$COMPILE_STATUS" -ne 0 ]; then
+            exit 1
+          fi
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: backend-diagnostics
+          path: |
+            ruff-check.log
+            ruff-format.log
+            pytest.log
+            compileall.log
