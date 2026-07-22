@@ -1,6 +1,6 @@
-import { render, screen, waitFor } from "@testing-library/react";
+import { cleanup, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import type { GroupSettings } from "../../api/types";
 import { GroupSettingsPanel } from "./GroupSettingsPanel";
 
@@ -16,6 +16,8 @@ const settings: GroupSettings = {
   track_replies: true,
   track_reactions: true,
 };
+
+afterEach(cleanup);
 
 describe("GroupSettingsPanel", () => {
   it("saves a changed field immediately without a global save button", async () => {
