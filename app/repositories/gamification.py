@@ -129,9 +129,7 @@ class GamificationRepository:
 
             author.content_fingerprint = activity.content_fingerprint
             author.content_simhash = (
-                f"{activity.content_simhash:016x}"
-                if activity.content_simhash is not None
-                else None
+                f"{activity.content_simhash:016x}" if activity.content_simhash is not None else None
             )
             author.content_length = activity.content_length
 
@@ -175,9 +173,7 @@ class GamificationRepository:
 
             base_xp = message_base_xp(activity)
             requested_xp = (
-                0
-                if cooldown or duplicate
-                else adjusted_message_xp(base_xp, len(recent) + 1)
+                0 if cooldown or duplicate else adjusted_message_xp(base_xp, len(recent) + 1)
             )
             update = await self._apply_xp(
                 session,
@@ -600,11 +596,7 @@ class GamificationRepository:
         summary = self._empty_summary()
         active_users: set[int] = set()
         for row in rows:
-            if any(
-                int(getattr(row, field))
-                for field in SUMMARY_FIELDS
-                if field != "xp_earned"
-            ):
+            if any(int(getattr(row, field)) for field in SUMMARY_FIELDS if field != "xp_earned"):
                 active_users.add(row.telegram_user_id)
             for field in SUMMARY_FIELDS:
                 summary[field] += int(getattr(row, field))

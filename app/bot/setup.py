@@ -25,9 +25,7 @@ def build_dispatcher(
 ) -> Dispatcher:
     dispatcher = Dispatcher()
     dispatcher["repository"] = repository
-    dispatcher["gamification_repository"] = GamificationRepository(
-        repository._session_factory
-    )
+    dispatcher["gamification_repository"] = GamificationRepository(repository._session_factory)
     dispatcher["default_timezone"] = default_timezone
     dispatcher["fingerprint_secret"] = fingerprint_secret
     for router_template in ROUTER_TEMPLATES:

@@ -202,9 +202,7 @@ class StreakProtectionUsage(Base):
 
 class MemberAchievement(Base):
     __tablename__ = "member_achievements"
-    __table_args__ = (
-        Index("ix_member_achievements_earned", "telegram_chat_id", "earned_at"),
-    )
+    __table_args__ = (Index("ix_member_achievements_earned", "telegram_chat_id", "earned_at"),)
 
     telegram_chat_id: Mapped[int] = mapped_column(
         BigInteger,

@@ -295,8 +295,7 @@ def format_comparison(current: Mapping[str, int], previous: Mapping[str, int]) -
         old_value = int(previous.get(key, 0))
         new_value = int(current.get(key, 0))
         lines.append(
-            f"{label}: {old_value} → {new_value} · "
-            f"{_percent_change(new_value, old_value)}"
+            f"{label}: {old_value} → {new_value} · {_percent_change(new_value, old_value)}"
         )
 
     old_activity = int(previous.get("messages_count", 0)) + int(

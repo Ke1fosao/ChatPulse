@@ -29,10 +29,7 @@ TOGGLE_FIELDS = {
 
 def settings_text(settings: dict) -> str:
     status = "призупинено" if settings["is_paused"] else "активний"
-    report_time = (
-        f"{int(settings['report_hour']):02d}:"
-        f"{int(settings.get('report_minute', 0)):02d}"
-    )
+    report_time = f"{int(settings['report_hour']):02d}:{int(settings.get('report_minute', 0)):02d}"
     theme = THEME_LABELS.get(
         settings.get("report_card_theme", "dark_pulse"),
         THEME_LABELS["dark_pulse"],

@@ -15,14 +15,17 @@ from app.services.gamification import (
 
 
 def test_weighted_message_xp() -> None:
-    assert message_base_xp(
-        MessageActivity(
-            is_media=True,
-            is_reply=True,
-            is_photo=True,
-            has_qualifying_text=True,
+    assert (
+        message_base_xp(
+            MessageActivity(
+                is_media=True,
+                is_reply=True,
+                is_photo=True,
+                has_qualifying_text=True,
+            )
         )
-    ) == 5
+        == 5
+    )
     assert message_base_xp(MessageActivity(is_media=True, is_reply=False)) == 0
 
 
