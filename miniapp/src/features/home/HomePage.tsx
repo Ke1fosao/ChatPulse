@@ -30,7 +30,9 @@ export function HomePage({
     <div className="page page--home">
       <ProfileHero
         user={data.user}
+        account={data.account}
         progress={data.global_progress}
+        levelCatalog={data.level_catalog}
         onShare={onShareProfile}
       />
 
