@@ -44,6 +44,7 @@ jobs:
         working-directory: miniapp
         run: npm install --no-audit --no-fund
       - name: Capture frontend diagnostics
+        working-directory: miniapp
         shell: bash
         run: |
           set +e
@@ -54,7 +55,7 @@ jobs:
             npm run typecheck
             echo '=== build ==='
             npm run build
-          } > owner-frontend-diagnostics.txt 2>&1
+          } > ../owner-frontend-diagnostics.txt 2>&1
           exit 0
       - name: Commit diagnostics
         shell: bash
