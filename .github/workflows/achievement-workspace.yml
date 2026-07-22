@@ -1,0 +1,25 @@
+name: Achievement Workspace Export
+
+on:
+  push:
+    branches:
+      - feat/achievement-system-v2
+    paths:
+      - .github/workflows/achievement-workspace.yml
+
+permissions:
+  contents: read
+
+jobs:
+  export:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feat/achievement-system-v2
+      - name: Pack workspace
+        run: tar --exclude=.git -czf achievement-workspace.tar.gz .
+      - uses: actions/upload-artifact@v4
+        with:
+          name: achievement-workspace
+          path: achievement-workspace.tar.gz
