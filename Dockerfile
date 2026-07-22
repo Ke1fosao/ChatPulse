@@ -1,8 +1,17 @@
+FROM node:22-slim AS miniapp-builder
+
+WORKDIR /build/miniapp
+COPY miniapp/package.json ./
+RUN npm install --no-audit --no-fund
+COPY miniapp ./
+RUN npm run build
+
 FROM python:3.12-slim
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
-    PIP_NO_CACHE_DIR=1
+    PIP_NO_CACHE_DIR=1 \
+    MINIAPP_DIST_DIR=/app/miniapp_dist
 
 WORKDIR /app
 
@@ -12,6 +21,7 @@ RUN apt-get update \
 
 COPY pyproject.toml README.md ./
 COPY app ./app
+COPY --from=miniapp-builder /build/miniapp/dist ./miniapp_dist
 
 RUN pip install --upgrade pip && pip install .
 
