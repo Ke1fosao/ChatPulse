@@ -20,29 +20,42 @@ export class ApiError extends Error {
   }
 }
 
-async function request<T>(path: string, init?: RequestInit): Promise<T> {
+function requestHeaders(init?: RequestInit, accept = "application/json"): Headers {
   const headers = new Headers(init?.headers);
-  headers.set("Accept", "application/json");
+  headers.set("Accept", accept);
   const initData = getInitData();
   if (initData) headers.set("X-Telegram-Init-Data", initData);
   if (init?.body && !headers.has("Content-Type")) {
     headers.set("Content-Type", "application/json");
   }
+  return headers;
+}
 
+async function responseError(response: Response): Promise<ApiError> {
+  let body: ApiErrorBody = {};
+  try {
+    body = (await response.json()) as ApiErrorBody;
+  } catch {
+    body = {};
+  }
+  return new ApiError(body.detail ?? "Не вдалося завантажити дані.", response.status);
+}
+
+async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const response = await fetch(`/api/miniapp/v1${path}`, {
     ...init,
-    headers,
+    headers: requestHeaders(init),
   });
-  if (!response.ok) {
-    let body: ApiErrorBody = {};
-    try {
-      body = (await response.json()) as ApiErrorBody;
-    } catch {
-      body = {};
-    }
-    throw new ApiError(body.detail ?? "Не вдалося завантажити дані.", response.status);
-  }
+  if (!response.ok) throw await responseError(response);
   return (await response.json()) as T;
+}
+
+async function requestBlob(path: string): Promise<Blob> {
+  const response = await fetch(`/api/miniapp/v1${path}`, {
+    headers: requestHeaders(undefined, "image/png"),
+  });
+  if (!response.ok) throw await responseError(response);
+  return response.blob();
 }
 
 export const api = {
@@ -69,4 +82,15 @@ export const api = {
       method: "POST",
       body: JSON.stringify({ confirmation: "СКИНУТИ" }),
     }),
+  profileCard: () => requestBlob("/profile-card"),
+  weeklyCard: (chatId: number) => requestBlob(`/groups/${chatId}/weekly-card`),
 };
+
+export function downloadBlob(blob: Blob, filename: string): void {
+  const url = URL.createObjectURL(blob);
+  const anchor = document.createElement("a");
+  anchor.href = url;
+  anchor.download = filename;
+  anchor.click();
+  window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
