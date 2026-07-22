@@ -1,0 +1,283 @@
+import { AlertTriangle, RefreshCw, Sparkles } from "lucide-react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { api, ApiError } from "./api/client";
+import type {
+  Achievement,
+  GroupCardData,
+  GroupDashboard,
+  GroupSettings,
+  HomePayload,
+  Metric,
+  Period,
+  RankingPayload,
+  TabId,
+} from "./api/types";
+import { AppShell } from "./components/AppShell";
+import { EmptyState } from "./components/EmptyState";
+import { ShareCardDialog } from "./components/ShareCardDialog";
+import { AchievementsPage } from "./features/achievements/AchievementsPage";
+import { GroupDashboardPage } from "./features/groups/GroupDashboardPage";
+import { GroupsPage } from "./features/groups/GroupsPage";
+import { HomePage } from "./features/home/HomePage";
+import { ProfilePage } from "./features/profile/ProfilePage";
+import { RankingsPage } from "./features/rankings/RankingsPage";
+import {
+  bindBackButton,
+  initTelegram,
+  isTelegramContext,
+  notify,
+} from "./telegram/sdk";
+
+export function App() {
+  const [activeTab, setActiveTab] = useState<TabId>("home");
+  const [home, setHome] = useState<HomePayload | null>(null);
+  const [groups, setGroups] = useState<GroupCardData[]>([]);
+  const [achievements, setAchievements] = useState<Achievement[]>([]);
+  const [selectedGroup, setSelectedGroup] = useState<GroupCardData | null>(null);
+  const [dashboard, setDashboard] = useState<GroupDashboard | null>(null);
+  const [groupPeriod, setGroupPeriod] = useState<Period>("week");
+  const [ranking, setRanking] = useState<RankingPayload | null>(null);
+  const [rankingGroupId, setRankingGroupId] = useState<number | null>(null);
+  const [rankingMetric, setRankingMetric] = useState<Metric>("xp");
+  const [rankingPeriod, setRankingPeriod] = useState<Period>("week");
+  const [loading, setLoading] = useState(true);
+  const [secondaryLoading, setSecondaryLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [shareOpen, setShareOpen] = useState(false);
+
+  const loadCore = useCallback(async () => {
+    setLoading(true);
+    setError("");
+    try {
+      const [homePayload, groupPayload, achievementPayload] = await Promise.all([
+        api.home(),
+        api.groups(),
+        api.achievements(),
+      ]);
+      setHome(homePayload);
+      setGroups(groupPayload);
+      setAchievements(achievementPayload);
+      const initialGroupId = rankingGroupId ?? groupPayload[0]?.telegram_chat_id ?? null;
+      setRankingGroupId(initialGroupId);
+      notify("success");
+    } catch (reason) {
+      const message = reason instanceof ApiError ? reason.message : "Не вдалося відкрити ChatPulse.";
+      setError(message);
+      notify("error");
+    } finally {
+      setLoading(false);
+    }
+  }, [rankingGroupId]);
+
+  useEffect(() => {
+    initTelegram();
+    void loadCore();
+  }, [loadCore]);
+
+  const loadDashboard = useCallback(
+    async (group: GroupCardData, period: Period = groupPeriod) => {
+      setSecondaryLoading(true);
+      setError("");
+      try {
+        const payload = await api.group(group.telegram_chat_id, period);
+        setSelectedGroup(group);
+        setDashboard(payload);
+        setGroupPeriod(period);
+      } catch (reason) {
+        setError(reason instanceof Error ? reason.message : "Не вдалося відкрити групу.");
+        notify("error");
+      } finally {
+        setSecondaryLoading(false);
+      }
+    },
+    [groupPeriod],
+  );
+
+  const loadRanking = useCallback(async () => {
+    if (rankingGroupId === null) {
+      setRanking(null);
+      return;
+    }
+    setSecondaryLoading(true);
+    try {
+      setRanking(await api.rankings(rankingGroupId, rankingMetric, rankingPeriod));
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : "Не вдалося завантажити рейтинг.");
+    } finally {
+      setSecondaryLoading(false);
+    }
+  }, [rankingGroupId, rankingMetric, rankingPeriod]);
+
+  useEffect(() => {
+    if (activeTab === "rankings") void loadRanking();
+  }, [activeTab, loadRanking]);
+
+  useEffect(() => bindBackButton(selectedGroup ? () => {
+    setSelectedGroup(null);
+    setDashboard(null);
+  } : null), [selectedGroup]);
+
+  const closeDashboard = () => {
+    setSelectedGroup(null);
+    setDashboard(null);
+  };
+
+  const openGroup = (group: GroupCardData) => {
+    void loadDashboard(group, "week");
+  };
+
+  const saveSettings = async (settings: Partial<GroupSettings>) => {
+    if (!selectedGroup) throw new Error("Групу не вибрано.");
+    const updated = await api.updateSettings(selectedGroup.telegram_chat_id, settings);
+    setDashboard((current) => current ? { ...current, settings: updated } : current);
+    return updated;
+  };
+
+  const resetGroup = async () => {
+    if (!selectedGroup) throw new Error("Групу не вибрано.");
+    await api.resetGroup(selectedGroup.telegram_chat_id);
+    await loadDashboard(selectedGroup, groupPeriod);
+    await loadCore();
+  };
+
+  const refreshAchievements = async () => {
+    setSecondaryLoading(true);
+    try {
+      setAchievements(await api.achievements());
+    } finally {
+      setSecondaryLoading(false);
+    }
+  };
+
+  const renderedPage = useMemo(() => {
+    if (!home) return null;
+    if (selectedGroup && dashboard) {
+      return (
+        <GroupDashboardPage
+          data={dashboard}
+          onBack={closeDashboard}
+          onPeriodChange={(period) => void loadDashboard(selectedGroup, period)}
+          onSaveSettings={saveSettings}
+          onReset={resetGroup}
+        />
+      );
+    }
+    if (activeTab === "groups") {
+      return <GroupsPage groups={groups} onOpenGroup={openGroup} onRefresh={loadCore} />;
+    }
+    if (activeTab === "rankings") {
+      return (
+        <RankingsPage
+          groups={groups}
+          ranking={ranking}
+          loading={secondaryLoading}
+          selectedGroupId={rankingGroupId}
+          metric={rankingMetric}
+          period={rankingPeriod}
+          onGroupChange={setRankingGroupId}
+          onMetricChange={setRankingMetric}
+          onPeriodChange={setRankingPeriod}
+          onRefresh={() => void loadRanking()}
+        />
+      );
+    }
+    if (activeTab === "achievements") {
+      return (
+        <AchievementsPage
+          achievements={achievements}
+          loading={secondaryLoading}
+          onRefresh={() => void refreshAchievements()}
+        />
+      );
+    }
+    if (activeTab === "profile") {
+      return (
+        <ProfilePage
+          data={home}
+          onShare={() => setShareOpen(true)}
+          onOpenAchievements={() => setActiveTab("achievements")}
+          onOpenGroups={() => setActiveTab("groups")}
+        />
+      );
+    }
+    return (
+      <HomePage
+        data={home}
+        onOpenGroup={openGroup}
+        onOpenAchievements={() => setActiveTab("achievements")}
+        onShareProfile={() => setShareOpen(true)}
+      />
+    );
+  }, [
+    activeTab,
+    achievements,
+    dashboard,
+    groupPeriod,
+    groups,
+    home,
+    loadCore,
+    loadDashboard,
+    loadRanking,
+    ranking,
+    rankingGroupId,
+    rankingMetric,
+    rankingPeriod,
+    secondaryLoading,
+    selectedGroup,
+  ]);
+
+  if (!isTelegramContext()) {
+    return (
+      <main className="standalone-screen">
+        <span><Sparkles size={32} /></span>
+        <h1>Відкрий ChatPulse через Telegram</h1>
+        <p>Mini App авторизується без паролів — напряму через твій Telegram-профіль.</p>
+      </main>
+    );
+  }
+
+  if (loading) {
+    return (
+      <main className="boot-screen">
+        <span className="boot-logo"><Sparkles /></span>
+        <h1>ChatPulse</h1>
+        <p>Збираємо твій пульс…</p>
+        <div className="boot-progress"><span /></div>
+      </main>
+    );
+  }
+
+  if (!home) {
+    return (
+      <main className="standalone-screen">
+        <span className="standalone-screen__error"><AlertTriangle size={30} /></span>
+        <h1>Не вдалося відкрити профіль</h1>
+        <p>{error || "Спробуй оновити Mini App."}</p>
+        <button className="primary-button" type="button" onClick={() => void loadCore()}>
+          <RefreshCw size={18} /> Повторити
+        </button>
+      </main>
+    );
+  }
+
+  return (
+    <>
+      <AppShell
+        activeTab={activeTab}
+        onTabChange={(tab) => {
+          closeDashboard();
+          setActiveTab(tab);
+        }}
+        badge={secondaryLoading ? "SYNC" : "LIVE"}
+      >
+        {error ? (
+          <button className="error-banner" type="button" onClick={() => setError("")}>
+            <AlertTriangle size={17} /> {error}
+          </button>
+        ) : null}
+        {renderedPage}
+      </AppShell>
+      <ShareCardDialog data={home} open={shareOpen} onClose={() => setShareOpen(false)} />
+    </>
+  );
+}
