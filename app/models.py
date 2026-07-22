@@ -1,6 +1,16 @@
 from datetime import UTC, date, datetime
 
-from sqlalchemy import BigInteger, Boolean, Date, DateTime, ForeignKey, Index, Integer, String
+from sqlalchemy import (
+    BigInteger,
+    Boolean,
+    CheckConstraint,
+    Date,
+    DateTime,
+    ForeignKey,
+    Index,
+    Integer,
+    String,
+)
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
 
@@ -25,6 +35,16 @@ class User(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now)
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now)
     last_activity_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now)
+
+
+class BotOwner(Base):
+    __tablename__ = "bot_owner"
+    __table_args__ = (CheckConstraint("owner_key = 'primary'", name="ck_bot_owner_singleton"),)
+
+    owner_key: Mapped[str] = mapped_column(String(16), primary_key=True, default="primary")
+    telegram_user_id: Mapped[int] = mapped_column(BigInteger, unique=True, nullable=False)
+    claimed_username: Mapped[str] = mapped_column(String(64), nullable=False)
+    claimed_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now)
 
 
 class ChatGroup(Base):

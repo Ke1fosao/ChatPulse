@@ -2,10 +2,18 @@ from typing import Any
 
 from aiogram import Bot
 
+from app.repositories.owner import OwnerRepository
+
 
 class TelegramAccessService:
-    def __init__(self, bot: Bot | Any) -> None:
+    def __init__(
+        self,
+        bot: Bot | Any,
+        *,
+        owner_repository: OwnerRepository | None = None,
+    ) -> None:
         self._bot = bot
+        self._owner_repository = owner_repository
 
     async def check_member(self, chat_id: int, user_id: int) -> bool:
         member = await self._safe_get_member(chat_id, user_id)
@@ -19,6 +27,8 @@ class TelegramAccessService:
         return False
 
     async def check_admin(self, chat_id: int, user_id: int) -> bool:
+        if self._owner_repository is not None and await self._owner_repository.is_owner(user_id):
+            return True
         member = await self._safe_get_member(chat_id, user_id)
         if member is None:
             return False

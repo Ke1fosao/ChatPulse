@@ -7,6 +7,7 @@ from app.bot.keyboards import open_miniapp_keyboard, private_start_keyboard
 from app.domain import UserData
 from app.repositories.activity import ActivityRepository
 from app.repositories.miniapp import MiniAppRepository
+from app.repositories.owner import OwnerClaimResult, OwnerRepository
 
 router = Router(name="private")
 
@@ -43,6 +44,31 @@ async def start_command(
         reply_markup=private_start_keyboard(bot_info.username, miniapp_url),
         parse_mode="HTML",
     )
+
+
+@router.message(Command("claimadmin"), F.chat.type == ChatType.PRIVATE)
+async def claim_admin_command(
+    message: Message,
+    owner_repository: OwnerRepository,
+) -> None:
+    user = message.from_user
+    if user is None:
+        return
+
+    result = await owner_repository.claim_owner(user.id, user.username)
+    responses = {
+        OwnerClaimResult.CLAIMED: (
+            "✅ Акаунт @veheblya закріплено як власника ChatPulse.\n\n"
+            "Надалі права перевіряються за незмінним Telegram ID, тому зміна username "
+            "не забере доступ."
+        ),
+        OwnerClaimResult.ALREADY_OWNER: "👑 Цей акаунт вже є власником ChatPulse.",
+        OwnerClaimResult.USERNAME_MISMATCH: ("⛔ Команда доступна лише акаунту @veheblya."),
+        OwnerClaimResult.CLAIMED_BY_OTHER: (
+            "⛔ Власник ChatPulse вже закріплений. Повторне призначення заблоковано."
+        ),
+    }
+    await message.answer(responses[result])
 
 
 @router.message(Command("open"), F.chat.type == ChatType.PRIVATE)
