@@ -33,9 +33,7 @@ def build_dispatcher(
     dispatcher["gamification_repository"] = AchievementGamificationRepository(
         repository._session_factory
     )
-    dispatcher["miniapp_repository"] = AchievementMiniAppRepository(
-        repository._session_factory
-    )
+    dispatcher["miniapp_repository"] = AchievementMiniAppRepository(repository._session_factory)
     dispatcher["owner_repository"] = resolved_owner_repository
     dispatcher["default_timezone"] = default_timezone
     dispatcher["fingerprint_secret"] = fingerprint_secret
