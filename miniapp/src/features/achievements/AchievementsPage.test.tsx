@@ -107,7 +107,7 @@ describe("AchievementsPage", () => {
     );
 
     expect(screen.getByLabelText("Прогрес 33%")).toBeInTheDocument();
-    expect(screen.queryByText("Майже")).not.toBeInTheDocument();
+    expect(screen.queryByText("МАЙЖЕ")).not.toBeInTheDocument();
     expect(screen.getByText("3 / 1")).toBeInTheDocument();
   });
 
@@ -120,10 +120,10 @@ describe("AchievementsPage", () => {
       />,
     );
 
-    const near = screen.getByText("Майже");
+    const near = screen.getByText("МАЙЖЕ");
     const badgeContainer = near.parentElement;
 
     expect(badgeContainer).not.toBeNull();
-    expect(within(badgeContainer as HTMLElement).getByText("Незвичайне")).toBeInTheDocument();
+    expect(within(badgeContainer as HTMLElement).getByText("НЕЗВИЧАЙНЕ")).toBeInTheDocument();
   });
 });
