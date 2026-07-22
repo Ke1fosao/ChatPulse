@@ -31,14 +31,14 @@ class OwnerRepository:
         username: str | None,
         claimed_at: datetime | None = None,
     ) -> OwnerClaimResult:
-        normalized_username = normalize_username(username)
-        if normalized_username != ALLOWED_OWNER_USERNAME:
-            return OwnerClaimResult.USERNAME_MISMATCH
-
         async with self._session_factory() as session:
             existing = await session.get(BotOwner, OWNER_KEY)
             if existing is not None:
                 return self._existing_result(existing, telegram_user_id)
+
+            normalized_username = normalize_username(username)
+            if normalized_username != ALLOWED_OWNER_USERNAME:
+                return OwnerClaimResult.USERNAME_MISMATCH
 
             session.add(
                 BotOwner(
