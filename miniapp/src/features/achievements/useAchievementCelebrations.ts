@@ -1,6 +1,11 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { api } from "../../api/client";
-import type { AchievementEventPayload, AchievementRarity } from "../../api/types";
+import type {
+  Achievement,
+  AchievementEventPayload,
+  AchievementRarity,
+  AchievementUnlockEventPayload,
+} from "../../api/types";
 
 const rarityWeight: Record<AchievementRarity, number> = {
   common: 1,
@@ -18,6 +23,12 @@ function mergeEvents(
   const merged = new Map(current.map((item) => [item.event_id, item]));
   for (const item of incoming) merged.set(item.event_id, item);
   return [...merged.values()].sort((left, right) => left.event_id - right.event_id);
+}
+
+function isUnlockEvent(
+  event: AchievementEventPayload,
+): event is AchievementUnlockEventPayload {
+  return event.event_type === "unlock";
 }
 
 export function useAchievementCelebrations() {
@@ -47,18 +58,21 @@ export function useAchievementCelebrations() {
     };
   }, [refresh]);
 
-  const summaryMode = individualShown >= 3 && queue.length > 0;
-  const current = summaryMode ? null : queue[0] ?? null;
-  const summaryItems = useMemo(
-    () =>
-      [...queue]
-        .sort(
-          (left, right) =>
-            rarityWeight[right.achievement.rarity] - rarityWeight[left.achievement.rarity],
-        )
-        .slice(0, 3),
-    [queue],
-  );
+  const head = queue[0] ?? null;
+  const collectionUpdate = head?.event_type === "collection_update" ? head : null;
+  const summaryMode = collectionUpdate !== null || (individualShown >= 3 && queue.length > 0);
+  const current = !summaryMode && head && isUnlockEvent(head) ? head : null;
+  const summaryItems = useMemo<Achievement[]>(() => {
+    if (collectionUpdate) return collectionUpdate.summary.achievements;
+    return queue
+      .filter(isUnlockEvent)
+      .map((item) => item.achievement)
+      .sort(
+        (left, right) => rarityWeight[right.rarity] - rarityWeight[left.rarity],
+      )
+      .slice(0, 3);
+  }, [collectionUpdate, queue]);
+  const summaryCount = collectionUpdate?.summary.count ?? queue.length;
 
   useEffect(() => {
     const active = queue.length > 0;
@@ -80,15 +94,20 @@ export function useAchievementCelebrations() {
 
   const dismissSummary = useCallback(async () => {
     if (!summaryMode || busy) return;
+    const eventIds = collectionUpdate
+      ? [collectionUpdate.event_id]
+      : queue.map((item) => item.event_id);
     setBusy(true);
     try {
-      await Promise.all(queue.map((item) => api.markAchievementSeen(item.event_id)));
-      setQueue([]);
+      await Promise.all(eventIds.map((eventId) => api.markAchievementSeen(eventId)));
+      setQueue((items) =>
+        items.filter((item) => !eventIds.includes(item.event_id)),
+      );
       setIndividualShown(0);
     } finally {
       setBusy(false);
     }
-  }, [busy, queue, summaryMode]);
+  }, [busy, collectionUpdate, queue, summaryMode]);
 
   useEffect(() => {
     if (queue.length === 0 && individualShown !== 0) setIndividualShown(0);
@@ -122,7 +141,7 @@ export function useAchievementCelebrations() {
     busy,
     current,
     summaryMode,
-    summaryCount: queue.length,
+    summaryCount,
     summaryItems,
     dismissCurrent,
     dismissSummary,
