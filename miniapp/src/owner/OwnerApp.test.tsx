@@ -95,6 +95,24 @@ describe("OwnerApp", () => {
     expect(await screen.findByText("Owner Panel закрито")).toBeInTheDocument();
   });
 
+  it("moves the VIP dialog above navigation and restores the page after closing", async () => {
+    const user = userEvent.setup();
+    render(<OwnerApp />);
+    await screen.findByText("Головний огляд");
+
+    await user.click(screen.getByRole("button", { name: "Користувачі" }));
+    await user.click(
+      await screen.findByRole("button", { name: "Керувати VIP для VIP Client" }),
+    );
+
+    const dialog = screen.getByRole("dialog", { name: "Керування VIP" });
+    expect(dialog.parentElement?.parentElement).toBe(document.body);
+    expect(document.body).toHaveClass("owner-modal-open");
+
+    await user.click(screen.getByRole("button", { name: "Закрити" }));
+    expect(document.body).not.toHaveClass("owner-modal-open");
+  });
+
   it("grants VIP only after explicit confirmation", async () => {
     const user = userEvent.setup();
     render(<OwnerApp />);
