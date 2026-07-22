@@ -34,6 +34,7 @@ class AchievementRepository:
         *,
         events: Iterable[AchievementEvent],
         snapshot: AchievementSnapshot,
+        create_events: bool = True,
     ) -> list[AchievementEarned]:
         event_list = list(events)
         if not event_list:
@@ -82,15 +83,16 @@ class AchievementRepository:
                         )
                         session.add(record)
                         await session.flush()
-                        session.add(
-                            AchievementEventRecord(
-                                telegram_user_id=unlock.telegram_user_id,
-                                achievement_unlock_id=record.id,
-                                event_type="unlock",
-                                payload_json="{}",
-                                created_at=unlock.occurred_at,
+                        if create_events:
+                            session.add(
+                                AchievementEventRecord(
+                                    telegram_user_id=unlock.telegram_user_id,
+                                    achievement_unlock_id=record.id,
+                                    event_type="unlock",
+                                    payload_json="{}",
+                                    created_at=unlock.occurred_at,
+                                )
                             )
-                        )
                         if unlock.telegram_chat_id is not None:
                             legacy = await session.get(
                                 MemberAchievement,
@@ -124,50 +126,94 @@ class AchievementRepository:
                 )
         return earned
 
-    async def list_pending_events(self, user_id: int, *, limit: int = 10) -> list[dict[str, Any]]:
+    async def list_pending_events(
+        self,
+        user_id: int,
+        *,
+        limit: int = 10,
+    ) -> list[dict[str, Any]]:
         safe_limit = min(max(limit, 1), 25)
         async with self._session_factory() as session, session.begin():
             rows = (
                 await session.execute(
-                    select(AchievementEventRecord, AchievementUnlockRecord, ChatGroup.title)
-                    .join(
+                    select(
+                        AchievementEventRecord,
+                        AchievementUnlockRecord,
+                        ChatGroup.title,
+                    )
+                    .outerjoin(
                         AchievementUnlockRecord,
                         AchievementUnlockRecord.id
                         == AchievementEventRecord.achievement_unlock_id,
                     )
                     .outerjoin(
                         ChatGroup,
-                        ChatGroup.telegram_chat_id == AchievementUnlockRecord.telegram_chat_id,
+                        ChatGroup.telegram_chat_id
+                        == AchievementUnlockRecord.telegram_chat_id,
                     )
                     .where(
                         AchievementEventRecord.telegram_user_id == user_id,
                         AchievementEventRecord.seen_at.is_(None),
-                        AchievementEventRecord.event_type == "unlock",
                     )
-                    .order_by(AchievementEventRecord.created_at.asc(), AchievementEventRecord.id.asc())
+                    .order_by(
+                        AchievementEventRecord.created_at.asc(),
+                        AchievementEventRecord.id.asc(),
+                    )
                     .limit(safe_limit)
                 )
             ).all()
             delivered_at = utc_now()
             result: list[dict[str, Any]] = []
-            for row in rows:
-                event = row.AchievementEventRecord
-                unlock = row.AchievementUnlockRecord
+            for event, unlock, group_title in rows:
                 if event.delivered_at is None:
                     event.delivered_at = delivered_at
+                base = {
+                    "event_id": int(event.id),
+                    "event_type": event.event_type,
+                    "created_at": event.created_at.isoformat(),
+                }
+                if event.event_type == "collection_update":
+                    payload = self._safe_payload(event.payload_json)
+                    rarest_codes = [
+                        str(code) for code in payload.get("rarest_codes", [])[:3]
+                    ]
+                    achievements = []
+                    for code in rarest_codes:
+                        definition = ACHIEVEMENT_BY_CODE.get(code)
+                        if definition is None:
+                            continue
+                        achievements.append(
+                            definition.to_public_dict(
+                                earned=True,
+                                progress=definition.threshold,
+                            )
+                        )
+                    result.append(
+                        {
+                            **base,
+                            "summary": {
+                                "count": max(int(payload.get("count", 0)), 0),
+                                "achievements": achievements,
+                            },
+                        }
+                    )
+                    continue
+
+                if unlock is None:
+                    continue
                 definition = ACHIEVEMENT_BY_CODE.get(unlock.achievement_code)
                 if definition is None:
                     continue
                 result.append(
                     {
-                        "event_id": int(event.id),
-                        "event_type": event.event_type,
-                        "created_at": event.created_at.isoformat(),
+                        **base,
                         "achievement": definition.to_public_dict(
                             earned=True,
                             progress=int(unlock.final_progress),
                             earned_at=unlock.earned_at.isoformat(),
-                            group_title=str(row.title) if row.title is not None else None,
+                            group_title=(
+                                str(group_title) if group_title is not None else None
+                            ),
                         ),
                     }
                 )
@@ -201,17 +247,42 @@ class AchievementRepository:
         rarest_codes: list[str],
         created_at: datetime | None = None,
     ) -> None:
+        async with self._session_factory() as session, session.begin():
+            self.add_collection_update_event(
+                session,
+                user_id=user_id,
+                count=count,
+                rarest_codes=rarest_codes,
+                created_at=created_at,
+            )
+
+    @staticmethod
+    def add_collection_update_event(
+        session: AsyncSession,
+        *,
+        user_id: int,
+        count: int,
+        rarest_codes: list[str],
+        created_at: datetime | None = None,
+    ) -> None:
         payload = json.dumps(
             {"count": max(count, 0), "rarest_codes": rarest_codes[:3]},
             ensure_ascii=False,
         )
-        async with self._session_factory() as session, session.begin():
-            session.add(
-                AchievementEventRecord(
-                    telegram_user_id=user_id,
-                    achievement_unlock_id=None,
-                    event_type="collection_update",
-                    payload_json=payload,
-                    created_at=created_at or utc_now(),
-                )
+        session.add(
+            AchievementEventRecord(
+                telegram_user_id=user_id,
+                achievement_unlock_id=None,
+                event_type="collection_update",
+                payload_json=payload,
+                created_at=created_at or utc_now(),
             )
+        )
+
+    @staticmethod
+    def _safe_payload(value: str) -> dict[str, Any]:
+        try:
+            payload = json.loads(value)
+        except (TypeError, ValueError, json.JSONDecodeError):
+            return {}
+        return payload if isinstance(payload, dict) else {}
