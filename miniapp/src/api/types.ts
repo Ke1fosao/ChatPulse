@@ -2,6 +2,13 @@ export type Period = "week" | "month" | "all";
 export type Metric = "xp" | "messages" | "reactions" | "replies" | "streak";
 export type TabId = "home" | "groups" | "rankings" | "achievements" | "profile";
 export type ReportTheme = "dark_pulse" | "telegram_wave" | "clean_light";
+export type AchievementRarity =
+  | "common"
+  | "uncommon"
+  | "rare"
+  | "epic"
+  | "legendary"
+  | "secret";
 
 export interface AccountAccess {
   plan: "free" | "vip" | "owner";
@@ -76,25 +83,46 @@ export interface GroupCardData {
   last_activity_at: string;
 }
 
+export interface AchievementChain {
+  key: string;
+  stage: number;
+  total: number;
+}
+
 export interface Achievement {
   code: string;
   title: string;
   description: string;
   category: string;
-  rarity: "common" | "epic";
+  rarity: AchievementRarity;
+  scope: "group" | "global";
+  icon: string;
+  visual_theme: string;
+  hidden: boolean;
   important: boolean;
   earned: boolean;
   earned_at?: string | null;
   group_title?: string | null;
   progress: number;
   threshold: number;
+  chain?: AchievementChain | null;
+  reward_xp: number;
+  version: number;
+  season_key?: string | null;
+}
+
+export interface AchievementEventPayload {
+  event_id: number;
+  event_type: "unlock" | "collection_update";
+  created_at: string;
+  achievement: Achievement;
 }
 
 export interface RecentAchievement {
   code: string;
   title: string;
   description: string;
-  rarity: "common" | "epic";
+  rarity: AchievementRarity;
   earned_at: string;
   group_title: string;
 }
