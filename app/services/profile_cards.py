@@ -191,9 +191,7 @@ def render_profile_card(payload: dict[str, Any]) -> bytes:
         radius=9,
         fill=(132, 103, 255),
     )
-    progress_label = (
-        f"{current:,} / {needed:,} XP до наступного рівня".replace(",", " ")
-    )
+    progress_label = f"{current:,} / {needed:,} XP до наступного рівня".replace(",", " ")
     draw.text(
         (414, 612),
         progress_label,
