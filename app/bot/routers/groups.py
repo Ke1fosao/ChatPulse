@@ -324,9 +324,9 @@ async def group_help_command(message: Message) -> None:
 async def track_group_message(
     message: Message,
     repository: ActivityRepository,
-    gamification_repository: GamificationRepository,
     default_timezone: str,
-    fingerprint_secret: str,
+    gamification_repository: GamificationRepository | None = None,
+    fingerprint_secret: str | None = None,
 ) -> None:
     activity = classify_message(message, fingerprint_secret)
     user = _user_data(message)
@@ -349,7 +349,7 @@ async def track_group_message(
         occurred_at=occurred_at,
         message_id=message.message_id,
     )
-    if not tracked:
+    if not tracked or gamification_repository is None:
         return
     update = await gamification_repository.award_message_xp(
         chat_id=message.chat.id,
