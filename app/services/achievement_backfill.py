@@ -69,9 +69,7 @@ class AchievementBackfillService:
                 )
             )
         ).all()
-        existing = {
-            (int(row[0]), str(row[1]), str(row[2])) for row in existing_rows
-        }
+        existing = {(int(row[0]), str(row[1]), str(row[2])) for row in existing_rows}
         rows = (
             await session.scalars(
                 select(MemberAchievement).order_by(
@@ -132,9 +130,7 @@ class AchievementBackfillService:
         ).all()
         recalculated = 0
         for member, user in rows:
-            values = dict(
-                AchievementGamificationRepository._live_snapshot(member, user).values
-            )
+            values = dict(AchievementGamificationRepository._live_snapshot(member, user).values)
             values.update(
                 await self._extended_metrics(
                     session,
