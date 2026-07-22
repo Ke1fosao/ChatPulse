@@ -60,7 +60,16 @@ def test_group_endpoint_hides_unknown_or_unauthorized_group() -> None:
 def test_rankings_endpoint_validates_metric_and_period() -> None:
     app = create_app(build_settings())
     app.dependency_overrides[get_miniapp_user] = current_user
-    repository = SimpleNamespace(get_rankings=AsyncMock(return_value=[]))
+    repository = SimpleNamespace(
+        get_rankings=AsyncMock(
+            return_value={
+                "metric": "xp",
+                "period": "month",
+                "rows": [],
+                "current_user": None,
+            }
+        )
+    )
 
     with TestClient(app) as client:
         app.state.miniapp_repository = repository
