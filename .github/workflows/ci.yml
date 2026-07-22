@@ -1,4 +1,4 @@
-name: Finalize Mini App formatting
+name: Export formatted Mini App backend
 
 on:
   push:
@@ -6,11 +6,8 @@ on:
   pull_request:
     branches: [main]
 
-permissions:
-  contents: write
-
 jobs:
-  finalize:
+  format:
     if: github.head_ref == 'feat/miniapp-dashboard' || github.ref == 'refs/heads/feat/miniapp-dashboard'
     runs-on: ubuntu-latest
     steps:
@@ -22,7 +19,7 @@ jobs:
           python-version: "3.12"
           cache: pip
       - run: pip install -q -e ".[dev]"
-      - name: Patch long local Mini App message
+      - name: Format backend tree
         shell: bash
         run: |
           python - <<'PY'
@@ -37,66 +34,11 @@ jobs:
           )
           path.write_text(content)
           PY
-      - run: ruff check --fix . || true
-      - run: ruff format .
-      - name: Restore final CI
-        shell: bash
-        run: |
-          cat > .github/workflows/ci.yml <<'YAML'
-          name: CI
-
-          on:
-            push:
-            pull_request:
-
-          jobs:
-            frontend:
-              runs-on: ubuntu-latest
-              defaults:
-                run:
-                  working-directory: miniapp
-              steps:
-                - uses: actions/checkout@v4
-                - uses: actions/setup-node@v4
-                  with:
-                    node-version: "22"
-                    cache: npm
-                    cache-dependency-path: miniapp/package.json
-                - run: npm install --no-audit --no-fund
-                - run: npm test -- --run
-                - run: npm run typecheck
-                - run: npm run build
-
-            backend:
-              runs-on: ubuntu-latest
-              steps:
-                - uses: actions/checkout@v4
-                - uses: actions/setup-python@v5
-                  with:
-                    python-version: "3.12"
-                    cache: pip
-                - run: pip install -q -e ".[dev]"
-                - run: ruff check .
-                - run: ruff format --check .
-                - run: pytest -q
-                - run: python -m compileall app
-
-            docker:
-              runs-on: ubuntu-latest
-              needs: [frontend, backend]
-              steps:
-                - uses: actions/checkout@v4
-                - run: docker build -t chatpulse-miniapp:test .
-          YAML
-          sed -i 's/^          //' .github/workflows/ci.yml
-      - name: Commit final formatting
-        shell: bash
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add .
-          if git diff --cached --quiet; then
-            exit 0
-          fi
-          git commit -m "style: finalize Mini App implementation"
-          git push origin HEAD:feat/miniapp-dashboard
+          ruff check --fix . || true
+          ruff format .
+          git diff --name-only > formatted-files.txt
+          tar -czf formatted-backend.tar.gz app tests pyproject.toml formatted-files.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: formatted-backend
+          path: formatted-backend.tar.gz
