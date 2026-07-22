@@ -79,6 +79,8 @@ export const api = {
     (await request<{ events: AchievementEventPayload[] }>(
       `/achievement-events?limit=${limit}`,
     )).events,
+  achievementCard: (eventId: number) =>
+    requestBlob(`/achievement-events/${eventId}/card`),
   markAchievementSeen: (eventId: number) =>
     request<{ ok: boolean }>(`/achievement-events/${eventId}/seen`, {
       method: "POST",
