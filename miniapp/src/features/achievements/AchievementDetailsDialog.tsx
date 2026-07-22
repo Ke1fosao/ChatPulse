@@ -119,15 +119,6 @@ export function AchievementDetailsDialog({
               <strong>{achievement.earned ? "Отримано" : "Ще не виконано"}</strong>
             </div>
           </article>
-          {achievement.reward_xp > 0 ? (
-            <article>
-              <span><Zap size={17} /></span>
-              <div>
-                <small>Нагорода</small>
-                <strong>+{achievement.reward_xp} XP</strong>
-              </div>
-            </article>
-          ) : null}
           {earnedAt ? (
             <article>
               <span><CalendarDays size={17} /></span>
