@@ -11,6 +11,7 @@ from fastapi import FastAPI, Header, HTTPException, Request, status
 from fastapi.responses import FileResponse, HTMLResponse
 
 from app.api.miniapp.routes import router as miniapp_router
+from app.api.owner.routes import router as owner_router
 from app.bot.setup import build_dispatcher
 from app.config import Settings, get_settings
 from app.database import Database
@@ -18,6 +19,7 @@ from app.repositories.activity import ActivityRepository
 from app.repositories.miniapp import MiniAppRepository
 from app.repositories.miniapp_gamification import MiniAppGamificationRepository
 from app.repositories.owner import OwnerRepository
+from app.repositories.owner_panel import OwnerPanelRepository
 from app.services.telegram_access import TelegramAccessService
 from app.services.weekly_reports import send_due_weekly_reports
 
@@ -50,6 +52,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         gamification_repository = MiniAppGamificationRepository(database.session_factory)
         miniapp_repository = MiniAppRepository(database.session_factory)
         owner_repository = OwnerRepository(database.session_factory)
+        owner_panel_repository = OwnerPanelRepository(database.session_factory)
         bot = Bot(resolved_settings.bot_token)
         telegram_access_service = TelegramAccessService(
             bot,
@@ -68,6 +71,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         app.state.gamification_repository = gamification_repository
         app.state.miniapp_repository = miniapp_repository
         app.state.owner_repository = owner_repository
+        app.state.owner_panel_repository = owner_panel_repository
         app.state.telegram_access_service = telegram_access_service
         app.state.bot = bot
         app.state.dispatcher = dispatcher
@@ -97,13 +101,14 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             await bot.session.close()
             await database.dispose()
 
-    app = FastAPI(title="ChatPulse", version="0.4.0", lifespan=lifespan)
+    app = FastAPI(title="ChatPulse", version="0.5.0", lifespan=lifespan)
     app.state.settings = resolved_settings
     app.include_router(miniapp_router)
+    app.include_router(owner_router)
 
     @app.get("/health")
     async def health() -> dict[str, str]:
-        return {"status": "ok", "service": "chatpulse", "version": "0.4.0"}
+        return {"status": "ok", "service": "chatpulse", "version": "0.5.0"}
 
     @app.post(resolved_settings.webhook_path)
     async def telegram_webhook(
