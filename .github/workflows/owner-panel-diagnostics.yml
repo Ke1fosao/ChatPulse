@@ -1,6 +1,5 @@
-name: Owner Panel Diagnostics
+name: Owner Panel Autoformat
 
-# One-time owner panel verification workflow, final pass.
 on:
   push:
     branches:
@@ -12,7 +11,7 @@ permissions:
   contents: write
 
 jobs:
-  diagnostics:
+  format:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -24,49 +23,19 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: "24"
-      - name: Install backend
-        run: pip install -q -e ".[dev]"
-      - name: Format owner repository
+      - name: Format backend
         run: |
+          pip install -q ruff
           ruff check --fix app/repositories/owner_panel.py
           ruff format app/repositories/owner_panel.py
-      - name: Capture backend diagnostics
-        shell: bash
-        run: |
-          set +e
-          {
-            echo '=== ruff check ==='
-            ruff check .
-            echo '=== ruff format ==='
-            ruff format --check .
-            echo '=== pytest ==='
-            pytest -q
-            echo '=== compileall ==='
-            python -m compileall app
-          } > owner-backend-diagnostics.txt 2>&1
-          exit 0
-      - name: Install frontend
+      - name: Refresh frontend lockfile
         working-directory: miniapp
         run: npm install --no-audit --no-fund
-      - name: Capture frontend diagnostics
-        working-directory: miniapp
-        shell: bash
-        run: |
-          set +e
-          {
-            echo '=== tests ==='
-            npm test -- --run
-            echo '=== typecheck ==='
-            npm run typecheck
-            echo '=== build ==='
-            npm run build
-          } > ../owner-frontend-diagnostics.txt 2>&1
-          exit 0
-      - name: Commit diagnostics
+      - name: Commit formatted release files
         shell: bash
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add app/repositories/owner_panel.py miniapp/package-lock.json owner-backend-diagnostics.txt owner-frontend-diagnostics.txt
-          git commit -m "test: format and capture owner panel diagnostics" || exit 0
+          git add app/repositories/owner_panel.py miniapp/package-lock.json
+          git commit -m "style: format owner panel release files" || exit 0
           git push origin HEAD:feat/owner-panel-vip
