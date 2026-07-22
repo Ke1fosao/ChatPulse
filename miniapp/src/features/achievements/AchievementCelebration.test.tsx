@@ -1,17 +1,29 @@
 import { cleanup, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { Achievement, AchievementEventPayload, AchievementRarity } from "../../api/types";
+import type {
+  Achievement,
+  AchievementEventPayload,
+  AchievementRarity,
+} from "../../api/types";
 import { AchievementCelebrationLayer } from "./AchievementCelebration";
 
 const mocks = vi.hoisted(() => ({
   achievementEvents: vi.fn(),
+  achievementCard: vi.fn(),
   markAchievementSeen: vi.fn(),
   markAchievementShared: vi.fn(),
+  downloadBlob: vi.fn(),
 }));
 
 vi.mock("../../api/client", () => ({
-  api: mocks,
+  api: {
+    achievementEvents: mocks.achievementEvents,
+    achievementCard: mocks.achievementCard,
+    markAchievementSeen: mocks.markAchievementSeen,
+    markAchievementShared: mocks.markAchievementShared,
+  },
+  downloadBlob: mocks.downloadBlob,
 }));
 
 vi.mock("../../telegram/sdk", () => ({
@@ -64,8 +76,11 @@ afterEach(cleanup);
 
 beforeEach(() => {
   mocks.achievementEvents.mockReset();
+  mocks.achievementCard.mockReset();
   mocks.markAchievementSeen.mockReset();
   mocks.markAchievementShared.mockReset();
+  mocks.downloadBlob.mockReset();
+  mocks.achievementCard.mockResolvedValue(new Blob(["png"], { type: "image/png" }));
   mocks.markAchievementSeen.mockResolvedValue({ ok: true });
   mocks.markAchievementShared.mockResolvedValue({ ok: true });
 });
@@ -88,6 +103,25 @@ describe("AchievementCelebrationLayer", () => {
     await waitFor(() =>
       expect(screen.queryByText("Номер один")).not.toBeInTheDocument(),
     );
+  });
+
+  it("fetches and downloads a trusted PNG when file sharing is unavailable", async () => {
+    const user = userEvent.setup();
+    mocks.achievementEvents.mockResolvedValue([
+      event(7, "Перша сотня", "uncommon"),
+    ]);
+
+    render(<AchievementCelebrationLayer onOpenCollection={vi.fn()} />);
+
+    expect(await screen.findByText("Перша сотня")).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Поділитися" }));
+
+    await waitFor(() => expect(mocks.achievementCard).toHaveBeenCalledWith(7));
+    expect(mocks.downloadBlob).toHaveBeenCalledWith(
+      expect.any(Blob),
+      "chatpulse-achievement_7.png",
+    );
+    expect(mocks.markAchievementShared).toHaveBeenCalledWith(7);
   });
 
   it("shows at most three individual celebrations before an overflow summary", async () => {
