@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from collections import defaultdict
-from datetime import UTC, datetime, timedelta
+from datetime import UTC, date, datetime, timedelta
 
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
@@ -31,8 +31,6 @@ class AchievementBackfillService:
     async def run(self, *, now: datetime | None = None) -> dict[str, int]:
         timestamp = (now or utc_now()).astimezone(UTC)
         added_by_user: defaultdict[int, list[str]] = defaultdict(list)
-        imported_legacy = 0
-        recalculated = 0
 
         async with self._session_factory() as session, session.begin():
             imported_legacy = await self._import_legacy_unlocks(
@@ -62,17 +60,18 @@ class AchievementBackfillService:
         session: AsyncSession,
         added_by_user: defaultdict[int, list[str]],
     ) -> int:
-        existing = set(
-            (
-                await session.execute(
-                    select(
-                        AchievementUnlockRecord.telegram_user_id,
-                        AchievementUnlockRecord.scope_key,
-                        AchievementUnlockRecord.achievement_code,
-                    )
+        existing_rows = (
+            await session.execute(
+                select(
+                    AchievementUnlockRecord.telegram_user_id,
+                    AchievementUnlockRecord.scope_key,
+                    AchievementUnlockRecord.achievement_code,
                 )
-            ).all()
-        )
+            )
+        ).all()
+        existing = {
+            (int(row[0]), str(row[1]), str(row[2])) for row in existing_rows
+        }
         rows = (
             await session.scalars(
                 select(MemberAchievement).order_by(
@@ -88,9 +87,9 @@ class AchievementBackfillService:
                 continue
             scope_key = achievement_scope_key("group", legacy.telegram_chat_id)
             identity = (
-                legacy.telegram_user_id,
+                int(legacy.telegram_user_id),
                 scope_key,
-                legacy.achievement_code,
+                str(legacy.achievement_code),
             )
             if identity in existing:
                 continue
@@ -133,7 +132,9 @@ class AchievementBackfillService:
         ).all()
         recalculated = 0
         for member, user in rows:
-            values = dict(AchievementGamificationRepository._live_snapshot(member, user).values)
+            values = dict(
+                AchievementGamificationRepository._live_snapshot(member, user).values
+            )
             values.update(
                 await self._extended_metrics(
                     session,
@@ -141,17 +142,11 @@ class AchievementBackfillService:
                     start_date=start_date,
                 )
             )
-            event = AchievementEvent(
-                trigger="message_created",
-                telegram_user_id=member.telegram_user_id,
-                telegram_chat_id=member.telegram_chat_id,
-                occurred_at=timestamp,
-            )
             events = tuple(
                 AchievementEvent(
                     trigger=trigger,
-                    telegram_user_id=event.telegram_user_id,
-                    telegram_chat_id=event.telegram_chat_id,
+                    telegram_user_id=member.telegram_user_id,
+                    telegram_chat_id=member.telegram_chat_id,
                     occurred_at=timestamp,
                 )
                 for trigger in (
@@ -183,7 +178,7 @@ class AchievementBackfillService:
         session: AsyncSession,
         *,
         member: GroupMember,
-        start_date,
+        start_date: date,
     ) -> dict[str, int]:
         rank = (
             int(
