@@ -1,10 +1,12 @@
 from types import SimpleNamespace
 from unittest.mock import AsyncMock
 
+import pytest
 from fastapi.testclient import TestClient
 
 from app.api.miniapp.auth import TelegramMiniAppUser
 from app.api.miniapp.dependencies import get_miniapp_user
+from app.api.miniapp.routes import _is_current_admin
 from app.config import Settings
 from app.main import create_app
 
@@ -26,6 +28,22 @@ def current_user() -> TelegramMiniAppUser:
         username="dmytro",
         auth_date="2026-07-22T10:00:00Z",
     )
+
+
+@pytest.mark.asyncio
+async def test_admin_check_uses_telegram_service_without_webhook_base_url() -> None:
+    access_service = SimpleNamespace(check_admin=AsyncMock(return_value=True))
+    request = SimpleNamespace(
+        app=SimpleNamespace(
+            state=SimpleNamespace(
+                settings=SimpleNamespace(webhook_base_url=""),
+                telegram_access_service=access_service,
+            )
+        )
+    )
+
+    assert await _is_current_admin(request, -1001, 101) is True
+    access_service.check_admin.assert_awaited_once_with(-1001, 101)
 
 
 def test_home_endpoint_uses_verified_user_identity() -> None:
