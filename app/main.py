@@ -10,6 +10,7 @@ from aiogram.types import MenuButtonWebApp, Update, WebAppInfo
 from fastapi import FastAPI, Header, HTTPException, Request, status
 from fastapi.responses import FileResponse, HTMLResponse
 
+from app.api.internal_achievements import router as internal_achievement_router
 from app.api.miniapp.routes import router as miniapp_router
 from app.api.owner.routes import router as owner_router
 from app.bot.setup import build_dispatcher
@@ -108,6 +109,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.state.settings = resolved_settings
     app.include_router(miniapp_router)
     app.include_router(owner_router)
+    app.include_router(internal_achievement_router)
 
     @app.get("/health")
     async def health() -> dict[str, str]:
