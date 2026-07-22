@@ -63,9 +63,7 @@ async def claim_admin_command(
             "не забере доступ."
         ),
         OwnerClaimResult.ALREADY_OWNER: "👑 Цей акаунт вже є власником ChatPulse.",
-        OwnerClaimResult.USERNAME_MISMATCH: (
-            "⛔ Команда доступна лише акаунту @veheblya."
-        ),
+        OwnerClaimResult.USERNAME_MISMATCH: ("⛔ Команда доступна лише акаунту @veheblya."),
         OwnerClaimResult.CLAIMED_BY_OTHER: (
             "⛔ Власник ChatPulse вже закріплений. Повторне призначення заблоковано."
         ),
