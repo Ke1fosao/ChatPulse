@@ -1,0 +1,33 @@
+name: Profile Autoformat
+
+on:
+  push:
+    branches:
+      - feat/profile-levels-sharing
+    paths:
+      - .github/workflows/profile-autoformat.yml
+
+permissions:
+  contents: write
+
+jobs:
+  format:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feat/profile-levels-sharing
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Format Python files
+        run: |
+          pip install -q ruff
+          ruff format app/services/levels.py app/services/profile_cards.py app/api/miniapp/routes.py tests/test_levels.py
+      - name: Commit formatting
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add app/services/levels.py app/services/profile_cards.py app/api/miniapp/routes.py tests/test_levels.py
+          git commit -m "style: format profile experience backend" || exit 0
+          git push origin HEAD:feat/profile-levels-sharing
