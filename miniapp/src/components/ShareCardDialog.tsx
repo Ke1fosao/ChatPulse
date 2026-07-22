@@ -1,4 +1,6 @@
 import { Download, Share2, X } from "lucide-react";
+import { useState } from "react";
+import { api, downloadBlob } from "../api/client";
 import type { HomePayload } from "../api/types";
 import { notify } from "../telegram/sdk";
 
@@ -9,6 +11,7 @@ interface ShareCardDialogProps {
 }
 
 export function ShareCardDialog({ data, open, onClose }: ShareCardDialogProps) {
+  const [downloading, setDownloading] = useState(false);
   if (!open) return null;
 
   const share = async () => {
@@ -25,8 +28,16 @@ export function ShareCardDialog({ data, open, onClose }: ShareCardDialogProps) {
     }
   };
 
-  const download = () => {
-    window.open("/api/miniapp/v1/profile-card", "_blank", "noopener,noreferrer");
+  const download = async () => {
+    setDownloading(true);
+    try {
+      downloadBlob(await api.profileCard(), "chatpulse-profile.png");
+      notify("success");
+    } catch {
+      notify("error");
+    } finally {
+      setDownloading(false);
+    }
   };
 
   return (
@@ -58,8 +69,8 @@ export function ShareCardDialog({ data, open, onClose }: ShareCardDialogProps) {
           <button className="primary-button" type="button" onClick={share}>
             <Share2 size={18} /> Поділитися
           </button>
-          <button className="secondary-button" type="button" onClick={download}>
-            <Download size={18} /> PNG-картка
+          <button className="secondary-button" type="button" onClick={download} disabled={downloading}>
+            <Download size={18} /> {downloading ? "Генеруємо…" : "PNG-картка"}
           </button>
         </div>
       </section>
