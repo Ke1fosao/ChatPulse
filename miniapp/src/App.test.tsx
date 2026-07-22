@@ -17,12 +17,18 @@ vi.mock("./api/client", () => ({
       global_progress: {
         xp_total: 850,
         level: 4,
-        tier: "Бронза",
+        tier: "Новачок",
         progress: 250,
         needed: 400,
         rank: 2,
         total_users: 10,
         percentile: 90,
+      },
+      level_catalog: {
+        max_level: 50,
+        current_level: 4,
+        next_tier: { level: 5, tier: "Бронза", xp_required: 1000 },
+        levels: [],
       },
       quick_stats: {
         xp_today: 18,
@@ -42,6 +48,7 @@ vi.mock("./api/client", () => ({
     group: vi.fn(),
     updateSettings: vi.fn(),
     resetGroup: vi.fn(),
+    profileCard: vi.fn(),
   },
 }));
 
