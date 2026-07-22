@@ -7,7 +7,6 @@ from app.bot.keyboards_settings import (
     tracking_keyboard,
 )
 
-
 SETTINGS = {
     "is_paused": False,
     "weekly_reports_enabled": True,

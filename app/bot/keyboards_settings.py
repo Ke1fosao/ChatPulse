@@ -46,10 +46,7 @@ def settings_home_keyboard(_settings: dict) -> InlineKeyboardMarkup:
 
 
 def reports_keyboard(settings: dict) -> InlineKeyboardMarkup:
-    report_time = (
-        f"{int(settings['report_hour']):02d}:"
-        f"{int(settings.get('report_minute', 0)):02d}"
-    )
+    report_time = f"{int(settings['report_hour']):02d}:{int(settings.get('report_minute', 0)):02d}"
     return InlineKeyboardMarkup(
         inline_keyboard=[
             [

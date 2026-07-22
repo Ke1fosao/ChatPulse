@@ -40,10 +40,7 @@ def _flag(value: bool) -> str:
 
 
 def _report_time(settings: dict) -> str:
-    return (
-        f"{int(settings['report_hour']):02d}:"
-        f"{int(settings.get('report_minute', 0)):02d}"
-    )
+    return f"{int(settings['report_hour']):02d}:{int(settings.get('report_minute', 0)):02d}"
 
 
 def settings_text(settings: dict) -> str:
@@ -342,9 +339,7 @@ async def settings_callback(
             await callback.answer("Некоректна зміна часу", show_alert=True)
             return
         total = (
-            int(settings["report_hour"]) * 60
-            + int(settings.get("report_minute", 0))
-            + delta
+            int(settings["report_hour"]) * 60 + int(settings.get("report_minute", 0)) + delta
         ) % (24 * 60)
         await gamification_repository.update_report_time(
             message.chat.id,
