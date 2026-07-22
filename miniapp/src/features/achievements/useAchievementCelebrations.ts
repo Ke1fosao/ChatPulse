@@ -141,6 +141,7 @@ export function useAchievementCelebrations() {
     busy,
     current,
     summaryMode,
+    historicalSummary: collectionUpdate !== null,
     summaryCount,
     summaryItems,
     dismissCurrent,
