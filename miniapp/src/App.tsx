@@ -15,6 +15,7 @@ import type {
 import { AppShell } from "./components/AppShell";
 import { LevelsDialog } from "./components/LevelsDialog";
 import { ShareCardDialog } from "./components/ShareCardDialog";
+import { AchievementCelebrationLayer } from "./features/achievements/AchievementCelebration";
 import { AchievementsPage } from "./features/achievements/AchievementsPage";
 import { GroupDashboardPage } from "./features/groups/GroupDashboardPage";
 import { GroupsPage } from "./features/groups/GroupsPage";
@@ -62,7 +63,8 @@ export function App() {
       setRankingGroupId(initialGroupId);
       notify("success");
     } catch (reason) {
-      const message = reason instanceof ApiError ? reason.message : "Не вдалося відкрити ChatPulse.";
+      const message =
+        reason instanceof ApiError ? reason.message : "Не вдалося відкрити ChatPulse.";
       setError(message);
       notify("error");
     } finally {
@@ -113,10 +115,18 @@ export function App() {
     if (activeTab === "rankings") void loadRanking();
   }, [activeTab, loadRanking]);
 
-  useEffect(() => bindBackButton(selectedGroup ? () => {
-    setSelectedGroup(null);
-    setDashboard(null);
-  } : null), [selectedGroup]);
+  useEffect(
+    () =>
+      bindBackButton(
+        selectedGroup
+          ? () => {
+              setSelectedGroup(null);
+              setDashboard(null);
+            }
+          : null,
+      ),
+    [selectedGroup],
+  );
 
   const closeDashboard = () => {
     setSelectedGroup(null);
@@ -130,7 +140,7 @@ export function App() {
   const saveSettings = async (settings: Partial<GroupSettings>) => {
     if (!selectedGroup) throw new Error("Групу не вибрано.");
     const updated = await api.updateSettings(selectedGroup.telegram_chat_id, settings);
-    setDashboard((current) => current ? { ...current, settings: updated } : current);
+    setDashboard((current) => (current ? { ...current, settings: updated } : current));
     return updated;
   };
 
@@ -282,6 +292,13 @@ export function App() {
       </AppShell>
       <ShareCardDialog data={home} open={shareOpen} onClose={() => setShareOpen(false)} />
       <LevelsDialog open={levelsOpen} onClose={() => setLevelsOpen(false)} />
+      <AchievementCelebrationLayer
+        onOpenCollection={() => {
+          closeDashboard();
+          setActiveTab("achievements");
+          void refreshAchievements();
+        }}
+      />
     </>
   );
 }
