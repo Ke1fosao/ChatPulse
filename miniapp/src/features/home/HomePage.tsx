@@ -17,6 +17,7 @@ interface HomePageProps {
   data: HomePayload;
   onOpenGroup(group: GroupCardData): void;
   onOpenAchievements(): void;
+  onOpenLevels(): void;
   onShareProfile(): void;
 }
 
@@ -24,14 +25,17 @@ export function HomePage({
   data,
   onOpenGroup,
   onOpenAchievements,
+  onOpenLevels,
   onShareProfile,
 }: HomePageProps) {
   return (
     <div className="page page--home">
       <ProfileHero
         user={data.user}
+        account={data.account}
         progress={data.global_progress}
         onShare={onShareProfile}
+        onOpenLevels={onOpenLevels}
       />
 
       <section className="stats-grid stats-grid--home">
@@ -84,7 +88,11 @@ export function HomePage({
       </section>
 
       <section className="section-block">
-        <button className="section-heading section-heading--button" type="button" onClick={onOpenAchievements}>
+        <button
+          className="section-heading section-heading--button"
+          type="button"
+          onClick={onOpenAchievements}
+        >
           <div>
             <p className="eyebrow">Колекція</p>
             <h2>Останні досягнення</h2>
@@ -94,7 +102,10 @@ export function HomePage({
         <div className="recent-achievements">
           {data.recent_achievements.length > 0 ? (
             data.recent_achievements.map((achievement) => (
-              <article className={`mini-achievement mini-achievement--${achievement.rarity}`} key={achievement.code}>
+              <article
+                className={`mini-achievement mini-achievement--${achievement.rarity}`}
+                key={achievement.code}
+              >
                 <span>{achievement.rarity === "epic" ? <Sparkles /> : <Award />}</span>
                 <div>
                   <strong>{achievement.title}</strong>

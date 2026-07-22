@@ -9,6 +9,7 @@ import type {
   Period,
   RankingPayload,
 } from "./types";
+import type { LevelsPayload } from "./levels";
 import { getInitData } from "../telegram/sdk";
 
 export class ApiError extends Error {
@@ -60,6 +61,7 @@ async function requestBlob(path: string): Promise<Blob> {
 
 export const api = {
   home: () => request<HomePayload>("/home"),
+  levels: () => request<LevelsPayload>("/levels"),
   groups: async () => (await request<{ groups: GroupCardData[] }>("/groups")).groups,
   group: (chatId: number, period: Period) =>
     request<GroupDashboard>(`/groups/${chatId}?period=${period}`),
@@ -91,6 +93,8 @@ export function downloadBlob(blob: Blob, filename: string): void {
   const anchor = document.createElement("a");
   anchor.href = url;
   anchor.download = filename;
+  document.body.append(anchor);
   anchor.click();
+  anchor.remove();
   window.setTimeout(() => URL.revokeObjectURL(url), 1000);
 }

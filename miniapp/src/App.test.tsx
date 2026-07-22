@@ -36,6 +36,23 @@ vi.mock("./api/client", () => ({
       recent_achievements: [],
       groups: [],
     }),
+    levels: vi.fn().mockResolvedValue({
+      current_level: 4,
+      xp_total: 850,
+      max_level: 50,
+      levels: [
+        {
+          level: 4,
+          tier: "Бронза",
+          xp_required: 600,
+          xp_to_next: 400,
+          is_unlocked: true,
+          is_current: true,
+          rewards: [],
+        },
+      ],
+    }),
+    profileCard: vi.fn().mockResolvedValue(new Blob(["png"], { type: "image/png" })),
     groups: vi.fn().mockResolvedValue([]),
     achievements: vi.fn().mockResolvedValue([]),
     rankings: vi.fn(),
@@ -43,12 +60,14 @@ vi.mock("./api/client", () => ({
     updateSettings: vi.fn(),
     resetGroup: vi.fn(),
   },
+  ApiError: class ApiError extends Error {},
+  downloadBlob: vi.fn(),
 }));
 
 describe("App", () => {
   beforeEach(() => vi.clearAllMocks());
 
-  it("renders five Ukrainian navigation tabs and changes active page", async () => {
+  it("renders five Ukrainian navigation tabs and opens the level roadmap", async () => {
     const user = userEvent.setup();
     render(<App />);
 
@@ -59,5 +78,10 @@ describe("App", () => {
 
     await user.click(screen.getByRole("button", { name: "Профіль" }));
     expect(await screen.findByText("Твій прогрес")).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: /Усі рівні ChatPulse/ }));
+    expect(
+      await screen.findByRole("dialog", { name: "Усі рівні ChatPulse" }),
+    ).toBeInTheDocument();
+    expect(screen.getByText("50")).toBeInTheDocument();
   });
 });
