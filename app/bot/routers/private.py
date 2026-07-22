@@ -62,7 +62,7 @@ async def claim_admin_command(
             "Надалі права перевіряються за незмінним Telegram ID, тому зміна username "
             "не забере доступ."
         ),
-        OwnerClaimResult.ALREADY_OWNER: "👑 Цей акаунт уже є власником ChatPulse.",
+        OwnerClaimResult.ALREADY_OWNER: "👑 Цей акаунт вже є власником ChatPulse.",
         OwnerClaimResult.USERNAME_MISMATCH: (
             "⛔ Команда доступна лише акаунту @veheblya."
         ),
