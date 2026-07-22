@@ -58,7 +58,9 @@ def render_profile_card(payload: dict[str, Any]) -> bytes:
     level_width = level_box[2] - level_box[0]
     draw.text((285 - level_width / 2, 452), level, font=level_font, fill=(255, 255, 255))
 
-    draw.text((515, 405), str(progress.get("tier", "Новачок")), font=title_font, fill=(205, 193, 255))
+    draw.text(
+        (515, 405), str(progress.get("tier", "Новачок")), font=title_font, fill=(205, 193, 255)
+    )
     xp = f"{int(progress.get('xp_total', 0)):,}".replace(",", " ")
     draw.text((515, 480), f"{xp} XP", font=metric_font, fill=(255, 255, 255))
     rank = int(progress.get("rank", 0))

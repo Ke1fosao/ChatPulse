@@ -180,7 +180,8 @@ def create_app(settings: Settings | None = None) -> FastAPI:
                 "<body style='margin:0;background:#090b12;color:#fff;font-family:system-ui;"
                 "display:grid;place-items:center;min-height:100vh;text-align:center;padding:24px'>"
                 "<main><h1>ChatPulse Mini App</h1><p style='color:#9aa1b4'>"
-                "Frontend build відсутній у локальному backend-only режимі.</p></main></body></html>",
+                "Frontend build відсутній у локальному backend-only "
+                "режимі.</p></main></body></html>",
                 status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             )
 

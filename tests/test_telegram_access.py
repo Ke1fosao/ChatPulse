@@ -26,9 +26,7 @@ async def test_telegram_access_rules(
     expected_admin: bool,
 ) -> None:
     bot = SimpleNamespace(
-        get_chat_member=AsyncMock(
-            return_value=SimpleNamespace(status=status, is_member=is_member)
-        )
+        get_chat_member=AsyncMock(return_value=SimpleNamespace(status=status, is_member=is_member))
     )
     service = TelegramAccessService(bot)
 

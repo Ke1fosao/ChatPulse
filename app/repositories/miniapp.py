@@ -19,8 +19,8 @@ from app.models import (
     utc_now,
 )
 from app.services.gamification import (
-    ACHIEVEMENTS,
     ACHIEVEMENT_BY_CODE,
+    ACHIEVEMENTS,
     MONTHLY_PROTECTION_DAYS,
     level_progress,
     level_tier,
@@ -72,14 +72,17 @@ class MiniAppRepository:
                 )
             )
 
-            rank = int(
-                await session.scalar(
-                    select(func.count())
-                    .select_from(User)
-                    .where(User.global_xp_total > user.global_xp_total)
+            rank = (
+                int(
+                    await session.scalar(
+                        select(func.count())
+                        .select_from(User)
+                        .where(User.global_xp_total > user.global_xp_total)
+                    )
+                    or 0
                 )
-                or 0
-            ) + 1
+                + 1
+            )
             total_users = int(await session.scalar(select(func.count()).select_from(User)) or 0)
             daily_global = await session.get(GlobalDailyXP, (user_id, today))
             activity_series = await self._global_activity_series(session, user_id, today)
@@ -124,9 +127,7 @@ class MiniAppRepository:
                     "longest_streak": longest_streak,
                     "protection_left": min(protection_values, default=MONTHLY_PROTECTION_DAYS),
                     "groups_count": len(groups),
-                    "messages_7d": sum(
-                        int(item["period"]["messages_count"]) for item in groups
-                    ),
+                    "messages_7d": sum(int(item["period"]["messages_count"]) for item in groups),
                 },
                 "activity_series": activity_series,
                 "recent_achievements": recent_achievements,
@@ -501,8 +502,7 @@ class MiniAppRepository:
     ) -> dict[str, int]:
         if start is None or end is None:
             expressions = [
-                func.coalesce(func.sum(getattr(GroupMember, field)), 0)
-                for field in SUMMARY_FIELDS
+                func.coalesce(func.sum(getattr(GroupMember, field)), 0) for field in SUMMARY_FIELDS
             ]
             query = select(
                 *expressions,

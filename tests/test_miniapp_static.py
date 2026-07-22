@@ -32,7 +32,9 @@ def test_miniapp_serves_index_and_nested_spa_routes(tmp_path: Path, monkeypatch)
     assert nested.text == root.text
 
 
-def test_miniapp_serves_assets_and_returns_404_for_missing_hash(tmp_path: Path, monkeypatch) -> None:
+def test_miniapp_serves_assets_and_returns_404_for_missing_hash(
+    tmp_path: Path, monkeypatch
+) -> None:
     dist = tmp_path / "dist"
     assets = dist / "assets"
     assets.mkdir(parents=True)
