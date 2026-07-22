@@ -17,6 +17,7 @@ from app.database import Database
 from app.repositories.activity import ActivityRepository
 from app.repositories.miniapp import MiniAppRepository
 from app.repositories.miniapp_gamification import MiniAppGamificationRepository
+from app.repositories.owner import OwnerRepository
 from app.services.telegram_access import TelegramAccessService
 from app.services.weekly_reports import send_due_weekly_reports
 
@@ -48,19 +49,25 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         repository = ActivityRepository(database.session_factory)
         gamification_repository = MiniAppGamificationRepository(database.session_factory)
         miniapp_repository = MiniAppRepository(database.session_factory)
+        owner_repository = OwnerRepository(database.session_factory)
         bot = Bot(resolved_settings.bot_token)
-        telegram_access_service = TelegramAccessService(bot)
+        telegram_access_service = TelegramAccessService(
+            bot,
+            owner_repository=owner_repository,
+        )
         dispatcher = build_dispatcher(
             repository,
             default_timezone=resolved_settings.default_timezone,
             fingerprint_secret=resolved_settings.webhook_header_secret,
             miniapp_url=miniapp_url,
+            owner_repository=owner_repository,
         )
 
         app.state.database = database
         app.state.repository = repository
         app.state.gamification_repository = gamification_repository
         app.state.miniapp_repository = miniapp_repository
+        app.state.owner_repository = owner_repository
         app.state.telegram_access_service = telegram_access_service
         app.state.bot = bot
         app.state.dispatcher = dispatcher
