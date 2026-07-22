@@ -10,6 +10,7 @@ from sqlalchemy import (
     Index,
     Integer,
     String,
+    Text,
 )
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
@@ -45,6 +46,49 @@ class BotOwner(Base):
     telegram_user_id: Mapped[int] = mapped_column(BigInteger, unique=True, nullable=False)
     claimed_username: Mapped[str] = mapped_column(String(64), nullable=False)
     claimed_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now)
+
+
+class VipGrant(Base):
+    __tablename__ = "vip_grants"
+    __table_args__ = (
+        CheckConstraint(
+            "expires_at IS NULL OR expires_at > starts_at",
+            name="ck_vip_grants_valid_expiry",
+        ),
+        Index("ix_vip_grants_active_expiry", "is_active", "expires_at"),
+    )
+
+    telegram_user_id: Mapped[int] = mapped_column(
+        BigInteger,
+        ForeignKey("users.telegram_id", ondelete="CASCADE"),
+        primary_key=True,
+    )
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+    starts_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now)
+    expires_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    granted_by_owner_id: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    grant_reason: Mapped[str] = mapped_column(String(300), nullable=False)
+    revoked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    revoked_by_owner_id: Mapped[int | None] = mapped_column(BigInteger, nullable=True)
+    revoke_reason: Mapped[str | None] = mapped_column(String(300), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now)
+
+
+class OwnerAuditLog(Base):
+    __tablename__ = "owner_audit_log"
+    __table_args__ = (
+        Index("ix_owner_audit_created", "created_at"),
+        Index("ix_owner_audit_target", "target_type", "target_id"),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    owner_telegram_user_id: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    action: Mapped[str] = mapped_column(String(64), nullable=False)
+    target_type: Mapped[str] = mapped_column(String(32), nullable=False)
+    target_id: Mapped[str] = mapped_column(String(64), nullable=False)
+    metadata_json: Mapped[str] = mapped_column(Text, default="{}", nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now)
 
 
 class ChatGroup(Base):

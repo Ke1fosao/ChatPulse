@@ -7,6 +7,13 @@ vi.mock("./api/client", () => ({
   api: {
     home: vi.fn().mockResolvedValue({
       user: { telegram_id: 101, first_name: "Dmytro", display_name: "Dmytro" },
+      account: {
+        plan: "free",
+        is_owner: false,
+        is_vip: false,
+        vip_expires_at: null,
+        entitlements: [],
+      },
       global_progress: {
         xp_total: 850,
         level: 4,

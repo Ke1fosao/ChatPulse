@@ -13,6 +13,8 @@ from app.api.miniapp.schemas import (
 from app.repositories.activity import ActivityRepository
 from app.repositories.miniapp import MiniAppRepository
 from app.repositories.miniapp_gamification import MiniAppGamificationRepository
+from app.repositories.owner import OwnerRepository
+from app.repositories.owner_panel import OwnerPanelRepository
 from app.services.profile_cards import render_profile_card
 from app.services.report_cards import render_weekly_report_card
 from app.services.telegram_access import TelegramAccessService
@@ -31,6 +33,14 @@ def _activity_repository(request: Request) -> ActivityRepository:
 
 def _gamification_repository(request: Request) -> MiniAppGamificationRepository:
     return request.app.state.gamification_repository
+
+
+def _owner_repository(request: Request) -> OwnerRepository:
+    return request.app.state.owner_repository
+
+
+def _owner_panel_repository(request: Request) -> OwnerPanelRepository:
+    return request.app.state.owner_panel_repository
 
 
 def _access_service(request: Request) -> TelegramAccessService:
@@ -71,6 +81,12 @@ async def home(
             detail="Профіль ChatPulse ще не створено. Напишіть /start боту.",
         )
     payload["user"]["photo_url"] = user.photo_url
+    is_owner = await _owner_repository(request).is_owner(user.telegram_id)
+    account = await _owner_panel_repository(request).get_account_access(
+        user.telegram_id,
+        is_owner=is_owner,
+    )
+    payload["account"] = account.to_dict()
     return payload
 
 

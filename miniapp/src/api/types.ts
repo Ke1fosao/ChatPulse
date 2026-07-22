@@ -3,6 +3,14 @@ export type Metric = "xp" | "messages" | "reactions" | "replies" | "streak";
 export type TabId = "home" | "groups" | "rankings" | "achievements" | "profile";
 export type ReportTheme = "dark_pulse" | "telegram_wave" | "clean_light";
 
+export interface AccountAccess {
+  plan: "free" | "vip" | "owner";
+  is_owner: boolean;
+  is_vip: boolean;
+  vip_expires_at: string | null;
+  entitlements: string[];
+}
+
 export interface UserSummary {
   telegram_id: number;
   first_name: string;
@@ -93,6 +101,7 @@ export interface RecentAchievement {
 
 export interface HomePayload {
   user: UserSummary;
+  account: AccountAccess;
   global_progress: GlobalProgress;
   quick_stats: QuickStats;
   activity_series: ActivityPoint[];
