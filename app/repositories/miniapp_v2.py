@@ -7,6 +7,7 @@ from sqlalchemy import func, select
 
 from app.achievement_models import AchievementUnlockRecord
 from app.achievements.catalog import ACHIEVEMENTS
+from app.achievements.presentation import achievement_progress_payload
 from app.models import ChatGroup, DailyActivity, GroupMember, MemberAchievement, User, utc_now
 from app.repositories.miniapp import MiniAppRepository
 
@@ -150,12 +151,19 @@ class AchievementMiniAppRepository(MiniAppRepository):
                 final_progress = (
                     max(current, int(earned_data.get("progress", 0))) if earned_data else current
                 )
-                result.append(
-                    definition.to_public_dict(
-                        earned=earned_data is not None,
+                is_earned = earned_data is not None
+                payload = definition.to_public_dict(
+                    earned=is_earned,
+                    progress=final_progress,
+                    earned_at=earned_data["earned_at"] if earned_data else None,
+                    group_title=earned_data["group_title"] if earned_data else None,
+                )
+                payload.update(
+                    achievement_progress_payload(
+                        definition,
                         progress=final_progress,
-                        earned_at=earned_data["earned_at"] if earned_data else None,
-                        group_title=earned_data["group_title"] if earned_data else None,
+                        earned=is_earned,
                     )
                 )
+                result.append(payload)
             return result
