@@ -45,7 +45,7 @@ Would reformat: app/repositories/owner_panel.py
     from starlette.testclient import TestClient as TestClient  # noqa
 
 -- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
-86 passed, 1 warning in 9.13s
+86 passed, 1 warning in 9.25s
 === compileall ===
 Listing 'app'...
 Listing 'app/api'...

@@ -1,27 +1,474 @@
 === tests ===
-npm error code ENOENT
-npm error syscall open
-npm error path /home/runner/work/ChatPulse/ChatPulse/package.json
-npm error errno -2
-npm error enoent Could not read package.json: Error: ENOENT: no such file or directory, open '/home/runner/work/ChatPulse/ChatPulse/package.json'
-npm error enoent This is related to npm not being able to find a file.
-npm error enoent
-npm error A complete log of this run can be found in: /home/runner/.npm/_logs/2026-07-22T08_33_54_015Z-debug-0.log
+
+> chatpulse-miniapp@0.5.0 test
+> vitest --run
+
+
+[1m[30m[46m RUN [49m[39m[22m [36mv4.1.10 [39m[90m/home/runner/work/ChatPulse/ChatPulse/miniapp[39m
+
+ [32m✓[39m src/App.test.tsx [2m([22m[2m1 test[22m[2m)[22m[33m 335[2mms[22m[39m
+     [33m[2m✓[22m[39m renders five Ukrainian navigation tabs and changes active page [33m 333[2mms[22m[39m
+ [31m❯[39m src/owner/OwnerApp.test.tsx [2m([22m[2m3 tests[22m[2m | [22m[31m2 failed[39m[2m)[22m[33m 1135[2mms[22m[39m
+[31m     [31m×[31m renders the isolated owner dashboard after server authorization[39m[32m 88[2mms[22m[39m
+     [32m✓[39m shows a closed screen when the server rejects owner access[32m 32[2mms[22m[39m
+[31m     [31m×[31m grants VIP only after explicit confirmation[39m[33m 1013[2mms[22m[39m
+
+[31m⎯⎯⎯⎯⎯⎯⎯[39m[1m[41m Failed Tests 2 [49m[22m[31m⎯⎯⎯⎯⎯⎯⎯[39m
+
+[41m[1m FAIL [22m[49m src/owner/OwnerApp.test.tsx[2m > [22mOwnerApp[2m > [22mrenders the isolated owner dashboard after server authorization
+[31m[1mError[22m: [2mexpect([22m[31melement[31m[2m).toBeInTheDocument()[22m
+
+[31melement could not be found in the document[31m[39m
+[36m [2m❯[22m src/owner/OwnerApp.test.tsx:[2m73:54[22m[39m
+    [90m 71|[39m     [34mrender[39m([33m<[39m[33mOwnerApp[39m [33m/[39m[33m>[39m)[33m;[39m
+    [90m 72|[39m
+    [90m 73|[39m     expect(await screen.findByText("Owner Control")).toBeInTheDocument…
+    [90m   |[39m                                                      [31m^[39m
+    [90m 74|[39m     [34mexpect[39m(screen[33m.[39m[34mgetByText[39m([32m"12"[39m))[33m.[39m[34mtoBeInTheDocument[39m()[33m;[39m
+    [90m 75|[39m     expect(screen.getByRole("button", { name: "Користувачі" })).toBeIn…
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/owner/OwnerApp.test.tsx[2m > [22mOwnerApp[2m > [22mgrants VIP only after explicit confirmation
+[31m[1mTestingLibraryElementError[22m[39m: Found multiple elements with the text: Owner Control
+
+Here are the matching elements:
+
+Ignored nodes: comments, script, style
+[36m<h1>[39m
+  [0mOwner Control[0m
+[36m</h1>[39m
+
+Ignored nodes: comments, script, style
+[36m<h1>[39m
+  [0mOwner Control[0m
+[36m</h1>[39m
+
+(If this is intentional, then use the `*AllBy*` variant of the query (like `queryAllByText`, `getAllByText`, or `findAllByText`)).
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"owner-shell"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"owner-ambient owner-ambient--one"[39m
+      [36m/>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"owner-ambient owner-ambient--two"[39m
+      [36m/>[39m
+      [36m<header[39m
+        [33mclass[39m=[32m"owner-topbar"[39m
+      [36m>[39m
+        [36m<button[39m
+          [33maria-label[39m=[32m"Повернутися в ChatPulse"[39m
+          [33mclass[39m=[32m"owner-icon-button"[39m
+          [33mtype[39m=[32m"button"[39m
+        [36m>[39m
+          [36m<svg[39m
+            [33maria-hidden[39m=[32m"true"[39m
+            [33mclass[39m=[32m"lucide lucide-arrow-left"[39m
+            [33mfill[39m=[32m"none"[39m
+            [33mheight[39m=[32m"19"[39m
+            [33mstroke[39m=[32m"currentColor"[39m
+            [33mstroke-linecap[39m=[32m"round"[39m
+            [33mstroke-linejoin[39m=[32m"round"[39m
+            [33mstroke-width[39m=[32m"2"[39m
+            [33mviewBox[39m=[32m"0 0 24 24"[39m
+            [33mwidth[39m=[32m"19"[39m
+            [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+          [36m>[39m
+            [36m<path[39m
+              [33md[39m=[32m"m12 19-7-7 7-7"[39m
+            [36m/>[39m
+            [36m<path[39m
+              [33md[39m=[32m"M19 12H5"[39m
+            [36m/>[39m
+          [36m</svg>[39m
+        [36m</button>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"owner-brand"[39m
+        [36m>[39m
+          [36m<span>[39m
+            [36m<svg[39m
+              [33maria-hidden[39m=[32m"true"[39m
+              [33mclass[39m=[32m"lucide lucide-crown"[39m
+              [33mfill[39m=[32m"none"[39m
+              [33mheight[39m=[32m"20"[39m
+              [33mstroke[39m=[32m"currentColor"[39m
+              [33mstroke-linecap[39m=[32m"round"[39m
+              [33mstroke-linejoin[39m=[32m"round"[39m
+              [33mstroke-width[39m=[32m"2"[39m
+              [33mviewBox[39m=[32m"0 0 24 24"[39m
+              [33mwidth[39m=[32m"20"[39m
+              [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+            [36m>[39m
+              [36m<path[39m
+                [33md[39m=[32m"M11.562 3.266a.5.5 0 0 1 .876 0L15.39 8.87a1 1 0 0 0 1.516.294L21.183 5.5a.5.5 0 0 1 .798.519l-2.834 10.246a1 1 0 0 1-.956.734H5.81a1 1 0 0 1-.957-.734L2.02 6.02a.5.5 0 0 1 .798-.519l4.276 3.664a1 1 0 0 0 1.516-.294z"[39m
+              [36m/>[39m
+              [36m<path[39m
+                [33md[39m=[32m"M5 21h14"[39m
+              [36m/>[39m
+            [36m</svg>[39m
+          [36m</span>[39m
+          [36m<div>[39m
+            [36m<p>[39m
+              [0mPrivate system[0m
+            [36m</p>[39m
+            [36m<h1>[39m
+              [0mOwner Control[0m
+            [36m</h1>[39m
+          [36m</div>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"owner-security-badge"[39m
+        [36m>[39m
+          [36m<svg[39m
+            [33maria-hidden[39m=[32m"true"[39m
+            [33mclass[39m=[32m"lucide lucide-shield-check"[39m
+            [33mfill[39m=[32m"none"[39m
+            [33mheight[39m=[32m"14"[39m
+            [33mstroke[39m=[32m"currentColor"[39m
+            [33mstroke-linecap[39m=[32m"round"[39m
+            [33mstroke-linejoin[39m=[32m"round"[39m
+            [33mstroke-width[39m=[32m"2"[39m
+            [33mviewBox[39m=[32m"0 0 24 24"[39m
+            [33mwidth[39m=[32m"14"[39m
+            [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+          [36m>[39m
+            [36m<path[39m
+              [33md[39m=[32m"M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"[39m
+            [36m/>[39m
+            [36m<path[39m
+              [33md[39m=[32m"m9 12 2 2 4-4"[39m
+            [36m/>[39m
+          [36m</svg>[39m
+          [36m<span>[39m
+            [0mSECURE[0m
+          [36m</span>[39m
+        [36m</div>[39m
+      [36m</header>[39m
+      [36m<section[39m
+        [33mclass[39m=[32m"owner-identity"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"owner-avatar"[39m
+        [36m>[39m
+          [0mDM[0m
+        [36m</div>[39m
+        [36m<div>[39m
+          [36m<p>[39m
+            [0mЄдиний власник[0m
+          [36m</p>[39m
+          [36m<strong>[39m
+            [0mDmytro[0m
+          [36m</strong>[39m
+          [36m<small>[39m
+            [0m@veheblya[0m
+          [36m</small>[39m
+        [36m</div>[39m
+        [36m<span[39m
+          [33mclass[39m=[32m"owner-role-pill"[39m
+        [36m>[39m
+          [36m<svg[39m
+            [33maria-hidden[39m=[32m"true"[39m
+            [33mclass[39m=[32m"lucide lucide-crown"[39m
+            [33mfill[39m=[32m"none"[39m
+            [33mheight[39m=[32m"13"[39m
+            [33mstroke[39m=[32m"currentColor"[39m
+            [33mstroke-linecap[39m=[32m"round"[39m
+            [33mstroke-linejoin[39m=[32m"round"[39m
+            [33mstroke-width[39m=[32m"2"[39m
+            [33mviewBox[39m=[32m"0 0 24 24"[39m
+            [33mwidth[39m=[32m"13"[39m
+            [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+          [36m>[39m
+            [36m<path[39m
+              [33md[39m=[32m"M11.562 3.266a.5.5 0 0 1 .876 0L15.39 8.87a1 1 0 0 0 1.516.294L21.183 5.5a.5.5 0 0 1 .798.519l-2.834 10.246a1 1 0 0 1-.956.734H5.81a1 1 0 0 1-.957-.734L2.02 6.02a.5.5 0 0 1 .798-.519l4.276 3.664a1 1 0 0 0 1.516-.294z"[39m
+            [36m/>[39m
+            [36m<path[39m
+              [33md[39m=[32m"M5 21h14"[39m
+            [36m/>[39m
+          [36m</svg>[39m
+          [0m OWNER[0m
+        [36m</span>[39m
+      [36m</section>[39m
+      [36m<main[39m
+        [33mclass[39m=[32m"owner-content"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"owner-page"[39m
+        [36m>[39m
+          [36m<header[39m
+            [33mclass[39m=[32m"owner-page-heading"[39m
+          [36m>[39m
+            [36m<div>[39m
+              [36m<p>[39m
+                [0mСистема під контролем[0m
+              [36m</p>[39m
+              [36m<h2>[39m
+                [0mГоловний огляд[0m
+              [36m</h2>[39m
+            [36m</div>[39m
+            [36m<span>[39m
+              [36m<svg[39m
+                [33maria-hidden[39m=[32m"true"[39m
+                [33mclass[39m=[32m"lucide lucide-activity"[39m
+                [33mfill[39m=[32m"none"[39m
+                [33mheight[39m=[32m"20"[39m
+                [33mstroke[39m=[32m"currentColor"[39m
+                [33mstroke-linecap[39m=[32m"round"[39m
+     ...
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"owner-shell"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"owner-ambient owner-ambient--one"[39m
+      [36m/>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"owner-ambient owner-ambient--two"[39m
+      [36m/>[39m
+      [36m<header[39m
+        [33mclass[39m=[32m"owner-topbar"[39m
+      [36m>[39m
+        [36m<button[39m
+          [33maria-label[39m=[32m"Повернутися в ChatPulse"[39m
+          [33mclass[39m=[32m"owner-icon-button"[39m
+          [33mtype[39m=[32m"button"[39m
+        [36m>[39m
+          [36m<svg[39m
+            [33maria-hidden[39m=[32m"true"[39m
+            [33mclass[39m=[32m"lucide lucide-arrow-left"[39m
+            [33mfill[39m=[32m"none"[39m
+            [33mheight[39m=[32m"19"[39m
+            [33mstroke[39m=[32m"currentColor"[39m
+            [33mstroke-linecap[39m=[32m"round"[39m
+            [33mstroke-linejoin[39m=[32m"round"[39m
+            [33mstroke-width[39m=[32m"2"[39m
+            [33mviewBox[39m=[32m"0 0 24 24"[39m
+            [33mwidth[39m=[32m"19"[39m
+            [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+          [36m>[39m
+            [36m<path[39m
+              [33md[39m=[32m"m12 19-7-7 7-7"[39m
+            [36m/>[39m
+            [36m<path[39m
+              [33md[39m=[32m"M19 12H5"[39m
+            [36m/>[39m
+          [36m</svg>[39m
+        [36m</button>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"owner-brand"[39m
+        [36m>[39m
+          [36m<span>[39m
+            [36m<svg[39m
+              [33maria-hidden[39m=[32m"true"[39m
+              [33mclass[39m=[32m"lucide lucide-crown"[39m
+              [33mfill[39m=[32m"none"[39m
+              [33mheight[39m=[32m"20"[39m
+              [33mstroke[39m=[32m"currentColor"[39m
+              [33mstroke-linecap[39m=[32m"round"[39m
+              [33mstroke-linejoin[39m=[32m"round"[39m
+              [33mstroke-width[39m=[32m"2"[39m
+              [33mviewBox[39m=[32m"0 0 24 24"[39m
+              [33mwidth[39m=[32m"20"[39m
+              [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+            [36m>[39m
+              [36m<path[39m
+                [33md[39m=[32m"M11.562 3.266a.5.5 0 0 1 .876 0L15.39 8.87a1 1 0 0 0 1.516.294L21.183 5.5a.5.5 0 0 1 .798.519l-2.834 10.246a1 1 0 0 1-.956.734H5.81a1 1 0 0 1-.957-.734L2.02 6.02a.5.5 0 0 1 .798-.519l4.276 3.664a1 1 0 0 0 1.516-.294z"[39m
+              [36m/>[39m
+              [36m<path[39m
+                [33md[39m=[32m"M5 21h14"[39m
+              [36m/>[39m
+            [36m</svg>[39m
+          [36m</span>[39m
+          [36m<div>[39m
+            [36m<p>[39m
+              [0mPrivate system[0m
+            [36m</p>[39m
+            [36m<h1>[39m
+              [0mOwner Control[0m
+            [36m</h1>[39m
+          [36m</div>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"owner-security-badge"[39m
+        [36m>[39m
+          [36m<svg[39m
+            [33maria-hidden[39m=[32m"true"[39m
+            [33mclass[39m=[32m"lucide lucide-shield-check"[39m
+            [33mfill[39m=[32m"none"[39m
+            [33mheight[39m=[32m"14"[39m
+            [33mstroke[39m=[32m"currentColor"[39m
+            [33mstroke-linecap[39m=[32m"round"[39m
+            [33mstroke-linejoin[39m=[32m"round"[39m
+            [33mstroke-width[39m=[32m"2"[39m
+            [33mviewBox[39m=[32m"0 0 24 24"[39m
+            [33mwidth[39m=[32m"14"[39m
+            [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+          [36m>[39m
+            [36m<path[39m
+              [33md[39m=[32m"M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"[39m
+            [36m/>[39m
+            [36m<path[39m
+              [33md[39m=[32m"m9 12 2 2 4-4"[39m
+            [36m/>[39m
+          [36m</svg>[39m
+          [36m<span>[39m
+            [0mSECURE[0m
+          [36m</span>[39m
+        [36m</div>[39m
+      [36m</header>[39m
+      [36m<section[39m
+        [33mclass[39m=[32m"owner-identity"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"owner-avatar"[39m
+        [36m>[39m
+          [0mDM[0m
+        [36m</div>[39m
+        [36m<div>[39m
+          [36m<p>[39m
+            [0mЄдиний власник[0m
+          [36m</p>[39m
+          [36m<strong>[39m
+            [0mDmytro[0m
+          [36m</strong>[39m
+          [36m<small>[39m
+            [0m@veheblya[0m
+          [36m</small>[39m
+        [36m</div>[39m
+        [36m<span[39m
+          [33mclass[39m=[32m"owner-role-pill"[39m
+        [36m>[39m
+          [36m<svg[39m
+            [33maria-hidden[39m=[32m"true"[39m
+            [33mclass[39m=[32m"lucide lucide-crown"[39m
+            [33mfill[39m=[32m"none"[39m
+            [33mheight[39m=[32m"13"[39m
+            [33mstroke[39m=[32m"currentColor"[39m
+            [33mstroke-linecap[39m=[32m"round"[39m
+            [33mstroke-linejoin[39m=[32m"round"[39m
+            [33mstroke-width[39m=[32m"2"[39m
+            [33mviewBox[39m=[32m"0 0 24 24"[39m
+            [33mwidth[39m=[32m"13"[39m
+            [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+          [36m>[39m
+            [36m<path[39m
+              [33md[39m=[32m"M11.562 3.266a.5.5 0 0 1 .876 0L15.39 8.87a1 1 0 0 0 1.516.294L21.183 5.5a.5.5 0 0 1 .798.519l-2.834 10.246a1 1 0 0 1-.956.734H5.81a1 1 0 0 1-.957-.734L2.02 6.02a.5.5 0 0 1 .798-.519l4.276 3.664a1 1 0 0 0 1.516-.294z"[39m
+            [36m/>[39m
+            [36m<path[39m
+              [33md[39m=[32m"M5 21h14"[39m
+            [36m/>[39m
+          [36m</svg>[39m
+          [0m OWNER[0m
+        [36m</span>[39m
+      [36m</section>[39m
+      [36m<main[39m
+        [33mclass[39m=[32m"owner-content"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"owner-page"[39m
+        [36m>[39m
+          [36m<header[39m
+            [33mclass[39m=[32m"owner-page-heading"[39m
+          [36m>[39m
+            [36m<div>[39m
+              [36m<p>[39m
+                [0mСистема під контролем[0m
+              [36m</p>[39m
+              [36m<h2>[39m
+                [0mГоловний огляд[0m
+              [36m</h2>[39m
+            [36m</div>[39m
+            [36m<span>[39m
+              [36m<svg[39m
+                [33maria-hidden[39m=[32m"true"[39m
+                [33mclass[39m=[32m"lucide lucide-activity"[39m
+                [33mfill[39m=[32m"none"[39m
+                [33mheight[39m=[32m"20"[39m
+                [33mstroke[39m=[32m"currentColor"[39m
+                [33mstroke-linecap[39m=[32m"round"[39m
+     ...
+[90m [2m❯[22m waitForWrapper node_modules/@testing-library/dom/dist/wait-for.js:[2m163:27[22m[39m
+[90m [2m❯[22m node_modules/@testing-library/dom/dist/query-helpers.js:[2m86:33[22m[39m
+[36m [2m❯[22m src/owner/OwnerApp.test.tsx:[2m89:18[22m[39m
+    [90m 87|[39m     [35mconst[39m user [33m=[39m userEvent[33m.[39m[34msetup[39m()[33m;[39m
+    [90m 88|[39m     [34mrender[39m([33m<[39m[33mOwnerApp[39m [33m/[39m[33m>[39m)[33m;[39m
+    [90m 89|[39m     [35mawait[39m screen[33m.[39m[34mfindByText[39m([32m"Owner Control"[39m)[33m;[39m
+    [90m   |[39m                  [31m^[39m
+    [90m 90|[39m
+    [90m 91|[39m     await user.click(screen.getByRole("button", { name: "Користувачі" …
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯[22m[39m
+
+[31m⎯⎯⎯⎯⎯⎯[39m[1m[41m Unhandled Errors [49m[22m[31m⎯⎯⎯⎯⎯⎯[39m
+[31m[1m
+Vitest caught 1 unhandled error during the test run.
+This might cause false positive tests. Resolve unhandled errors to make sure your tests are not affected.[22m[39m
+
+[31m⎯⎯⎯⎯[39m[1m[41m Unhandled Rejection [49m[22m[31m⎯⎯⎯⎯⎯[39m
+[31m[1mError[22m: [vitest] No "OwnerApiError" export is defined on the "./ownerApi" mock. Did you forget to return it from "vi.mock"?
+If you need to partially mock a module, you can use "importOriginal" helper inside:
+[39m
+vi.mock(import("./ownerApi"), async (importOriginal) => {
+  const actual = await importOriginal()
+  return {
+    ...actual,
+    // your mocked methods
+  }
+})
+
+[90m [2m❯[22m VitestMocker.createError node_modules/vitest/dist/chunks/startVitestModuleRunner.DB-7oCpn.js:[2m62:17[22m[39m
+[90m [2m❯[22m Object.get node_modules/vitest/dist/chunks/startVitestModuleRunner.DB-7oCpn.js:[2m327:16[22m[39m
+[36m [2m❯[22m src/owner/OwnerApp.tsx:[2m77:40[22m[39m
+    [90m 75|[39m       [34mnotify[39m([32m"success"[39m)[33m;[39m
+    [90m 76|[39m     } [35mcatch[39m (reason) {
+    [90m 77|[39m       [35mconst[39m status [33m=[39m reason [35minstanceof[39m [33mOwnerApiError[39m
+    [90m   |[39m                                        [31m^[39m
+    [90m 78|[39m         [33m?[39m reason[33m.[39mstatus
+    [90m 79|[39m         : typeof reason === "object" && reason !== null && "status" in…
+
+[31mThis error originated in "[1msrc/owner/OwnerApp.test.tsx[22m" test file. It doesn't mean the error was thrown inside the file itself, but while it was running.[39m
+[31mThe latest test that might've caused the error is "[1mshows a closed screen when the server rejects owner access[22m". It might mean one of the following:
+- The error was thrown, while Vitest was running this test.
+- If the error occurred after the test had been completed, this was the last documented test before it was thrown.[39m
+[31m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[39m
+
+
+[2m Test Files [22m [1m[31m1 failed[39m[22m[2m | [22m[1m[32m1 passed[39m[22m[90m (2)[39m
+[2m      Tests [22m [1m[31m2 failed[39m[22m[2m | [22m[1m[32m2 passed[39m[22m[90m (4)[39m
+[2m     Errors [22m [1m[31m1 error[39m[22m
+[2m   Start at [22m 08:35:20
+[2m   Duration [22m 2.67s[2m (transform 424ms, setup 211ms, import 844ms, tests 1.47s, environment 1.73s)[22m
+
+
+::error file=/home/runner/work/ChatPulse/ChatPulse/miniapp/src/owner/OwnerApp.tsx,title=Unhandled error,line=77,column=40::Error: [vitest] No "OwnerApiError" export is defined on the "./ownerApi" mock. Did you forget to return it from "vi.mock"?%0AIf you need to partially mock a module, you can use "importOriginal" helper inside:%0A%0Avi.mock(import("./ownerApi"), async (importOriginal) => {%0A  const actual = await importOriginal()%0A  return {%0A    ...actual,%0A    // your mocked methods%0A  }%0A})%0A%0A ❯ src/owner/OwnerApp.tsx:77:40%0A%0AThis error originated in "src/owner/OwnerApp.test.tsx" test file. It doesn't mean the error was thrown inside the file itself, but while it was running.%0AThe latest test that might've caused the error is "shows a closed screen when the server rejects owner access". It might mean one of the following:%0A- The error was thrown, while Vitest was running this test.%0A- If the error occurred after the test had been completed, this was the last documented test before it was thrown.%0A
+
+::error file=/home/runner/work/ChatPulse/ChatPulse/miniapp/src/owner/OwnerApp.test.tsx,title=src/owner/OwnerApp.test.tsx > OwnerApp > renders the isolated owner dashboard after server authorization,line=73,column=54::Error: expect(element).toBeInTheDocument()%0A%0Aelement could not be found in the document%0A ❯ src/owner/OwnerApp.test.tsx:73:54%0A%0A
+
+::error file=/home/runner/work/ChatPulse/ChatPulse/miniapp/src/owner/OwnerApp.test.tsx,title=src/owner/OwnerApp.test.tsx > OwnerApp > grants VIP only after explicit confirmation,line=89,column=18::TestingLibraryElementError: Found multiple elements with the text: Owner Control%0A%0AHere are the matching elements:%0A%0AIgnored nodes: comments, script, style%0A<h1>%0A  Owner Control%0A</h1>%0A%0AIgnored nodes: comments, script, style%0A<h1>%0A  Owner Control%0A</h1>%0A%0A(If this is intentional, then use the `*AllBy*` variant of the query (like `queryAllByText`, `getAllByText`, or `findAllByText`)).%0A%0AIgnored nodes: comments, script, style%0A<body>%0A  <div>%0A    <div%0A      class="owner-shell"%0A    >%0A      <div%0A        class="owner-ambient owner-ambient--one"%0A      />%0A      <div%0A        class="owner-ambient owner-ambient--two"%0A      />%0A      <header%0A        class="owner-topbar"%0A      >%0A        <button%0A          aria-label="Повернутися в ChatPulse"%0A          class="owner-icon-button"%0A          type="button"%0A        >%0A          <svg%0A            aria-hidden="true"%0A            class="lucide lucide-arrow-left"%0A            fill="none"%0A            height="19"%0A            stroke="currentColor"%0A            stroke-linecap="round"%0A            stroke-linejoin="round"%0A            stroke-width="2"%0A            viewBox="0 0 24 24"%0A            width="19"%0A            xmlns="http://www.w3.org/2000/svg"%0A          >%0A            <path%0A              d="m12 19-7-7 7-7"%0A            />%0A            <path%0A              d="M19 12H5"%0A            />%0A          </svg>%0A        </button>%0A        <div%0A          class="owner-brand"%0A        >%0A          <span>%0A            <svg%0A              aria-hidden="true"%0A              class="lucide lucide-crown"%0A              fill="none"%0A              height="20"%0A              stroke="currentColor"%0A              stroke-linecap="round"%0A              stroke-linejoin="round"%0A              stroke-width="2"%0A              viewBox="0 0 24 24"%0A              width="20"%0A              xmlns="http://www.w3.org/2000/svg"%0A            >%0A              <path%0A                d="M11.562 3.266a.5.5 0 0 1 .876 0L15.39 8.87a1 1 0 0 0 1.516.294L21.183 5.5a.5.5 0 0 1 .798.519l-2.834 10.246a1 1 0 0 1-.956.734H5.81a1 1 0 0 1-.957-.734L2.02 6.02a.5.5 0 0 1 .798-.519l4.276 3.664a1 1 0 0 0 1.516-.294z"%0A              />%0A              <path%0A                d="M5 21h14"%0A              />%0A            </svg>%0A          </span>%0A          <div>%0A            <p>%0A              Private system%0A            </p>%0A            <h1>%0A              Owner Control%0A            </h1>%0A          </div>%0A        </div>%0A        <div%0A          class="owner-security-badge"%0A        >%0A          <svg%0A            aria-hidden="true"%0A            class="lucide lucide-shield-check"%0A            fill="none"%0A            height="14"%0A            stroke="currentColor"%0A            stroke-linecap="round"%0A            stroke-linejoin="round"%0A            stroke-width="2"%0A            viewBox="0 0 24 24"%0A            width="14"%0A            xmlns="http://www.w3.org/2000/svg"%0A          >%0A            <path%0A              d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"%0A            />%0A            <path%0A              d="m9 12 2 2 4-4"%0A            />%0A          </svg>%0A          <span>%0A            SECURE%0A          </span>%0A        </div>%0A      </header>%0A      <section%0A        class="owner-identity"%0A      >%0A        <div%0A          class="owner-avatar"%0A        >%0A          DM%0A        </div>%0A        <div>%0A          <p>%0A            Єдиний власник%0A          </p>%0A          <strong>%0A            Dmytro%0A          </strong>%0A          <small>%0A            @veheblya%0A          </small>%0A        </div>%0A        <span%0A          class="owner-role-pill"%0A        >%0A          <svg%0A            aria-hidden="true"%0A            class="lucide lucide-crown"%0A            fill="none"%0A            height="13"%0A            stroke="currentColor"%0A            stroke-linecap="round"%0A            stroke-linejoin="round"%0A            stroke-width="2"%0A            viewBox="0 0 24 24"%0A            width="13"%0A            xmlns="http://www.w3.org/2000/svg"%0A          >%0A            <path%0A              d="M11.562 3.266a.5.5 0 0 1 .876 0L15.39 8.87a1 1 0 0 0 1.516.294L21.183 5.5a.5.5 0 0 1 .798.519l-2.834 10.246a1 1 0 0 1-.956.734H5.81a1 1 0 0 1-.957-.734L2.02 6.02a.5.5 0 0 1 .798-.519l4.276 3.664a1 1 0 0 0 1.516-.294z"%0A            />%0A            <path%0A              d="M5 21h14"%0A            />%0A          </svg>%0A           OWNER%0A        </span>%0A      </section>%0A      <main%0A        class="owner-content"%0A      >%0A        <div%0A          class="owner-page"%0A        >%0A          <header%0A            class="owner-page-heading"%0A          >%0A            <div>%0A              <p>%0A                Система під контролем%0A              </p>%0A              <h2>%0A                Головний огляд%0A              </h2>%0A            </div>%0A            <span>%0A              <svg%0A                aria-hidden="true"%0A                class="lucide lucide-activity"%0A                fill="none"%0A                height="20"%0A                stroke="currentColor"%0A                stroke-linecap="round"%0A     ...%0A%0AIgnored nodes: comments, script, style%0A<body>%0A  <div>%0A    <div%0A      class="owner-shell"%0A    >%0A      <div%0A        class="owner-ambient owner-ambient--one"%0A      />%0A      <div%0A        class="owner-ambient owner-ambient--two"%0A      />%0A      <header%0A        class="owner-topbar"%0A      >%0A        <button%0A          aria-label="Повернутися в ChatPulse"%0A          class="owner-icon-button"%0A          type="button"%0A        >%0A          <svg%0A            aria-hidden="true"%0A            class="lucide lucide-arrow-left"%0A            fill="none"%0A            height="19"%0A            stroke="currentColor"%0A            stroke-linecap="round"%0A            stroke-linejoin="round"%0A            stroke-width="2"%0A            viewBox="0 0 24 24"%0A            width="19"%0A            xmlns="http://www.w3.org/2000/svg"%0A          >%0A            <path%0A              d="m12 19-7-7 7-7"%0A            />%0A            <path%0A              d="M19 12H5"%0A            />%0A          </svg>%0A        </button>%0A        <div%0A          class="owner-brand"%0A        >%0A          <span>%0A            <svg%0A              aria-hidden="true"%0A              class="lucide lucide-crown"%0A              fill="none"%0A              height="20"%0A              stroke="currentColor"%0A              stroke-linecap="round"%0A              stroke-linejoin="round"%0A              stroke-width="2"%0A              viewBox="0 0 24 24"%0A              width="20"%0A              xmlns="http://www.w3.org/2000/svg"%0A            >%0A              <path%0A                d="M11.562 3.266a.5.5 0 0 1 .876 0L15.39 8.87a1 1 0 0 0 1.516.294L21.183 5.5a.5.5 0 0 1 .798.519l-2.834 10.246a1 1 0 0 1-.956.734H5.81a1 1 0 0 1-.957-.734L2.02 6.02a.5.5 0 0 1 .798-.519l4.276 3.664a1 1 0 0 0 1.516-.294z"%0A              />%0A              <path%0A                d="M5 21h14"%0A              />%0A            </svg>%0A          </span>%0A          <div>%0A            <p>%0A              Private system%0A            </p>%0A            <h1>%0A              Owner Control%0A            </h1>%0A          </div>%0A        </div>%0A        <div%0A          class="owner-security-badge"%0A        >%0A          <svg%0A            aria-hidden="true"%0A            class="lucide lucide-shield-check"%0A            fill="none"%0A            height="14"%0A            stroke="currentColor"%0A            stroke-linecap="round"%0A            stroke-linejoin="round"%0A            stroke-width="2"%0A            viewBox="0 0 24 24"%0A            width="14"%0A            xmlns="http://www.w3.org/2000/svg"%0A          >%0A            <path%0A              d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"%0A            />%0A            <path%0A              d="m9 12 2 2 4-4"%0A            />%0A          </svg>%0A          <span>%0A            SECURE%0A          </span>%0A        </div>%0A      </header>%0A      <section%0A        class="owner-identity"%0A      >%0A        <div%0A          class="owner-avatar"%0A        >%0A          DM%0A        </div>%0A        <div>%0A          <p>%0A            Єдиний власник%0A          </p>%0A          <strong>%0A            Dmytro%0A          </strong>%0A          <small>%0A            @veheblya%0A          </small>%0A        </div>%0A        <span%0A          class="owner-role-pill"%0A        >%0A          <svg%0A            aria-hidden="true"%0A            class="lucide lucide-crown"%0A            fill="none"%0A            height="13"%0A            stroke="currentColor"%0A            stroke-linecap="round"%0A            stroke-linejoin="round"%0A            stroke-width="2"%0A            viewBox="0 0 24 24"%0A            width="13"%0A            xmlns="http://www.w3.org/2000/svg"%0A          >%0A            <path%0A              d="M11.562 3.266a.5.5 0 0 1 .876 0L15.39 8.87a1 1 0 0 0 1.516.294L21.183 5.5a.5.5 0 0 1 .798.519l-2.834 10.246a1 1 0 0 1-.956.734H5.81a1 1 0 0 1-.957-.734L2.02 6.02a.5.5 0 0 1 .798-.519l4.276 3.664a1 1 0 0 0 1.516-.294z"%0A            />%0A            <path%0A              d="M5 21h14"%0A            />%0A          </svg>%0A           OWNER%0A        </span>%0A      </section>%0A      <main%0A        class="owner-content"%0A      >%0A        <div%0A          class="owner-page"%0A        >%0A          <header%0A            class="owner-page-heading"%0A          >%0A            <div>%0A              <p>%0A                Система під контролем%0A              </p>%0A              <h2>%0A                Головний огляд%0A              </h2>%0A            </div>%0A            <span>%0A              <svg%0A                aria-hidden="true"%0A                class="lucide lucide-activity"%0A                fill="none"%0A                height="20"%0A                stroke="currentColor"%0A                stroke-linecap="round"%0A     ...%0A ❯ waitForWrapper node_modules/@testing-library/dom/dist/wait-for.js:163:27%0A ❯ node_modules/@testing-library/dom/dist/query-helpers.js:86:33%0A ❯ src/owner/OwnerApp.test.tsx:89:18%0A%0A
 === typecheck ===
-npm error code ENOENT
-npm error syscall open
-npm error path /home/runner/work/ChatPulse/ChatPulse/package.json
-npm error errno -2
-npm error enoent Could not read package.json: Error: ENOENT: no such file or directory, open '/home/runner/work/ChatPulse/ChatPulse/package.json'
-npm error enoent This is related to npm not being able to find a file.
-npm error enoent
-npm error A complete log of this run can be found in: /home/runner/.npm/_logs/2026-07-22T08_33_54_127Z-debug-0.log
+
+> chatpulse-miniapp@0.5.0 typecheck
+> tsc -b --pretty false
+
 === build ===
-npm error code ENOENT
-npm error syscall open
-npm error path /home/runner/work/ChatPulse/ChatPulse/package.json
-npm error errno -2
-npm error enoent Could not read package.json: Error: ENOENT: no such file or directory, open '/home/runner/work/ChatPulse/ChatPulse/package.json'
-npm error enoent This is related to npm not being able to find a file.
-npm error enoent
-npm error A complete log of this run can be found in: /home/runner/.npm/_logs/2026-07-22T08_33_54_228Z-debug-0.log
+
+> chatpulse-miniapp@0.5.0 build
+> tsc -b && vite build
+
+[36mvite v8.1.5 [32mbuilding client environment for production...[36m[39m
+[2Ktransforming...✓ 1803 modules transformed.
+rendering chunks...
+computing gzip size...
+dist/index.html                   0.60 kB │ gzip:  0.34 kB
+dist/assets/index-SC-2zmFj.css   42.80 kB │ gzip:  9.30 kB
+dist/assets/index-DTtiHLeV.js   263.08 kB │ gzip: 79.61 kB
+
+[32m✓ built in 208ms[39m
