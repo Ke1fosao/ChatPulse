@@ -8,7 +8,7 @@ from app.bot.routers.reactions import router as reactions_router
 from app.bot.routers.settings import router as settings_router
 from app.repositories.activity import ActivityRepository
 from app.repositories.gamification_v2 import AchievementGamificationRepository
-from app.repositories.miniapp import MiniAppRepository
+from app.repositories.miniapp_v2 import AchievementMiniAppRepository
 from app.repositories.owner import OwnerRepository
 
 ROUTER_TEMPLATES: tuple[Router, ...] = (
@@ -33,7 +33,9 @@ def build_dispatcher(
     dispatcher["gamification_repository"] = AchievementGamificationRepository(
         repository._session_factory
     )
-    dispatcher["miniapp_repository"] = MiniAppRepository(repository._session_factory)
+    dispatcher["miniapp_repository"] = AchievementMiniAppRepository(
+        repository._session_factory
+    )
     dispatcher["owner_repository"] = resolved_owner_repository
     dispatcher["default_timezone"] = default_timezone
     dispatcher["fingerprint_secret"] = fingerprint_secret
