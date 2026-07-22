@@ -39,10 +39,12 @@ export function OwnerUsers({
   const [saving, setSaving] = useState(false);
   const [formError, setFormError] = useState("");
 
-  const minimumDate = useMemo(() => new Date(Date.now() + 86_400_000).toISOString().slice(0, 10), []);
+  const minimumDate = useMemo(
+    () => new Date(Date.now() + 86_400_000).toISOString().slice(0, 10),
+    [],
+  );
 
   const close = () => {
-    if (saving) return;
     setSelected(null);
     setMode("permanent");
     setExpiresAt("");
@@ -65,7 +67,9 @@ export function OwnerUsers({
     try {
       await onGrant(selected.telegram_id, {
         mode,
-        ...(mode === "until" ? { expires_at: new Date(`${expiresAt}T23:59:59Z`).toISOString() } : {}),
+        ...(mode === "until"
+          ? { expires_at: new Date(`${expiresAt}T23:59:59Z`).toISOString() }
+          : {}),
         reason: reason.trim(),
         confirmation: "ВИДАТИ VIP",
       });
@@ -134,17 +138,25 @@ export function OwnerUsers({
 
       <section className="owner-list" aria-busy={loading}>
         {users.length === 0 ? (
-          <div className="owner-empty">{loading ? "Завантаження користувачів…" : "Користувачів не знайдено."}</div>
+          <div className="owner-empty">
+            {loading ? "Завантаження користувачів…" : "Користувачів не знайдено."}
+          </div>
         ) : users.map((user) => (
           <article className="owner-user-card" key={user.telegram_id}>
-            <div className="owner-user-avatar">{user.display_name.slice(0, 2).toUpperCase()}</div>
+            <div className="owner-user-avatar">
+              {user.display_name.slice(0, 2).toUpperCase()}
+            </div>
             <div className="owner-user-main">
               <div>
                 <strong>{user.display_name}</strong>
-                {user.is_vip ? <span className="vip-badge"><Crown size={11} /> VIP</span> : null}
+                {user.is_vip ? (
+                  <span className="vip-badge"><Crown size={11} /> VIP</span>
+                ) : null}
               </div>
               <p>{user.username ? `@${user.username}` : `ID ${user.telegram_id}`}</p>
-              <small>{user.global_xp_total.toLocaleString("uk-UA")} XP · {user.groups_count} груп · {user.is_vip ? dateLabel(user.vip_expires_at) : "Free"}</small>
+              <small>
+                {user.global_xp_total.toLocaleString("uk-UA")} XP · {user.groups_count} груп · {user.is_vip ? dateLabel(user.vip_expires_at) : "Free"}
+              </small>
             </div>
             <button
               type="button"
@@ -159,35 +171,62 @@ export function OwnerUsers({
       </section>
 
       {selected ? (
-        <div className="owner-modal-backdrop" role="presentation" onMouseDown={(event) => {
-          if (event.target === event.currentTarget) close();
-        }}>
-          <section className="owner-modal" role="dialog" aria-modal="true" aria-label="Керування VIP">
+        <div
+          className="owner-modal-backdrop"
+          role="presentation"
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget && !saving) close();
+          }}
+        >
+          <section
+            className="owner-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Керування VIP"
+          >
             <header>
               <div>
                 <p>{selected.is_vip ? "Активний VIP" : "Новий VIP-клієнт"}</p>
                 <h3>{selected.display_name}</h3>
               </div>
-              <button type="button" aria-label="Закрити" onClick={close}><X size={19} /></button>
+              <button type="button" aria-label="Закрити" disabled={saving} onClick={close}>
+                <X size={19} />
+              </button>
             </header>
 
             {!selected.is_vip ? (
               <div className="owner-mode-grid">
-                <button type="button" className={mode === "permanent" ? "is-active" : ""} onClick={() => setMode("permanent")}>
+                <button
+                  type="button"
+                  className={mode === "permanent" ? "is-active" : ""}
+                  onClick={() => setMode("permanent")}
+                >
                   <Crown size={18} /><strong>Безстроково</strong><small>Поки ти не відкличеш</small>
                 </button>
-                <button type="button" className={mode === "until" ? "is-active" : ""} onClick={() => setMode("until")}>
+                <button
+                  type="button"
+                  className={mode === "until" ? "is-active" : ""}
+                  onClick={() => setMode("until")}
+                >
                   <Sparkles size={18} /><strong>До дати</strong><small>Автоматичне завершення</small>
                 </button>
               </div>
             ) : (
-              <div className="owner-current-vip"><Crown size={18} /><span>Доступ активний {dateLabel(selected.vip_expires_at)}</span></div>
+              <div className="owner-current-vip">
+                <Crown size={18} />
+                <span>Доступ активний {dateLabel(selected.vip_expires_at)}</span>
+              </div>
             )}
 
             {!selected.is_vip && mode === "until" ? (
               <label className="owner-field">
                 <span>VIP діє до</span>
-                <input type="date" min={minimumDate} value={expiresAt} onChange={(event) => setExpiresAt(event.target.value)} />
+                <input
+                  type="date"
+                  min={minimumDate}
+                  value={expiresAt}
+                  onChange={(event) => setExpiresAt(event.target.value)}
+                />
               </label>
             ) : null}
 
@@ -198,18 +237,30 @@ export function OwnerUsers({
                 value={reason}
                 maxLength={300}
                 onChange={(event) => setReason(event.target.value)}
-                placeholder={selected.is_vip ? "Чому відкликаєш VIP" : "Наприклад: партнерський клієнт"}
+                placeholder={selected.is_vip
+                  ? "Чому відкликаєш VIP"
+                  : "Наприклад: партнерський клієнт"}
               />
             </label>
 
             {formError ? <p className="owner-form-error">{formError}</p> : null}
 
             {selected.is_vip ? (
-              <button type="button" className="owner-danger-action" disabled={saving} onClick={() => void revoke()}>
+              <button
+                type="button"
+                className="owner-danger-action"
+                disabled={saving}
+                onClick={() => void revoke()}
+              >
                 <ShieldOff size={18} /> {saving ? "Відкликаю…" : "Відкликати VIP"}
               </button>
             ) : (
-              <button type="button" className="owner-primary-action" disabled={saving} onClick={() => void grant()}>
+              <button
+                type="button"
+                className="owner-primary-action"
+                disabled={saving}
+                onClick={() => void grant()}
+              >
                 <Crown size={18} /> {saving ? "Видаю…" : "Видати VIP"}
               </button>
             )}
