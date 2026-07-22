@@ -67,7 +67,10 @@ class AchievementRepository:
         for event in event_list:
             for unlock in evaluate_event(event, snapshot, existing_codes):
                 definition = unlock.definition
-                scope_key = achievement_scope_key(definition.scope, unlock.telegram_chat_id)
+                scope_key = achievement_scope_key(
+                    definition.scope,
+                    unlock.telegram_chat_id,
+                )
                 try:
                     async with session.begin_nested():
                         record = AchievementUnlockRecord(
@@ -136,20 +139,7 @@ class AchievementRepository:
         async with self._session_factory() as session, session.begin():
             rows = (
                 await session.execute(
-                    select(
-                        AchievementEventRecord,
-                        AchievementUnlockRecord,
-                        ChatGroup.title,
-                    )
-                    .outerjoin(
-                        AchievementUnlockRecord,
-                        AchievementUnlockRecord.id == AchievementEventRecord.achievement_unlock_id,
-                    )
-                    .outerjoin(
-                        ChatGroup,
-                        ChatGroup.telegram_chat_id == AchievementUnlockRecord.telegram_chat_id,
-                    )
-                    .where(
+                    self._event_query().where(
                         AchievementEventRecord.telegram_user_id == user_id,
                         AchievementEventRecord.seen_at.is_(None),
                     )
@@ -165,53 +155,32 @@ class AchievementRepository:
             for event, unlock, group_title in rows:
                 if event.delivered_at is None:
                     event.delivered_at = delivered_at
-                base = {
-                    "event_id": int(event.id),
-                    "event_type": event.event_type,
-                    "created_at": event.created_at.isoformat(),
-                }
-                if event.event_type == "collection_update":
-                    payload = self._safe_payload(event.payload_json)
-                    rarest_codes = [str(code) for code in payload.get("rarest_codes", [])[:3]]
-                    achievements = []
-                    for code in rarest_codes:
-                        definition = ACHIEVEMENT_BY_CODE.get(code)
-                        if definition is None:
-                            continue
-                        achievements.append(
-                            definition.to_public_dict(
-                                earned=True,
-                                progress=definition.threshold,
-                            )
-                        )
-                    result.append(
-                        {
-                            **base,
-                            "summary": {
-                                "count": max(int(payload.get("count", 0)), 0),
-                                "achievements": achievements,
-                            },
-                        }
-                    )
-                    continue
-
-                if unlock is None:
-                    continue
-                definition = ACHIEVEMENT_BY_CODE.get(unlock.achievement_code)
-                if definition is None:
-                    continue
-                result.append(
-                    {
-                        **base,
-                        "achievement": definition.to_public_dict(
-                            earned=True,
-                            progress=int(unlock.final_progress),
-                            earned_at=unlock.earned_at.isoformat(),
-                            group_title=(str(group_title) if group_title is not None else None),
-                        ),
-                    }
-                )
+                payload = self._event_payload(event, unlock, group_title)
+                if payload is not None:
+                    result.append(payload)
             return result
+
+    async def get_unlock_event(
+        self,
+        user_id: int,
+        event_id: int,
+    ) -> dict[str, Any] | None:
+        async with self._session_factory() as session:
+            row = (
+                await session.execute(
+                    self._event_query().where(
+                        AchievementEventRecord.id == event_id,
+                        AchievementEventRecord.telegram_user_id == user_id,
+                        AchievementEventRecord.event_type == "unlock",
+                    )
+                )
+            ).first()
+            if row is None:
+                return None
+            event, unlock, group_title = row
+            if unlock is None:
+                return None
+            return self._event_payload(event, unlock, group_title)
 
     async def mark_seen(self, user_id: int, event_id: int) -> bool:
         return await self._mark_event(user_id, event_id, field="seen_at")
@@ -274,9 +243,80 @@ class AchievementRepository:
         )
 
     @staticmethod
+    def _event_query():
+        return (
+            select(
+                AchievementEventRecord,
+                AchievementUnlockRecord,
+                ChatGroup.title,
+            )
+            .outerjoin(
+                AchievementUnlockRecord,
+                AchievementUnlockRecord.id
+                == AchievementEventRecord.achievement_unlock_id,
+            )
+            .outerjoin(
+                ChatGroup,
+                ChatGroup.telegram_chat_id
+                == AchievementUnlockRecord.telegram_chat_id,
+            )
+        )
+
+    @classmethod
+    def _event_payload(
+        cls,
+        event: AchievementEventRecord,
+        unlock: AchievementUnlockRecord | None,
+        group_title: str | None,
+    ) -> dict[str, Any] | None:
+        base = {
+            "event_id": int(event.id),
+            "event_type": event.event_type,
+            "created_at": event.created_at.isoformat(),
+        }
+        if event.event_type == "collection_update":
+            raw_payload = cls._safe_payload(event.payload_json)
+            rarest_codes = [
+                str(code) for code in raw_payload.get("rarest_codes", [])[:3]
+            ]
+            achievements = []
+            for code in rarest_codes:
+                definition = ACHIEVEMENT_BY_CODE.get(code)
+                if definition is None:
+                    continue
+                achievements.append(
+                    definition.to_public_dict(
+                        earned=True,
+                        progress=definition.threshold,
+                    )
+                )
+            return {
+                **base,
+                "summary": {
+                    "count": max(int(raw_payload.get("count", 0)), 0),
+                    "achievements": achievements,
+                },
+            }
+
+        if unlock is None:
+            return None
+        definition = ACHIEVEMENT_BY_CODE.get(unlock.achievement_code)
+        if definition is None:
+            return None
+        return {
+            **base,
+            "achievement": definition.to_public_dict(
+                earned=True,
+                progress=int(unlock.final_progress),
+                earned_at=unlock.earned_at.isoformat(),
+                group_title=str(group_title) if group_title is not None else None,
+            ),
+        }
+
+    @staticmethod
     def _safe_payload(value: str) -> dict[str, Any]:
         try:
             payload = json.loads(value)
-        except (TypeError, ValueError, json.JSONDecodeError):
+        except (TypeError, ValueError):
             return {}
         return payload if isinstance(payload, dict) else {}
