@@ -2,10 +2,12 @@ import pytest
 
 from app.domain import MessageActivity
 from app.services.gamification import (
+    MAX_LEVEL,
     adjusted_message_xp,
     content_fingerprints,
     format_comparison,
     hamming_distance,
+    level_catalog,
     level_for_xp,
     level_tier,
     message_base_xp,
@@ -45,6 +47,22 @@ def test_level_thresholds_are_stable() -> None:
     assert level_for_xp(1000) == 5
     assert level_tier(5) == "Бронза"
     assert level_tier(35) == "Діамант"
+
+
+def test_level_roadmap_has_a_clear_maximum_and_milestones() -> None:
+    assert MAX_LEVEL == 50
+    assert level_for_xp(xp_threshold_for_level(75)) == MAX_LEVEL
+    assert level_tier(MAX_LEVEL) == "Легенда"
+
+    catalog = level_catalog(1000)
+    assert catalog["max_level"] == MAX_LEVEL
+    assert catalog["current_level"] == 5
+    assert len(catalog["levels"]) == MAX_LEVEL
+    assert catalog["levels"][0]["xp_required"] == 0
+    assert catalog["levels"][4]["is_current"] is True
+    assert catalog["levels"][4]["milestone_label"] == "Бронза"
+    assert catalog["levels"][-1]["milestone_label"] == "Легенда"
+    assert catalog["next_tier"]["level"] == 10
 
 
 def test_keyed_fingerprints_detect_similarity_without_storing_text() -> None:
