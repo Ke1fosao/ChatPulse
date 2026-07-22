@@ -12,6 +12,7 @@ from app.bot.keyboards_settings import (
 from app.domain import GroupData
 from app.repositories.activity import ActivityRepository
 from app.repositories.gamification import GamificationRepository
+from app.repositories.owner import OwnerRepository
 from app.services.gamification import parse_report_time
 
 router = Router(name="settings")
@@ -43,12 +44,22 @@ def settings_text(settings: dict) -> str:
         f"Час звіту: {report_time}\n"
         f"Тема картки: {theme}\n\n"
         "Точний час можна змінити командою /setreporttime 20:30\n"
-        "Зміни доступні лише адміністраторам групи."
+        "Зміни доступні адміністраторам групи та власнику ChatPulse."
     )
 
 
-async def is_group_admin(bot: Bot, chat_id: int, user_id: int) -> bool:
-    member = await bot.get_chat_member(chat_id, user_id)
+async def is_group_admin(
+    bot: Bot,
+    chat_id: int,
+    user_id: int,
+    owner_repository: OwnerRepository | None = None,
+) -> bool:
+    if owner_repository is not None and await owner_repository.is_owner(user_id):
+        return True
+    try:
+        member = await bot.get_chat_member(chat_id, user_id)
+    except Exception:
+        return False
     return member.status in ADMIN_STATUSES
 
 
@@ -93,12 +104,14 @@ async def settings_command(
     bot: Bot,
     repository: ActivityRepository,
     gamification_repository: GamificationRepository,
+    owner_repository: OwnerRepository,
     default_timezone: str,
 ) -> None:
     if message.from_user is None or not await is_group_admin(
         bot,
         message.chat.id,
         message.from_user.id,
+        owner_repository,
     ):
         await message.answer("⚠️ Налаштування доступні лише адміністраторам групи.")
         return
@@ -114,12 +127,14 @@ async def set_report_time_command(
     bot: Bot,
     repository: ActivityRepository,
     gamification_repository: GamificationRepository,
+    owner_repository: OwnerRepository,
     default_timezone: str,
 ) -> None:
     if message.from_user is None or not await is_group_admin(
         bot,
         message.chat.id,
         message.from_user.id,
+        owner_repository,
     ):
         await message.answer("⚠️ Час звіту може змінювати лише адміністратор.")
         return
@@ -142,11 +157,16 @@ async def set_report_time_command(
 
 
 @router.message(Command("resetstats"), F.chat.type.in_(GROUP_TYPES))
-async def reset_command(message: Message, bot: Bot) -> None:
+async def reset_command(
+    message: Message,
+    bot: Bot,
+    owner_repository: OwnerRepository,
+) -> None:
     if message.from_user is None or not await is_group_admin(
         bot,
         message.chat.id,
         message.from_user.id,
+        owner_repository,
     ):
         await message.answer("⚠️ Скидати статистику може лише адміністратор.")
         return
@@ -162,11 +182,17 @@ async def settings_callback(
     bot: Bot,
     repository: ActivityRepository,
     gamification_repository: GamificationRepository,
+    owner_repository: OwnerRepository,
 ) -> None:
     message = callback.message
     if message is None:
         return
-    if not await is_group_admin(bot, message.chat.id, callback.from_user.id):
+    if not await is_group_admin(
+        bot,
+        message.chat.id,
+        callback.from_user.id,
+        owner_repository,
+    ):
         await callback.answer("Лише для адміністраторів", show_alert=True)
         return
 
