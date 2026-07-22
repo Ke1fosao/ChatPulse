@@ -1,4 +1,4 @@
-name: Profile Redesign Diagnostics
+name: Profile Backend Autoformat
 
 on:
   push:
@@ -11,7 +11,7 @@ permissions:
   contents: write
 
 jobs:
-  diagnostics:
+  format:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -20,45 +20,16 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - uses: actions/setup-node@v4
-        with:
-          node-version: "24"
-      - name: Capture backend diagnostics
-        shell: bash
+      - name: Apply Ruff formatting
         run: |
-          set +e
-          pip install -q -e ".[dev]"
-          {
-            echo '=== ruff check ==='
-            ruff check .
-            echo '=== ruff format ==='
-            ruff format --check .
-            echo '=== pytest ==='
-            pytest -q
-            echo '=== compileall ==='
-            python -m compileall app
-          } > backend-profile-diagnostics.txt 2>&1
-          exit 0
-      - name: Capture frontend diagnostics
-        shell: bash
-        run: |
-          set +e
-          cd miniapp
-          npm install --no-audit --no-fund
-          {
-            echo '=== tests ==='
-            npm test -- --run
-            echo '=== typecheck ==='
-            npm run typecheck
-            echo '=== build ==='
-            npm run build
-          } > ../frontend-profile-diagnostics.txt 2>&1
-          exit 0
-      - name: Commit exact diagnostics
+          pip install -q ruff
+          ruff check --fix app/services/gamification.py app/services/profile_cards.py
+          ruff format app/services/gamification.py app/services/profile_cards.py
+      - name: Commit formatted files
         shell: bash
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add backend-profile-diagnostics.txt frontend-profile-diagnostics.txt miniapp/package-lock.json
-          git commit -m "test: capture exact profile redesign failures" || exit 0
+          git add app/services/gamification.py app/services/profile_cards.py
+          git commit -m "style: format profile level backend" || exit 0
           git push origin HEAD:feat/profile-levels-share-v06
