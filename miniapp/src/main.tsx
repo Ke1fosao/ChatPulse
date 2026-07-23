@@ -9,6 +9,7 @@ import "./styles/group-settings.css";
 import "./styles/achievement-celebration.css";
 import "./styles/achievement-collection.css";
 import "./styles/achievement-card-fixes.css";
+import "./styles/featured-premium.css";
 import "./styles/owner.css";
 import "./styles/owner-mobile.css";
 import "./styles/profile-experience.css";
