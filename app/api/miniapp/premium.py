@@ -1,3 +1,4 @@
+from datetime import UTC, datetime
 from typing import Annotated, Any, Literal
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
@@ -82,6 +83,35 @@ async def premium_context(
         "trial_available": bool(billing["trial_available"] and not account.is_owner),
         "active_subscription": billing["active_subscription"],
     }
+
+
+@router.get("/year-summary")
+async def premium_year_summary(
+    request: Request,
+    user: Annotated[TelegramMiniAppUser, Depends(get_miniapp_user)],
+    year: Annotated[int, Query(ge=2020, le=2100)],
+) -> dict:
+    account = await _account(request, user.telegram_id)
+    if not _has(account, "profile.premium_card"):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Річний підсумок доступний у ChatPulse VIP.",
+        )
+    if year > datetime.now(UTC).year:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="Майбутній рік ще не має статистики.",
+        )
+    payload = await request.app.state.miniapp_repository.get_year_summary(
+        user.telegram_id,
+        year,
+    )
+    if payload is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Профіль не знайдено.",
+        )
+    return payload
 
 
 @router.get("/groups/{chat_id}/analytics")
