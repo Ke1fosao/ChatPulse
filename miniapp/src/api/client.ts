@@ -24,6 +24,8 @@ export class ApiError extends Error {
   constructor(
     message: string,
     public readonly status: number,
+    public readonly code?: string,
+    public readonly reason?: string | null,
   ) {
     super(message);
   }
@@ -47,7 +49,22 @@ async function responseError(response: Response): Promise<ApiError> {
   } catch {
     body = {};
   }
-  return new ApiError(body.detail ?? "Не вдалося завантажити дані.", response.status);
+  if (typeof body.detail === "string") {
+    return new ApiError(body.detail, response.status);
+  }
+  if (body.detail && typeof body.detail === "object") {
+    return new ApiError(
+      typeof body.detail.message === "string"
+        ? body.detail.message
+        : "Не вдалося завантажити дані.",
+      response.status,
+      typeof body.detail.code === "string" ? body.detail.code : undefined,
+      typeof body.detail.reason === "string" || body.detail.reason === null
+        ? body.detail.reason
+        : undefined,
+    );
+  }
+  return new ApiError("Не вдалося завантажити дані.", response.status);
 }
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
