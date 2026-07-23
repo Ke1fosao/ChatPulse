@@ -22,7 +22,8 @@ Included:
 - controlled refunds;
 - owner notes on payments or users;
 - subscription cancellation/restoration;
-- audit log entries for every financial mutation.
+- audit log entries for every financial mutation;
+- an entitlement-source ledger so refunds never remove unrelated paid or gifted VIP time.
 
 Excluded:
 
@@ -62,8 +63,9 @@ Top KPI cards:
 Definitions:
 
 - revenue includes payments with status `paid` and excludes refunded or refund-required payments;
-- paid VIP means the current active grant is backed by at least one successful non-refunded payment;
-- gifted VIP means the active grant was issued by owner action and has no active paid entitlement;
+- paid VIP means current access has at least one active payment-backed entitlement source;
+- gifted VIP means current access has an active owner-backed source and no active payment-backed source;
+- mixed VIP means both payment-backed and owner-backed sources are active;
 - MRR is the sum of Stars for active non-canceled monthly subscriptions;
 - ARPPU is successful non-refunded Stars divided by unique paying users in the period.
 
@@ -173,6 +175,7 @@ Opening a transaction shows:
 - full payment metadata;
 - current user VIP status;
 - complete payment history for that user;
+- entitlement-source timeline;
 - owner VIP grant history;
 - subscription state;
 - refund state;
@@ -207,13 +210,16 @@ Execution order:
 2. create a pending audit entry;
 3. call Telegram refund method;
 4. on success, mark payment `refunded` with timestamp and reason;
-5. recalculate paid VIP entitlement without removing unrelated paid time or owner-granted time;
-6. send idempotent refund notification to the user;
-7. finalize audit metadata.
+5. revoke only the entitlement source created by that payment;
+6. recompute the current VIP projection from all remaining active sources;
+7. send idempotent refund notification to the user;
+8. finalize audit metadata.
+
+A refund must never shorten another paid purchase, a different subscription period, or an owner-granted VIP source.
 
 Failure handling:
 
-- Telegram failure leaves payment unchanged;
+- Telegram failure leaves payment and entitlement sources unchanged;
 - audit entry records failure category without leaking secrets;
 - UI shows a clear retryable or non-retryable error;
 - duplicate refund requests are idempotent.
@@ -245,6 +251,41 @@ Add `owner_payment_notes` table:
 
 Notes are private to Owner Panel, protected by RLS, and never exposed to the user-facing Mini App.
 
+## Entitlement-source ledger
+
+Add `vip_access_sources` as the source of truth for why a user has VIP.
+
+Fields:
+
+- id;
+- Telegram user ID;
+- source type: `payment`, `owner`, or `system`;
+- payment ID nullable and unique for payment-backed sources;
+- owner audit-log ID nullable for owner-backed sources;
+- starts-at timestamp;
+- expires-at timestamp nullable for permanent access;
+- revoked-at timestamp nullable;
+- revoke reason nullable;
+- created-at and updated-at timestamps.
+
+Rules:
+
+- every successful payment creates or extends a payment-backed source;
+- every manual owner grant creates an owner-backed source rather than overwriting paid access;
+- revoking an owner gift only revokes its owner-backed source;
+- refunding a payment only revokes its payment-backed source;
+- effective VIP is active when at least one non-revoked source is currently valid;
+- effective expiry is permanent when any active source is permanent, otherwise the maximum active expiry;
+- the existing `vip_grants` row becomes a compatibility projection/cache and is recomputed transactionally from active sources.
+
+Migration and backfill:
+
+- existing successful payments are backfilled as payment-backed sources;
+- existing active manual grants are backfilled as owner-backed sources;
+- ambiguous legacy rows are classified conservatively and logged for owner review;
+- no user loses currently active access during migration;
+- migration is additive and verified with pre/post counts.
+
 ## Backend architecture
 
 Add a focused `OwnerRevenueRepository` rather than expanding `OwnerPanelRepository` indefinitely.
@@ -256,17 +297,23 @@ Responsibilities:
 - compute trial funnel;
 - list and filter transactions;
 - return payment detail;
-- save notes;
-- coordinate refund and subscription mutations through a service layer.
+- save notes.
+
+Add `VipEntitlementService`:
+
+- create and revoke entitlement sources;
+- recompute the compatibility `vip_grants` projection;
+- determine paid, gifted, mixed, and expired states;
+- guarantee refund isolation.
 
 Add `OwnerPaymentService` for Telegram side effects:
 
 - refund payment;
 - cancel or restore subscription;
-- entitlement recalculation;
-- notification and audit coordination.
+- call `VipEntitlementService` only after Telegram success;
+- coordinate notifications and audit entries.
 
-This keeps queries separate from external side effects.
+This keeps analytical queries, entitlement calculations, and external side effects separate.
 
 ## API design
 
@@ -295,11 +342,12 @@ Request schemas forbid unknown fields. Date ranges and filters are validated ser
 Add:
 
 - `vip_product_events` for conversion events;
+- `vip_access_sources` for isolated entitlement sources;
 - `owner_payment_notes` for private notes;
-- optional explicit subscription state fields if current invoice intent status is insufficient;
-- indexes for payment date, plan, status, user, and recurring state.
+- explicit subscription state fields when current invoice intent status is insufficient;
+- indexes for payment date, plan, status, user, recurring state, source user, source expiry, and source payment.
 
-Existing billing tables remain the source of truth for invoices and payments.
+Existing billing tables remain the source of truth for invoices and payment transactions. `vip_access_sources` becomes the source of truth for entitlement contributions. `vip_grants` remains a derived compatibility projection.
 
 All new tables:
 
@@ -335,27 +383,39 @@ Financial audit actions:
 - `subscription.canceled_by_owner`;
 - `subscription.restored_by_owner`;
 - `payment.note_updated`;
-- `payments.csv_exported`.
+- `payments.csv_exported`;
+- `entitlement.source_created`;
+- `entitlement.source_revoked`;
+- `entitlement.projection_recomputed`.
 
-Audit metadata includes IDs, plan, Stars, reason, and outcome. It never stores bot tokens or Telegram initData.
+Audit metadata includes IDs, plan, Stars, reason, source IDs, and outcome. It never stores bot tokens or Telegram initData.
 
 ## Testing
 
 Repository tests:
 
-- KPI calculations with paid, refunded, trial, recurring, and gifted VIP data;
+- KPI calculations with paid, refunded, trial, recurring, gifted, and mixed VIP data;
 - MRR and ARPPU;
 - new vs repeat classification;
 - funnel conversion;
 - filters and pagination;
 - CSV export.
 
+Entitlement tests:
+
+- overlapping purchases;
+- permanent owner gift plus paid subscription;
+- refund of one among multiple purchases;
+- owner gift revocation without paid-access loss;
+- migration backfill without access loss;
+- idempotent source creation and revocation.
+
 Service tests:
 
 - successful refund;
 - Telegram refund failure;
 - duplicate refund idempotency;
-- entitlement recalculation;
+- isolated entitlement recalculation;
 - subscription cancel and restore;
 - notification idempotency;
 - complete audit trail.
@@ -378,4 +438,4 @@ Frontend tests:
 
 ## Rollout
 
-Implement after the VIP distributed-experience PR. Apply the additive database migration before merging application code. Run backend, frontend, typecheck, production build, and Docker checks before merge.
+Implement after the VIP distributed-experience PR. Apply the additive database migration and entitlement backfill before merging application code. Verify pre/post access counts, then run backend, frontend, typecheck, production build, and Docker checks before merge.
