@@ -6,7 +6,6 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from app.domain import GroupData
 from app.models import ChatGroup, utc_now
-from app.repositories.activity import ActivityRepository
 
 PRIVILEGED_BOT_STATUSES = {"administrator", "creator"}
 ACTIVE_BOT_STATUSES = {"member", "administrator", "creator", "restricted"}
@@ -17,7 +16,7 @@ def normalize_bot_status(status: str) -> str:
 
 
 async def upsert_group_from_message(
-    repository: ActivityRepository | Any,
+    repository: Any,
     data: GroupData,
 ) -> None:
     """Refresh group metadata without downgrading known administrator privileges."""
@@ -27,10 +26,7 @@ async def upsert_group_from_message(
     if session_factory is not None:
         async with session_factory() as session:
             group = await session.get(ChatGroup, data.telegram_chat_id)
-            if (
-                group is not None
-                and normalize_bot_status(group.bot_status) in PRIVILEGED_BOT_STATUSES
-            ):
+            if group is not None and normalize_bot_status(group.bot_status) in PRIVILEGED_BOT_STATUSES:
                 bot_status = normalize_bot_status(group.bot_status)
 
     await repository.upsert_group(
