@@ -32,6 +32,18 @@ export interface PremiumAnalyticsPayload extends PremiumAnalyticsRange {
   trends: Record<string, number | null>;
 }
 
+export interface YearSummaryPayload {
+  year: number;
+  messages_count: number;
+  xp_earned: number;
+  active_days: number;
+  groups_count: number;
+  best_streak: number;
+  top_month: number | null;
+  monthly_xp: Array<{ month: number; xp: number }>;
+  achievements_count: number;
+}
+
 export interface PremiumContextPayload {
   account: AccountAccess;
   trial_available: boolean;
