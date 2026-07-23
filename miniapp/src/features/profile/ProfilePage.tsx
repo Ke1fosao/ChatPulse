@@ -13,6 +13,8 @@ import {
 } from "lucide-react";
 import type { HomePayload } from "../../api/types";
 import { ProfileHero } from "../../components/ProfileHero";
+import { usePremium } from "../../premium/PremiumContext";
+import { VipBadge } from "../../premium/VipBadge";
 
 interface ProfilePageProps {
   data: HomePayload;
@@ -29,6 +31,24 @@ export function ProfilePage({
   onOpenAchievements,
   onOpenGroups,
 }: ProfilePageProps) {
+  const { trialAvailable, openVip } = usePremium();
+  const openPlan = () => {
+    if (data.account.is_owner) {
+      window.location.assign("/miniapp/owner");
+      return;
+    }
+    if (data.account.is_vip) {
+      window.location.assign("/miniapp/vip?source=profile");
+      return;
+    }
+    openVip("profile", "premium.all");
+  };
+  const planTitle = data.account.is_owner
+    ? "Відкрити Owner Panel"
+    : data.account.is_vip
+      ? "Керувати ChatPulse VIP"
+      : "Відкрий ChatPulse VIP";
+
   return (
     <div className="page profile-page">
       <ProfileHero
@@ -39,7 +59,10 @@ export function ProfilePage({
         onOpenLevels={onOpenLevels}
       />
 
-      <section
+      <button
+        type="button"
+        aria-label={planTitle}
+        onClick={openPlan}
         className={`account-plan-card ${
           data.account.is_owner
             ? "account-plan-card--owner"
@@ -50,19 +73,16 @@ export function ProfilePage({
       >
         <span><Crown size={22} /></span>
         <div>
-          <p>
-            {data.account.is_owner
-              ? "Owner · Creator"
-              : data.account.is_vip
-                ? "VIP-клієнт"
-                : "Стандартний учасник"}
-          </p>
+          <div className="account-plan-card__title">
+            <p>{planTitle}</p>
+            <VipBadge account={data.account} />
+          </div>
           <strong>
             {data.account.is_owner
-              ? "Ти створив і контролюєш ChatPulse"
+              ? "Повна аналітика та керування ChatPulse"
               : data.account.is_vip
                 ? "Усі premium-функції активні"
-                : "Базовий доступ до аналітики"}
+                : "Більше аналітики там, де вона потрібна"}
           </strong>
           <small>
             {data.account.is_owner
@@ -73,17 +93,17 @@ export function ProfilePage({
                       dateStyle: "medium",
                     }).format(new Date(data.account.vip_expires_at))}`
                   : "Безстроковий VIP-доступ"
-                : "Premium-функції відкриваються через VIP"}
+                : trialAvailable
+                  ? "7 днів за 1 ⭐"
+                  : "Натисни, щоб переглянути доступні тарифи"}
           </small>
         </div>
-      </section>
+        <ExternalLink size={18} />
+      </button>
 
       <section className="profile-milestones panel">
         <div className="section-heading">
-          <div>
-            <p className="eyebrow">Особисті рекорди</p>
-            <h2>Твій прогрес</h2>
-          </div>
+          <div><p className="eyebrow">Особисті рекорди</p><h2>Твій прогрес</h2></div>
           <Trophy size={22} />
         </div>
         <div className="milestone-grid">
@@ -95,37 +115,20 @@ export function ProfilePage({
       </section>
 
       <section className="profile-actions panel">
-        <button
-          type="button"
-          className="profile-vip-action"
-          onClick={() => window.location.assign("/miniapp/vip")}
-        >
+        <button type="button" className="profile-vip-action" onClick={openPlan}>
           <span><Crown size={20} /></span>
           <div>
-            <strong>
-              {data.account.is_owner || data.account.is_vip
-                ? "Керувати ChatPulse VIP"
-                : "Спробувати VIP за 1 ⭐"}
-            </strong>
+            <strong>{planTitle}</strong>
             <small>
-              {data.account.is_owner || data.account.is_vip
-                ? "Тарифи, експорт, досягнення та підписка"
-                : "7 днів усіх premium-функцій без автопродовження"}
+              {data.account.is_owner
+                ? "Оплати, користувачі, групи та аудит"
+                : data.account.is_vip
+                  ? "Тариф, історія платежів та підписка"
+                  : "VIP-функції відкриваються прямо у потрібних розділах"}
             </small>
           </div>
           <ExternalLink size={18} />
         </button>
-        {data.account.is_owner ? (
-          <button
-            type="button"
-            className="profile-owner-action"
-            onClick={() => window.location.assign("/miniapp/owner")}
-          >
-            <span><Crown size={20} /></span>
-            <div><strong>Owner Panel</strong><small>Користувачі, VIP, групи та аудит</small></div>
-            <ExternalLink size={18} />
-          </button>
-        ) : null}
         <button type="button" onClick={onOpenLevels}>
           <span><Trophy size={20} /></span>
           <div><strong>Усі рівні ChatPulse</strong><small>50 рівнів, статуси та вимоги XP</small></div>
