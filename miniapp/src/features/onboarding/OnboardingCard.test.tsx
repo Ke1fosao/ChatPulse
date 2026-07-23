@@ -1,17 +1,24 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
+import type { OnboardingPayload } from "../../api/types";
 import { OnboardingCard } from "./OnboardingCard";
 
-const incomplete = {
+const incomplete: OnboardingPayload = {
   completed_steps: 1,
   total_steps: 3,
   is_complete: false,
   add_group_url: "https://t.me/chatpulse_bot?startgroup=true",
-  primary_action: "add_group" as const,
+  primary_action: "add_group",
+  linked_group: null,
   steps: [
     { id: "start", title: "Запусти ChatPulse", description: "Готово", completed: true },
     { id: "group", title: "Додай у групу", description: "Додай бота", completed: false },
-    { id: "activity", title: "Створи перший пульс", description: "Напиши повідомлення", completed: false },
+    {
+      id: "activity",
+      title: "Створи перший пульс",
+      description: "Напиши повідомлення",
+      completed: false,
+    },
   ],
 };
 
