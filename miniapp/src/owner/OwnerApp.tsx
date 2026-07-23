@@ -4,6 +4,7 @@ import { initTelegram, isTelegramContext, notify } from "../telegram/sdk";
 import { OwnerAudit } from "./OwnerAudit";
 import { OwnerGroups } from "./OwnerGroups";
 import { OwnerOverview } from "./OwnerOverview";
+import { OwnerPayments } from "./OwnerPayments";
 import { OwnerShell } from "./OwnerShell";
 import { OwnerUsers } from "./OwnerUsers";
 import { OwnerApiError, ownerApi } from "./ownerApi";
@@ -186,6 +187,9 @@ export function OwnerApp() {
           onUpdate={updateGroup}
         />
       );
+    }
+    if (activeTab === "payments") {
+      return <OwnerPayments />;
     }
     if (activeTab === "audit") {
       return <OwnerAudit items={audit} loading={busy} onRefresh={() => void loadAudit()} />;
