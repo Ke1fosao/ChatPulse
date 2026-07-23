@@ -8,6 +8,7 @@ import { LevelsDialog } from "./components/LevelsDialog";
 import { ShareCardDialog } from "./components/ShareCardDialog";
 import { AchievementCelebrationLayer } from "./features/achievements/AchievementCelebration";
 import { AchievementsPage } from "./features/achievements/AchievementsPage";
+import { BlockedAccountPage } from "./features/access/BlockedAccountPage";
 import { GroupCenterPage } from "./features/groups/GroupCenterPage";
 import { GroupsPage } from "./features/groups/GroupsPage";
 import { HomePage } from "./features/home/HomePage";
@@ -28,12 +29,14 @@ export function App() {
   const [loading, setLoading] = useState(true);
   const [secondaryLoading, setSecondaryLoading] = useState(false);
   const [error, setError] = useState("");
+  const [blockedAccount, setBlockedAccount] = useState<{ reason: string | null } | null>(null);
   const [shareOpen, setShareOpen] = useState(false);
   const [levelsOpen, setLevelsOpen] = useState(false);
 
   const loadCore = useCallback(async () => {
     setLoading(true);
     setError("");
+    setBlockedAccount(null);
     try {
       const [homePayload, groupPayload, achievementPayload] = await Promise.all([
         api.home(),
@@ -45,10 +48,15 @@ export function App() {
       setAchievements(achievementPayload);
       notify("success");
     } catch (reason) {
-      const message =
-        reason instanceof ApiError ? reason.message : "Не вдалося відкрити ChatPulse.";
-      setError(message);
-      notify("error");
+      if (reason instanceof ApiError && reason.code === "ACCOUNT_BLOCKED") {
+        setHome(null);
+        setBlockedAccount({ reason: reason.reason ?? null });
+      } else {
+        const message =
+          reason instanceof ApiError ? reason.message : "Не вдалося відкрити ChatPulse.";
+        setError(message);
+        notify("error");
+      }
     } finally {
       setLoading(false);
     }
@@ -179,6 +187,10 @@ export function App() {
         <div className="boot-progress"><span /></div>
       </main>
     );
+  }
+
+  if (blockedAccount) {
+    return <BlockedAccountPage reason={blockedAccount.reason} />;
   }
 
   if (!home) {
