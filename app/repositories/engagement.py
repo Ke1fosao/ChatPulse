@@ -245,9 +245,10 @@ class EngagementRepository:
                 status="claimed",
                 claimed_at=current,
             )
-            session.add(notification)
             try:
-                await session.flush()
+                async with session.begin_nested():
+                    session.add(notification)
+                    await session.flush()
             except IntegrityError:
                 return None
             return int(notification.id)
@@ -354,6 +355,20 @@ class EngagementRepository:
                 )
             )
             return [int(value) for value in rows.all()]
+
+    async def get_group_xp_ranks(self, chat_id: int) -> dict[int, int]:
+        async with self._session_factory() as session:
+            rows = (
+                await session.execute(
+                    select(GroupMember.telegram_user_id, GroupMember.xp_total)
+                    .where(GroupMember.telegram_chat_id == chat_id)
+                    .order_by(
+                        GroupMember.xp_total.desc(),
+                        GroupMember.telegram_user_id.asc(),
+                    )
+                )
+            ).all()
+            return {int(row.telegram_user_id): index for index, row in enumerate(rows, start=1)}
 
     async def update_rank_snapshot(
         self,
