@@ -13,6 +13,7 @@ from fastapi.responses import FileResponse, HTMLResponse
 from app.api.billing.routes import router as billing_router
 from app.api.internal_achievements import router as internal_achievement_router
 from app.api.miniapp.featured import router as featured_achievement_router
+from app.api.miniapp.onboarding import router as onboarding_router
 from app.api.miniapp.premium import router as premium_router
 from app.api.miniapp.routes import router as miniapp_router
 from app.api.owner.revenue import router as owner_revenue_router
@@ -23,6 +24,7 @@ from app.database import Database
 from app.repositories.achievements import AchievementRepository
 from app.repositories.activity import ActivityRepository
 from app.repositories.billing import BillingRepository
+from app.repositories.engagement import EngagementRepository
 from app.repositories.featured_achievements import FeaturedAchievementRepository
 from app.repositories.miniapp_gamification import MiniAppGamificationRepository
 from app.repositories.miniapp_v2 import AchievementMiniAppRepository
@@ -31,6 +33,7 @@ from app.repositories.owner_panel import OwnerPanelRepository
 from app.repositories.owner_revenue import OwnerRevenueRepository
 from app.repositories.vip_product_events import VipProductEventRepository
 from app.services.owner_payments import OwnerPaymentService
+from app.services.retention_lifecycle import RetentionLifecycleService
 from app.services.telegram_access import TelegramAccessService
 from app.services.vip_lifecycle import VipLifecycleService
 from app.services.weekly_reports import send_due_weekly_reports
@@ -70,8 +73,13 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         owner_revenue_repository = OwnerRevenueRepository(database.session_factory)
         owner_payment_service = OwnerPaymentService(database.session_factory)
         billing_repository = BillingRepository(database.session_factory)
+        engagement_repository = EngagementRepository(database.session_factory)
         vip_product_event_repository = VipProductEventRepository(database.session_factory)
         vip_lifecycle_service = VipLifecycleService(database.session_factory)
+        retention_lifecycle_service = RetentionLifecycleService(
+            database.session_factory,
+            miniapp_url=miniapp_url,
+        )
         bot = Bot(resolved_settings.bot_token)
         telegram_access_service = TelegramAccessService(
             bot,
@@ -84,6 +92,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             miniapp_url=miniapp_url,
             owner_repository=owner_repository,
             billing_repository=billing_repository,
+            engagement_repository=engagement_repository,
         )
 
         app.state.database = database
@@ -97,12 +106,15 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         app.state.owner_revenue_repository = owner_revenue_repository
         app.state.owner_payment_service = owner_payment_service
         app.state.billing_repository = billing_repository
+        app.state.engagement_repository = engagement_repository
         app.state.vip_product_event_repository = vip_product_event_repository
         app.state.vip_lifecycle_service = vip_lifecycle_service
+        app.state.retention_lifecycle_service = retention_lifecycle_service
         app.state.telegram_access_service = telegram_access_service
         app.state.bot = bot
         app.state.dispatcher = dispatcher
         app.state.miniapp_url = miniapp_url
+        app.state.bot_username = None
 
         if resolved_settings.webhook_url:
             await bot.set_webhook(
@@ -113,6 +125,8 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             )
         if miniapp_url:
             try:
+                bot_info = await bot.get_me()
+                app.state.bot_username = bot_info.username
                 await bot.set_chat_menu_button(
                     menu_button=MenuButtonWebApp(
                         text="Відкрити ChatPulse",
@@ -128,9 +142,10 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             await bot.session.close()
             await database.dispose()
 
-    app = FastAPI(title="ChatPulse", version="0.9.0", lifespan=lifespan)
+    app = FastAPI(title="ChatPulse", version="0.10.0", lifespan=lifespan)
     app.state.settings = resolved_settings
     app.include_router(miniapp_router)
+    app.include_router(onboarding_router)
     app.include_router(featured_achievement_router)
     app.include_router(premium_router)
     app.include_router(billing_router)
@@ -140,7 +155,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
 
     @app.get("/health")
     async def health() -> dict[str, str]:
-        return {"status": "ok", "service": "chatpulse", "version": "0.9.0"}
+        return {"status": "ok", "service": "chatpulse", "version": "0.10.0"}
 
     @app.post(resolved_settings.webhook_path)
     async def telegram_webhook(
@@ -209,6 +224,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         sent = await send_due_weekly_reports(
             request.app.state.bot,
             request.app.state.repository,
+            retention_service=request.app.state.retention_lifecycle_service,
         )
         return {"ok": True, "sent": sent}
 
@@ -221,8 +237,13 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         ),
     ) -> dict[str, int | bool]:
         require_scheduler_secret(scheduler_secret)
-        result = await request.app.state.vip_lifecycle_service.send_due(request.app.state.bot)
-        return {"ok": True, **result}
+        vip_result = await request.app.state.vip_lifecycle_service.send_due(
+            request.app.state.bot
+        )
+        retention_result = await request.app.state.retention_lifecycle_service.send_due(
+            request.app.state.bot
+        )
+        return {"ok": True, **vip_result, **retention_result}
 
     @app.get("/miniapp", include_in_schema=False)
     @app.get("/miniapp/", include_in_schema=False)
