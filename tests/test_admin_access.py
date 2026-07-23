@@ -14,12 +14,12 @@ async def test_owner_has_every_permission_and_staff_roles_are_fixed(tmp_path) ->
     async with database.session_factory() as session, session.begin():
         session.add_all(
             [
-                User(telegram_id=101, username="owner", first_name="Owner"),
+                User(telegram_id=101, username="veheblya", first_name="Owner"),
                 User(telegram_id=202, username="admin", first_name="Admin"),
                 User(telegram_id=303, username="support", first_name="Support"),
             ]
         )
-    await OwnerRepository(database.session_factory).claim_owner(101, "owner")
+    await OwnerRepository(database.session_factory).claim_owner(101, "veheblya")
     async with database.session_factory() as session, session.begin():
         session.add_all(
             [
@@ -56,11 +56,11 @@ async def test_inactive_or_unknown_staff_cannot_resolve(tmp_path) -> None:
     async with database.session_factory() as session, session.begin():
         session.add_all(
             [
-                User(telegram_id=101, username="owner", first_name="Owner"),
+                User(telegram_id=101, username="veheblya", first_name="Owner"),
                 User(telegram_id=202, username="moderator", first_name="Moderator"),
             ]
         )
-    await OwnerRepository(database.session_factory).claim_owner(101, "owner")
+    await OwnerRepository(database.session_factory).claim_owner(101, "veheblya")
     async with database.session_factory() as session, session.begin():
         session.add(
             AdminStaff(
