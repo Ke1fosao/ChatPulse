@@ -1,4 +1,4 @@
-import type { AccountAccess } from "../api/types";
+import type { AccountAccess, ActivityPoint, Summary } from "../api/types";
 
 export type VipPlacementEventType =
   | "vip_viewed"
@@ -8,6 +8,29 @@ export type VipPlacementEventType =
   | "vip_payment_canceled"
   | "vip_feature_previewed"
   | "vip_feature_unlocked";
+
+export type PremiumAnalyticsPeriod = "quarter" | "half_year" | "year";
+
+export interface PremiumAnalyticsRange {
+  period: PremiumAnalyticsPeriod;
+  days: number;
+  start: string;
+  end: string;
+  overview: Summary;
+  activity_series: ActivityPoint[];
+}
+
+export interface PremiumAnalyticsPayload extends PremiumAnalyticsRange {
+  group: {
+    telegram_chat_id: number;
+    title: string;
+    username?: string | null;
+    initials: string;
+    timezone: string;
+  };
+  comparison: PremiumAnalyticsRange | null;
+  trends: Record<string, number | null>;
+}
 
 export interface PremiumContextPayload {
   account: AccountAccess;
