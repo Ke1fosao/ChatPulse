@@ -12,6 +12,8 @@ import { ActivityChart } from "../../components/ActivityChart";
 import { GroupCard } from "../../components/GroupCard";
 import { ProfileHero } from "../../components/ProfileHero";
 import { StatCard } from "../../components/StatCard";
+import { usePremium } from "../../premium/PremiumContext";
+import { YearSummaryCard } from "../year/YearSummaryCard";
 
 interface HomePageProps {
   data: HomePayload;
@@ -28,6 +30,7 @@ export function HomePage({
   onOpenLevels,
   onShareProfile,
 }: HomePageProps) {
+  const premium = usePremium();
   return (
     <div className="page page--home">
       <ProfileHero
@@ -67,6 +70,12 @@ export function HomePage({
       </section>
 
       <ActivityChart data={data.activity_series} metric="xp" title="Пульс твого XP" />
+
+      <YearSummaryCard
+        account={premium.account}
+        trialAvailable={premium.trialAvailable}
+        onOpenVip={premium.openVip}
+      />
 
       <section className="section-block">
         <div className="section-heading">
