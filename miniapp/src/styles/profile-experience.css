@@ -72,7 +72,7 @@
   display: grid;
   align-items: end;
   padding: 12px;
-  background: rgba(3,5,10,.8);
+  background: rgba(3,5,10,.82);
   backdrop-filter: blur(18px);
 }
 body.levels-dialog-open,
@@ -82,12 +82,12 @@ body.share-dialog-open .bottom-nav { opacity: 0; pointer-events: none; transform
 
 .levels-dialog,
 .share-dialog--premium {
-  width: min(100%, 620px);
-  max-height: min(90dvh, 900px);
+  width: min(100%, 560px);
+  max-height: min(92dvh, 900px);
   margin: 0 auto;
   overflow-y: auto;
   border: 1px solid rgba(255,255,255,.1);
-  border-radius: 30px;
+  border-radius: 28px;
   background: linear-gradient(180deg, #171b29, #0d1019);
   box-shadow: 0 35px 100px rgba(0,0,0,.62);
 }
@@ -130,12 +130,37 @@ body.share-dialog-open .bottom-nav { opacity: 0; pointer-events: none; transform
 .level-row__next { display: flex; gap: 2px; align-items: center; color: #81899c; font-size: 8px; }
 
 .share-dialog--premium { padding: 18px; }
-.share-image-frame { display: grid; place-items: center; min-height: 300px; margin-top: 16px; overflow: hidden; border: 1px solid var(--stroke); border-radius: 24px; background: #090b12; }
-.share-image-frame img { display: block; width: 100%; height: auto; max-height: 58dvh; object-fit: contain; }
+.share-image-frame {
+  display: grid;
+  place-items: center;
+  min-height: 260px;
+  margin-top: 15px;
+  overflow: hidden;
+  border: 1px solid rgba(141,112,255,.25);
+  border-radius: 22px;
+  background: #090b12;
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,.02);
+}
+.share-image-frame img { display: block; width: 100%; height: auto; max-height: 52dvh; object-fit: contain; }
 .share-image-loading { display: flex; gap: 9px; align-items: center; color: var(--muted-bright); font-size: 10px; }
-.share-preview--fallback { width: 100%; min-height: 310px; border: 0; border-radius: 0; }
+.share-preview--fallback { width: 100%; min-height: 280px; border: 0; border-radius: 0; }
 .share-preview--fallback > strong { color: #f0cc77; font-size: 8px; letter-spacing: .12em; }
-.share-primary-actions { display: grid; grid-template-columns: 1.2fr 1fr; gap: 9px; margin-top: 12px; }
+.share-streak-focus {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 12px;
+  align-items: center;
+  margin-top: 11px;
+  padding: 13px 14px;
+  border: 1px solid rgba(255,137,74,.25);
+  border-radius: 18px;
+  background: linear-gradient(135deg, rgba(255,112,54,.13), rgba(141,112,255,.06));
+}
+.share-streak-focus > span { display: grid; place-items: center; width: 46px; height: 46px; border-radius: 15px; background: rgba(255,116,54,.14); color: #ff9858; }
+.share-streak-focus small { display: block; color: #e4a17b; font-size: 7px; font-weight: 900; letter-spacing: .13em; }
+.share-streak-focus strong { display: block; margin-top: 2px; font-size: 18px; }
+.share-streak-focus p { margin-top: 2px; color: #b9a3a0; font-size: 8px; line-height: 1.4; }
+.share-primary-actions { display: grid; grid-template-columns: 1.15fr 1fr; gap: 9px; margin-top: 11px; }
 .share-primary-actions button { min-width: 0; font-size: 10px; }
 .share-secondary-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 9px; margin-top: 9px; }
 .share-secondary-actions button { display: flex; gap: 7px; align-items: center; justify-content: center; min-height: 42px; border: 1px solid var(--stroke); border-radius: 14px; background: rgba(255,255,255,.035); color: var(--muted-bright); font-size: 9px; font-weight: 800; }
@@ -150,8 +175,9 @@ body.share-dialog-open .bottom-nav { opacity: 0; pointer-events: none; transform
   .profile-hero__rank--structured div { padding: 8px 6px; }
   .profile-role-badge span { display: none; }
   .levels-backdrop, .share-dialog-backdrop { padding: 6px; }
-  .levels-dialog, .share-dialog--premium { max-height: calc(var(--tg-viewport-height, 100dvh) - 12px); border-radius: 26px; }
-  .share-primary-actions { grid-template-columns: 1fr; }
+  .levels-dialog, .share-dialog--premium { max-height: calc(var(--tg-viewport-height, 100dvh) - 12px); border-radius: 24px; }
+  .share-primary-actions { grid-template-columns: 1fr 1fr; }
+  .share-image-frame img { max-height: 46dvh; }
 }
 
 @media (min-width: 680px) {
