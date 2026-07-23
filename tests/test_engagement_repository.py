@@ -8,6 +8,10 @@ from app.models import ChatGroup, GroupMember, User
 from app.repositories.engagement import EngagementRepository
 
 
+def _utc(value: datetime) -> datetime:
+    return value.replace(tzinfo=UTC) if value.tzinfo is None else value.astimezone(UTC)
+
+
 @pytest.mark.asyncio
 async def test_onboarding_progresses_from_start_to_first_group_activity(tmp_path) -> None:
     database = Database(f"sqlite+aiosqlite:///{tmp_path / 'engagement.db'}")
@@ -64,7 +68,8 @@ async def test_onboarding_progresses_from_start_to_first_group_activity(tmp_path
     async with database.session_factory() as session:
         profile = await session.get(EngagementProfile, 101)
         assert profile is not None
-        assert profile.onboarding_completed_at == now
+        assert profile.onboarding_completed_at is not None
+        assert _utc(profile.onboarding_completed_at) == now
 
     await database.dispose()
 
