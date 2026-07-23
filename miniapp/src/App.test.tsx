@@ -73,7 +73,6 @@ vi.mock("./api/client", () => ({
     profileCard: vi.fn().mockResolvedValue(new Blob(["png"], { type: "image/png" })),
     groups: vi.fn().mockResolvedValue([]),
     achievements: vi.fn().mockResolvedValue([]),
-    rankings: vi.fn(),
     group: vi.fn(),
     updateSettings: vi.fn(),
     resetGroup: vi.fn(),
@@ -85,14 +84,15 @@ vi.mock("./api/client", () => ({
 describe("App", () => {
   beforeEach(() => vi.clearAllMocks());
 
-  it("renders five Ukrainian navigation tabs and opens the level roadmap", async () => {
+  it("renders four Ukrainian navigation tabs without a global ranking page", async () => {
     const user = userEvent.setup();
     render(<App />);
 
     expect(await screen.findByText("Пульс твого XP")).toBeInTheDocument();
-    for (const label of ["Головна", "Групи", "Рейтинг", "Досягнення", "Профіль"]) {
+    for (const label of ["Головна", "Групи", "Досягнення", "Профіль"]) {
       expect(screen.getByRole("button", { name: label })).toBeInTheDocument();
     }
+    expect(screen.queryByRole("button", { name: "Рейтинг" })).not.toBeInTheDocument();
 
     await user.click(screen.getByRole("button", { name: "Профіль" }));
     expect(await screen.findByText("Твій прогрес")).toBeInTheDocument();
