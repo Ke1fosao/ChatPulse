@@ -143,9 +143,33 @@ export interface RecentAchievement {
   group_title: string;
 }
 
+export type OnboardingStepId = "start" | "group" | "activity";
+
+export interface OnboardingStep {
+  id: OnboardingStepId;
+  title: string;
+  description: string;
+  completed: boolean;
+}
+
+export interface OnboardingPayload {
+  completed_steps: number;
+  total_steps: number;
+  is_complete: boolean;
+  primary_action: "add_group" | "send_message" | "done";
+  add_group_url: string | null;
+  linked_group?: {
+    telegram_chat_id: number;
+    title: string;
+    username?: string | null;
+  } | null;
+  steps: OnboardingStep[];
+}
+
 export interface HomePayload {
   user: UserSummary;
   account: AccountAccess;
+  onboarding: OnboardingPayload;
   global_progress: GlobalProgress;
   quick_stats: QuickStats;
   activity_series: ActivityPoint[];
