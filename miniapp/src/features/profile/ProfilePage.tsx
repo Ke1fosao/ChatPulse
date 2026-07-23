@@ -115,20 +115,6 @@ export function ProfilePage({
       </section>
 
       <section className="profile-actions panel">
-        <button type="button" className="profile-vip-action" onClick={openPlan}>
-          <span><Crown size={20} /></span>
-          <div>
-            <strong>{planTitle}</strong>
-            <small>
-              {data.account.is_owner
-                ? "Оплати, користувачі, групи та аудит"
-                : data.account.is_vip
-                  ? "Тариф, історія платежів та підписка"
-                  : "VIP-функції відкриваються прямо у потрібних розділах"}
-            </small>
-          </div>
-          <ExternalLink size={18} />
-        </button>
         <button type="button" onClick={onOpenLevels}>
           <span><Trophy size={20} /></span>
           <div><strong>Усі рівні ChatPulse</strong><small>50 рівнів, статуси та вимоги XP</small></div>
