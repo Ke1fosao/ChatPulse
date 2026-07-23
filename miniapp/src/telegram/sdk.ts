@@ -1,4 +1,5 @@
 type HapticType = "light" | "medium" | "heavy";
+export type InvoiceStatus = "paid" | "cancelled" | "failed" | "pending";
 
 interface TelegramWebApp {
   initData: string;
@@ -20,6 +21,7 @@ interface TelegramWebApp {
     notificationOccurred(type: "error" | "success" | "warning"): void;
   };
   openTelegramLink?(url: string): void;
+  openInvoice?(url: string, callback: (status: InvoiceStatus) => void): void;
 }
 
 declare global {
@@ -60,6 +62,17 @@ export function openTelegramLink(url: string): void {
     return;
   }
   window.open(url, "_blank", "noopener,noreferrer");
+}
+
+export function openInvoice(url: string): Promise<InvoiceStatus> {
+  return new Promise((resolve) => {
+    if (telegram?.openInvoice) {
+      telegram.openInvoice(url, resolve);
+      return;
+    }
+    window.open(url, "_blank", "noopener,noreferrer");
+    resolve("pending");
+  });
 }
 
 export function bindBackButton(callback: (() => void) | null): () => void {

@@ -1,6 +1,7 @@
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
 import app.achievement_models  # noqa: F401
+import app.billing_models  # noqa: F401
 from app.models import Base
 
 
