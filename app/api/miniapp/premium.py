@@ -6,9 +6,11 @@ from pydantic import BaseModel, ConfigDict, Field
 from app.api.miniapp.auth import TelegramMiniAppUser
 from app.api.miniapp.dependencies import get_miniapp_user
 from app.repositories.vip_product_events import ALLOWED_EVENT_TYPES
+from app.services.premium_policy import PREMIUM_REPORT_THEMES
 
 router = APIRouter(prefix="/api/miniapp/v1/premium", tags=["premium-context"])
 PremiumPeriod = Literal["quarter", "half_year", "year"]
+PremiumTheme = Literal["telegram_wave", "clean_light", "aurora_gold"]
 
 
 class VipProductEventRequest(BaseModel):
@@ -28,6 +30,12 @@ class VipProductEventRequest(BaseModel):
     metadata: dict[str, Any] = Field(default_factory=dict)
 
 
+class PremiumThemeRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    theme: PremiumTheme
+
+
 async def _account(request: Request, user_id: int):
     is_owner = await request.app.state.owner_repository.is_owner(user_id)
     return await request.app.state.owner_panel_repository.get_account_access(
@@ -42,6 +50,14 @@ def _has(account, entitlement: str) -> bool:
         or "premium.all" in account.entitlements
         or entitlement in account.entitlements
     )
+
+
+async def _require_admin(request: Request, chat_id: int, user_id: int) -> None:
+    if not await request.app.state.telegram_access_service.check_admin(chat_id, user_id):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Ця дія доступна лише адміністраторам групи.",
+        )
 
 
 @router.get("/context")
@@ -94,6 +110,33 @@ async def premium_group_analytics(
                 detail="Групу не знайдено або доступ відсутній.",
             )
     return payload
+
+
+@router.put("/groups/{chat_id}/report-theme")
+async def premium_report_theme(
+    chat_id: int,
+    payload: PremiumThemeRequest,
+    request: Request,
+    user: Annotated[TelegramMiniAppUser, Depends(get_miniapp_user)],
+) -> dict[str, str]:
+    account = await _account(request, user.telegram_id)
+    if not _has(account, "reports.premium_themes"):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Premium-теми доступні у ChatPulse VIP.",
+        )
+    await _require_admin(request, chat_id, user.telegram_id)
+    if payload.theme not in PREMIUM_REPORT_THEMES:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="Unsupported premium theme",
+        )
+    await request.app.state.gamification_repository.update_report_theme(
+        chat_id,
+        payload.theme,
+        premium_allowed=True,
+    )
+    return {"report_card_theme": payload.theme}
 
 
 @router.post("/events", status_code=status.HTTP_201_CREATED)
