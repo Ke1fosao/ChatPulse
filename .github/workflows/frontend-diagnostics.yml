@@ -1,0 +1,25 @@
+name: Frontend diagnostics
+
+on:
+  pull_request:
+
+jobs:
+  diagnostics:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: miniapp
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: miniapp/package.json
+      - run: npm install --no-audit --no-fund
+      - name: Capture test output
+        run: npm test -- --run > ../frontend-tests.txt 2>&1 || true
+      - uses: actions/upload-artifact@v4
+        with:
+          name: frontend-test-diagnostics
+          path: frontend-tests.txt
