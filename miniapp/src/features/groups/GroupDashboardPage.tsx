@@ -21,8 +21,10 @@ import { ActivityChart } from "../../components/ActivityChart";
 import { Heatmap } from "../../components/Heatmap";
 import { Leaderboard } from "../../components/Leaderboard";
 import { StatCard } from "../../components/StatCard";
+import { usePremium } from "../../premium/PremiumContext";
 import { openTelegramLink } from "../../telegram/sdk";
 import { GroupSettingsPanel } from "../admin/GroupSettingsPanel";
+import { PremiumAnalytics } from "./PremiumAnalytics";
 
 interface GroupDashboardPageProps {
   data: GroupDashboard;
@@ -51,6 +53,7 @@ export function GroupDashboardPage({
   const [showSettings, setShowSettings] = useState(false);
   const summary = data.overview.current;
   const isAdmin = Boolean(data.capabilities?.is_admin);
+  const premium = usePremium();
 
   if (showSettings && isAdmin) {
     return (
@@ -107,70 +110,25 @@ export function GroupDashboardPage({
       </div>
 
       <section className="stats-grid">
-        <StatCard
-          accent
-          icon={<MessageCircle size={19} />}
-          label="Повідомлення"
-          value={summary.messages_count}
-          trend={data.overview.trends.messages_count}
-        />
-        <StatCard
-          icon={<Heart size={19} />}
-          label="Реакції"
-          value={summary.reactions_received}
-          trend={data.overview.trends.reactions_received}
-        />
-        <StatCard
-          icon={<Reply size={19} />}
-          label="Відповіді"
-          value={summary.replies_count}
-          trend={data.overview.trends.replies_count}
-        />
-        <StatCard
-          icon={<Image size={19} />}
-          label="Медіа"
-          value={summary.media_count}
-          trend={data.overview.trends.media_count}
-        />
-        <StatCard
-          icon={<Users size={19} />}
-          label="Активні"
-          value={summary.active_members}
-          trend={data.overview.trends.active_members}
-        />
-        <StatCard
-          icon={<Zap size={19} />}
-          label="XP групи"
-          value={summary.xp_earned}
-          trend={data.overview.trends.xp_earned}
-        />
+        <StatCard accent icon={<MessageCircle size={19} />} label="Повідомлення" value={summary.messages_count} trend={data.overview.trends.messages_count} />
+        <StatCard icon={<Heart size={19} />} label="Реакції" value={summary.reactions_received} trend={data.overview.trends.reactions_received} />
+        <StatCard icon={<Reply size={19} />} label="Відповіді" value={summary.replies_count} trend={data.overview.trends.replies_count} />
+        <StatCard icon={<Image size={19} />} label="Медіа" value={summary.media_count} trend={data.overview.trends.media_count} />
+        <StatCard icon={<Users size={19} />} label="Активні" value={summary.active_members} trend={data.overview.trends.active_members} />
+        <StatCard icon={<Zap size={19} />} label="XP групи" value={summary.xp_earned} trend={data.overview.trends.xp_earned} />
       </section>
 
       <section className="panel personal-progress">
         <div className="section-heading">
-          <div>
-            <p className="eyebrow">Твій результат</p>
-            <h2>Рівень {data.personal_progress.level} · {data.personal_progress.tier}</h2>
-          </div>
+          <div><p className="eyebrow">Твій результат</p><h2>Рівень {data.personal_progress.level} · {data.personal_progress.tier}</h2></div>
           <strong>#{data.personal_progress.rank ?? "—"}</strong>
         </div>
         <div className="personal-progress__xp">
           <span>{data.personal_progress.xp_total.toLocaleString("uk-UA")} XP</span>
-          <small>
-            {data.personal_progress.progress} / {data.personal_progress.needed}
-          </small>
+          <small>{data.personal_progress.progress} / {data.personal_progress.needed}</small>
         </div>
         <div className="hero-progress">
-          <span
-            style={{
-              width: `${Math.min(
-                100,
-                Math.round(
-                  (data.personal_progress.progress / data.personal_progress.needed) * 100,
-                ),
-              )}%`,
-            }}
-          />
+          <span style={{ width: `${Math.min(100, Math.round((data.personal_progress.progress / data.personal_progress.needed) * 100))}%` }} />
         </div>
         <div className="personal-progress__badges">
           <span><Flame size={16} /> {data.personal_progress.current_streak} днів</span>
@@ -187,43 +145,32 @@ export function GroupDashboardPage({
             ["reactions", "Реакції"],
             ["replies", "Відповіді"],
           ] as const).map(([metric, label]) => (
-            <button
-              className={chartMetric === metric ? "is-active" : ""}
-              key={metric}
-              type="button"
-              onClick={() => setChartMetric(metric)}
-            >
-              {label}
-            </button>
+            <button className={chartMetric === metric ? "is-active" : ""} key={metric} type="button" onClick={() => setChartMetric(metric)}>{label}</button>
           ))}
         </div>
         <ActivityChart data={data.activity_series} metric={chartMetric} title="Активність групи" />
       </section>
 
+      <PremiumAnalytics
+        account={premium.account}
+        chatId={data.group.telegram_chat_id}
+        trialAvailable={premium.trialAvailable}
+        onOpenVip={premium.openVip}
+      />
+
       <Heatmap data={data.heatmap} />
 
       {data.top_message ? (
-        <button
-          className="top-message-card"
-          type="button"
-          onClick={() => data.top_message?.url && openTelegramLink(data.top_message.url)}
-        >
+        <button className="top-message-card" type="button" onClick={() => data.top_message?.url && openTelegramLink(data.top_message.url)}>
           <span><Send size={21} /></span>
-          <div>
-            <p className="eyebrow">Повідомлення періоду</p>
-            <strong>{data.top_message.display_name}</strong>
-            <small>{data.top_message.reactions_count} реакцій · без збереження тексту</small>
-          </div>
+          <div><p className="eyebrow">Повідомлення періоду</p><strong>{data.top_message.display_name}</strong><small>{data.top_message.reactions_count} реакцій · без збереження тексту</small></div>
           <ArrowLeft className="rotate-180" size={19} />
         </button>
       ) : null}
 
       <section className="panel">
         <div className="section-heading">
-          <div>
-            <p className="eyebrow">Лідери</p>
-            <h2>Топ за XP</h2>
-          </div>
+          <div><p className="eyebrow">Лідери</p><h2>Топ за XP</h2></div>
           <BarChart3 size={22} />
         </div>
         <Leaderboard rows={data.leaderboard} />
@@ -231,10 +178,7 @@ export function GroupDashboardPage({
 
       <section className="section-block">
         <div className="section-heading">
-          <div>
-            <p className="eyebrow">Характер чату</p>
-            <h2>Номінації</h2>
-          </div>
+          <div><p className="eyebrow">Характер чату</p><h2>Номінації</h2></div>
           <Award size={22} />
         </div>
         <div className="nomination-grid">
