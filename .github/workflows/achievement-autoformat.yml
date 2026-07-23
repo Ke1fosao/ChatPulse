@@ -1,4 +1,4 @@
-name: Achievement autoformat
+name: Achievement release finalizer
 
 on:
   push:
@@ -9,7 +9,7 @@ permissions:
   contents: write
 
 jobs:
-  format:
+  finalize:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -19,17 +19,18 @@ jobs:
         with:
           python-version: "3.12"
       - run: pip install -q ruff
-      - name: Format changed Python files
+      - name: Format and bump release
         run: |
           ruff format app/api/miniapp/featured.py app/repositories/gamification_v2.py app/services/profile_cards.py
           ruff check --fix app/api/miniapp/featured.py app/repositories/gamification_v2.py app/services/profile_cards.py
-      - name: Commit formatting
+          sed -i 's/0.11.0/0.12.0/g' app/main.py pyproject.toml miniapp/package.json
+      - name: Commit release metadata
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add app/api/miniapp/featured.py app/repositories/gamification_v2.py app/services/profile_cards.py
+          git add app/api/miniapp/featured.py app/repositories/gamification_v2.py app/services/profile_cards.py app/main.py pyproject.toml miniapp/package.json
           if git diff --cached --quiet; then
             exit 0
           fi
-          git commit -m "style: format achievement backend"
+          git commit -m "release: prepare ChatPulse 0.12.0"
           git push origin HEAD:feat/achievements-showcase-v3
