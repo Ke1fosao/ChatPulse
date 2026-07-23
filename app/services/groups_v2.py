@@ -1,7 +1,8 @@
 from __future__ import annotations
 
+from collections.abc import Mapping
 from datetime import UTC, date, datetime, timedelta
-from typing import Any, Mapping, TypedDict
+from typing import Any, TypedDict
 
 
 class GroupStatusPayload(TypedDict):
@@ -135,7 +136,10 @@ def calculate_group_pulse(
         )
     elif message_change < 0:
         negative_candidates.append(
-            (abs(message_change), f"Повідомлень стало на {round(abs(message_change))}% менше.")
+            (
+                abs(message_change),
+                f"Повідомлень стало на {round(abs(message_change))}% менше.",
+            )
         )
     if active_ratio >= 60:
         positive_candidates.append(
@@ -150,16 +154,31 @@ def calculate_group_pulse(
             (engagement_ratio, "У групі багато відповідей і реакцій.")
         )
     elif messages > 0 and engagement_ratio < 10:
-        negative_candidates.append((10 - engagement_ratio, "У повідомлень мало реакцій і відповідей."))
+        negative_candidates.append(
+            (10 - engagement_ratio, "У повідомлень мало реакцій і відповідей.")
+        )
     if consecutive_active_days >= continuity_target:
         positive_candidates.append(
-            (float(consecutive_active_days), f"Група активна {consecutive_active_days} днів поспіль.")
+            (
+                float(consecutive_active_days),
+                f"Група активна {consecutive_active_days} днів поспіль.",
+            )
         )
     elif consecutive_active_days <= 1:
-        negative_candidates.append((7.0, "Стабільна серія активності ще не сформувалася."))
+        negative_candidates.append(
+            (7.0, "Стабільна серія активності ще не сформувалася.")
+        )
 
-    positive = max(positive_candidates, default=(0.0, None), key=lambda item: item[0])[1]
-    negative = max(negative_candidates, default=(0.0, None), key=lambda item: item[0])[1]
+    positive = max(
+        positive_candidates,
+        default=(0.0, None),
+        key=lambda item: item[0],
+    )[1]
+    negative = max(
+        negative_candidates,
+        default=(0.0, None),
+        key=lambda item: item[0],
+    )[1]
 
     return {
         "score": score,
@@ -215,7 +234,9 @@ def build_group_insights(
                 "kind": "record",
                 "icon": "bar-chart",
                 "title": "Сильний день",
-                "description": f"{record_messages} повідомлень{when} — найкращий результат періоду.",
+                "description": (
+                    f"{record_messages} повідомлень{when} — найкращий результат періоду."
+                ),
             }
         )
     if consecutive_active_days >= 3:
