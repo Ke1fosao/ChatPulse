@@ -39,6 +39,10 @@ export const premiumApi = {
       `/groups/${chatId}/analytics?${params.toString()}`,
     );
   },
+  rankingPlans: (chatId: number) =>
+    premiumRequest<{ plans: Record<string, "free" | "vip" | "owner"> }>(
+      `/groups/${chatId}/ranking-plans`,
+    ),
   reportTheme: (
     chatId: number,
     theme: "telegram_wave" | "clean_light" | "aurora_gold",
