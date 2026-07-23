@@ -17,6 +17,7 @@ import "./styles/premium.css";
 import "./styles/premium-identity.css";
 import "./styles/premium-purchase.css";
 import "./styles/vip.css";
+import "./styles/year-summary.css";
 
 const route = window.location.pathname.replace(/\/+$/, "");
 const root = createRoot(document.getElementById("root")!);
