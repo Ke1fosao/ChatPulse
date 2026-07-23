@@ -78,7 +78,11 @@ export function GroupCard({
           <span className="group-card-v2__footer">
             {group.is_admin ? (
               <span className="group-admin-pill">
-                <ShieldCheck size={13} /> Адмін
+                <ShieldCheck size={13} />
+                <span>
+                  <strong>Ви адміністратор</strong>
+                  <small>Доступне керування групою</small>
+                </span>
               </span>
             ) : (
               <span>Твоя позиція у групі</span>
