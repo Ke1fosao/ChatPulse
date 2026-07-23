@@ -1,65 +1,124 @@
 import {
+  ArrowUpRight,
   ChevronRight,
-  Flame,
   MessageCircle,
   ShieldCheck,
+  Star,
   Trophy,
 } from "lucide-react";
+import type { CSSProperties } from "react";
+import type { GroupsV2CardData } from "../api/groups-v2";
+import { isGroupsV2Card } from "../api/groups-v2";
 import type { GroupCardData } from "../api/types";
 import { haptic } from "../telegram/sdk";
 
 interface GroupCardProps {
-  group: GroupCardData;
+  group: GroupCardData | GroupsV2CardData;
   onOpen(group: GroupCardData): void;
+  onToggleFavorite?(group: GroupsV2CardData, nextValue: boolean): void;
+  favoriteBusy?: boolean;
 }
 
-export function GroupCard({ group, onOpen }: GroupCardProps) {
+function statusFallback(group: GroupCardData) {
+  return group.period.messages_count > 0
+    ? { id: "active", label: "Активна", tone: "success" }
+    : { id: "quiet", label: "Тиха", tone: "neutral" };
+}
+
+export function GroupCard({
+  group,
+  onOpen,
+  onToggleFavorite,
+  favoriteBusy = false,
+}: GroupCardProps) {
+  const enhanced = isGroupsV2Card(group);
+  const status = enhanced ? group.status : statusFallback(group);
+  const messages = enhanced ? group.messages_7d : group.period.messages_count;
+  const today = enhanced ? group.messages_today : null;
+  const hue = Math.abs(group.telegram_chat_id) % 360;
+  const style = { "--group-hue": hue } as CSSProperties;
+
   return (
-    <button
-      className={`group-card ${group.is_admin ? "group-card--admin" : ""}`}
-      type="button"
-      onClick={() => {
-        haptic("medium");
-        onOpen(group);
-      }}
-    >
-      <span className="group-avatar">{group.initials}</span>
-      <span className="group-card__main">
-        <span className="group-card__title-row">
-          <strong>{group.title}</strong>
-          {group.is_admin ? (
-            <em>
-              <ShieldCheck size={10} /> Ви адміністратор
-            </em>
-          ) : null}
+    <article className={`group-card-v2 group-card-v2--${status.tone}`} style={style}>
+      <button
+        className="group-card-v2__open"
+        type="button"
+        onClick={() => {
+          haptic("medium");
+          onOpen(group);
+        }}
+        aria-label={`Відкрити групу ${group.title}`}
+      >
+        <span className="group-avatar-v2" aria-hidden="true">
+          {group.initials}
         </span>
-        {group.is_admin ? (
-          <span className="group-card__admin-hint">Доступне керування групою</span>
-        ) : null}
-        <span className="group-card__meta">
-          <span>
-            <Trophy size={14} /> #{group.rank ?? "—"}
+
+        <span className="group-card-v2__content">
+          <span className="group-card-v2__heading">
+            <strong>{group.title}</strong>
+            <span className={`group-status group-status--${status.tone}`}>
+              <i /> {status.label}
+            </span>
           </span>
-          <span>
-            <Flame size={14} /> {group.current_streak} дн.
-          </span>
-          <span>
-            <MessageCircle size={14} /> {group.period.messages_count}
+
+          {enhanced && group.attention_reason ? (
+            <span className="group-card-v2__attention">{group.attention_reason}</span>
+          ) : (
+            <span className="group-card-v2__metrics">
+              <span>
+                <Trophy size={14} /> #{group.rank ?? "—"}
+              </span>
+              <span>
+                <MessageCircle size={14} /> {messages} за 7 днів
+              </span>
+              {today !== null ? <span>{today} сьогодні</span> : null}
+            </span>
+          )}
+
+          <span className="group-card-v2__footer">
+            {group.is_admin ? (
+              <span className="group-admin-pill">
+                <ShieldCheck size={13} />
+                <span>
+                  <strong>Ви адміністратор</strong>
+                  <small>Доступне керування групою</small>
+                </span>
+              </span>
+            ) : (
+              <span>Твоя позиція у групі</span>
+            )}
+            <span
+              className={`group-trend ${group.trend !== null && group.trend !== undefined && group.trend < 0 ? "is-negative" : ""}`}
+            >
+              {group.trend === null || group.trend === undefined
+                ? "Нові дані"
+                : `${group.trend >= 0 ? "+" : ""}${group.trend}%`}
+              <ArrowUpRight size={13} />
+            </span>
           </span>
         </span>
-        <span className="group-card__progress">
-          <span style={{ width: `${Math.min(100, Math.max(8, group.level * 4))}%` }} />
-        </span>
-      </span>
-      <span className="group-card__side">
-        <strong>{group.period.xp_earned} XP</strong>
-        <small className={group.trend && group.trend < 0 ? "is-negative" : ""}>
-          {group.trend === null || group.trend === undefined
-            ? "—"
-            : `${group.trend >= 0 ? "+" : ""}${group.trend}%`}
-        </small>
-        <ChevronRight size={19} />
-      </span>
-    </button>
+
+        <ChevronRight className="group-card-v2__chevron" size={20} />
+      </button>
+
+      {enhanced && onToggleFavorite ? (
+        <button
+          className={`group-favorite ${group.is_favorite ? "is-active" : ""}`}
+          type="button"
+          disabled={favoriteBusy}
+          aria-label={
+            group.is_favorite
+              ? `Прибрати ${group.title} з обраного`
+              : `Додати ${group.title} в обране`
+          }
+          onClick={() => {
+            haptic("light");
+            onToggleFavorite(group, !group.is_favorite);
+          }}
+        >
+          <Star size={17} fill={group.is_favorite ? "currentColor" : "none"} />
+        </button>
+      ) : null}
+    </article>
   );
 }

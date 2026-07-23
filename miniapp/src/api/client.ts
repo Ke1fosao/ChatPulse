@@ -1,8 +1,9 @@
+import type { LevelsPayload } from "./levels";
+import type { GroupsV2CardData } from "./groups-v2";
 import type {
   Achievement,
   AchievementEventPayload,
   ApiErrorBody,
-  GroupCardData,
   GroupDashboard,
   GroupSettings,
   HomePayload,
@@ -11,7 +12,6 @@ import type {
   Period,
   RankingPayload,
 } from "./types";
-import type { LevelsPayload } from "./levels";
 import { getInitData } from "../telegram/sdk";
 
 export class ApiError extends Error {
@@ -71,7 +71,16 @@ export const api = {
   },
   onboarding: () => request<OnboardingPayload>("/onboarding"),
   levels: () => request<LevelsPayload>("/levels"),
-  groups: async () => (await request<{ groups: GroupCardData[] }>("/groups")).groups,
+  groups: async () =>
+    (await request<{ groups: GroupsV2CardData[] }>("/groups-v2")).groups,
+  setGroupFavorite: (chatId: number, isFavorite: boolean) =>
+    request<{ telegram_chat_id: number; is_favorite: boolean }>(
+      `/groups/${chatId}/favorite`,
+      {
+        method: "PUT",
+        body: JSON.stringify({ is_favorite: isFavorite }),
+      },
+    ),
   group: (chatId: number, period: Period) =>
     request<GroupDashboard>(`/groups/${chatId}?period=${period}`),
   rankings: (chatId: number, metric: Metric, period: Period) =>
