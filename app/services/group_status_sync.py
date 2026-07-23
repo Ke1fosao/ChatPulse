@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import Any
+
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from app.domain import GroupData
@@ -15,16 +17,21 @@ def normalize_bot_status(status: str) -> str:
 
 
 async def upsert_group_from_message(
-    repository: ActivityRepository,
+    repository: ActivityRepository | Any,
     data: GroupData,
 ) -> None:
     """Refresh group metadata without downgrading known administrator privileges."""
 
     bot_status = "member"
-    async with repository._session_factory() as session:
-        group = await session.get(ChatGroup, data.telegram_chat_id)
-        if group is not None and normalize_bot_status(group.bot_status) in PRIVILEGED_BOT_STATUSES:
-            bot_status = normalize_bot_status(group.bot_status)
+    session_factory = getattr(repository, "_session_factory", None)
+    if session_factory is not None:
+        async with session_factory() as session:
+            group = await session.get(ChatGroup, data.telegram_chat_id)
+            if (
+                group is not None
+                and normalize_bot_status(group.bot_status) in PRIVILEGED_BOT_STATUSES
+            ):
+                bot_status = normalize_bot_status(group.bot_status)
 
     await repository.upsert_group(
         data,
