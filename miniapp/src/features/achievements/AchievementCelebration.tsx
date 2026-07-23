@@ -1,4 +1,4 @@
-import { Share2, Sparkles, Trophy } from "lucide-react";
+import { Check, Pin, Share2, Sparkles, Trophy } from "lucide-react";
 import type { CSSProperties } from "react";
 import { useEffect } from "react";
 import { createPortal } from "react-dom";
@@ -9,6 +9,14 @@ import { useAchievementCelebrations } from "./useAchievementCelebrations";
 
 interface AchievementCelebrationLayerProps {
   onOpenCollection(): void;
+}
+
+type CelebrationMode = "toast" | "modal" | "fullscreen";
+
+function celebrationMode(rarity: AchievementRarity): CelebrationMode {
+  if (rarity === "common" || rarity === "uncommon") return "toast";
+  if (rarity === "rare" || rarity === "epic") return "modal";
+  return "fullscreen";
 }
 
 function celebrationHaptic(rarity: AchievementRarity): void {
@@ -23,7 +31,7 @@ function celebrationHaptic(rarity: AchievementRarity): void {
 }
 
 function Confetti({ rarity }: { rarity: AchievementRarity }) {
-  const count = rarity === "legendary" || rarity === "secret" ? 56 : 34;
+  const count = rarity === "legendary" || rarity === "secret" ? 56 : 28;
   return (
     <div className="achievement-confetti" aria-hidden="true">
       {Array.from({ length: count }, (_, index) => {
@@ -44,6 +52,7 @@ export function AchievementCelebrationLayer({
 }: AchievementCelebrationLayerProps) {
   const celebrations = useAchievementCelebrations();
   const current = celebrations.current;
+  const mode = current ? celebrationMode(current.achievement.rarity) : "fullscreen";
 
   useEffect(() => {
     if (current) celebrationHaptic(current.achievement.rarity);
@@ -69,32 +78,43 @@ export function AchievementCelebrationLayer({
 
   return createPortal(
     <div
-      className={`achievement-celebration ${
+      className={`achievement-celebration achievement-celebration--${
+        celebrations.summaryMode ? "fullscreen" : mode
+      } ${
         celebrations.summaryMode
           ? "achievement-celebration--summary"
           : `achievement-celebration--${current?.achievement.rarity ?? "common"}`
       }`}
       role="dialog"
-      aria-modal="true"
+      aria-modal={mode !== "toast"}
       aria-label={celebrations.summaryMode ? "Нові досягнення" : "Досягнення розблоковано"}
     >
       <div className="achievement-celebration__backdrop" />
       {!celebrations.summaryMode && current ? (
         <>
-          <Confetti rarity={current.achievement.rarity} />
-          <div className="achievement-celebration__rays" aria-hidden="true" />
+          {mode !== "toast" ? <Confetti rarity={current.achievement.rarity} /> : null}
+          {mode === "fullscreen" ? (
+            <div className="achievement-celebration__rays" aria-hidden="true" />
+          ) : null}
           <section className="achievement-celebration__card">
             <p className="achievement-celebration__eyebrow">ДОСЯГНЕННЯ РОЗБЛОКОВАНО</p>
             <div className="achievement-celebration__icon-wrap">
               <span className="achievement-celebration__orbit" />
               <span className="achievement-celebration__icon">
-                <AchievementIcon achievement={current.achievement} size={40} />
+                <AchievementIcon achievement={current.achievement} size={mode === "toast" ? 28 : 40} />
               </span>
             </div>
             <div className="achievement-celebration__copy">
-              <span className="achievement-celebration__rarity">
-                {rarityLabel[current.achievement.rarity]}
-              </span>
+              <div className="achievement-celebration__labels">
+                <span className="achievement-celebration__rarity">
+                  {rarityLabel[current.achievement.rarity]}
+                </span>
+                {current.achievement.reward_xp > 0 ? (
+                  <strong className="achievement-celebration__reward">
+                    +{current.achievement.reward_xp} XP
+                  </strong>
+                ) : null}
+              </div>
               <h2>{current.achievement.title}</h2>
               <p>{current.achievement.description}</p>
               <div className="achievement-celebration__meta">
@@ -117,6 +137,17 @@ export function AchievementCelebrationLayer({
               >
                 <Share2 size={18} /> Поділитися
               </button>
+              {current.achievement.primary_scope_key ? (
+                <button
+                  className="achievement-celebration__pin"
+                  type="button"
+                  onClick={() => void celebrations.pinCurrent()}
+                  disabled={celebrations.busy || celebrations.pinned}
+                >
+                  {celebrations.pinned ? <Check size={18} /> : <Pin size={18} />}
+                  {celebrations.pinned ? "Закріплено" : "Закріпити"}
+                </button>
+              ) : null}
               <button
                 className="achievement-celebration__collection"
                 type="button"
