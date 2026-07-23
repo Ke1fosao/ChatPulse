@@ -5,8 +5,7 @@ from app.services.vip_plans import MONTH_SECONDS, VIP_PLANS, get_vip_plan, new_i
 
 def test_vip_plan_prices_and_durations_are_fixed() -> None:
     assert {
-        code: (plan.stars, plan.duration_days, plan.recurring)
-        for code, plan in VIP_PLANS.items()
+        code: (plan.stars, plan.duration_days, plan.recurring) for code, plan in VIP_PLANS.items()
     } == {
         "trial_7d": (1, 7, False),
         "monthly_30d": (59, 30, True),

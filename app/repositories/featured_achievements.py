@@ -66,9 +66,7 @@ class FeaturedAchievementRepository:
                     raise ValueError("Можна закріплювати лише отримані досягнення.")
 
             await session.execute(
-                delete(FeaturedAchievement).where(
-                    FeaturedAchievement.telegram_user_id == user_id
-                )
+                delete(FeaturedAchievement).where(FeaturedAchievement.telegram_user_id == user_id)
             )
             created_at = utc_now()
             for slot, code in enumerate(normalized, start=1):

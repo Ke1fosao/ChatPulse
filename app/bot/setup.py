@@ -33,7 +33,9 @@ def build_dispatcher(
 ) -> Dispatcher:
     dispatcher = Dispatcher()
     resolved_owner_repository = owner_repository or OwnerRepository(repository._session_factory)
-    resolved_billing_repository = billing_repository or BillingRepository(repository._session_factory)
+    resolved_billing_repository = billing_repository or BillingRepository(
+        repository._session_factory
+    )
     dispatcher["repository"] = repository
     dispatcher["gamification_repository"] = AchievementGamificationRepository(
         repository._session_factory

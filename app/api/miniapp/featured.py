@@ -20,9 +20,7 @@ async def featured_achievements(
     request: Request,
     user: Annotated[TelegramMiniAppUser, Depends(get_miniapp_user)],
 ) -> dict:
-    items = await request.app.state.featured_achievement_repository.list_featured(
-        user.telegram_id
-    )
+    items = await request.app.state.featured_achievement_repository.list_featured(user.telegram_id)
     return {"items": items}
 
 

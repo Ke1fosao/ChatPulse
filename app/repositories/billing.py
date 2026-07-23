@@ -357,7 +357,10 @@ class BillingRepository:
         else:
             existing_expiry = (
                 _as_utc(grant.expires_at)
-                if grant and grant.is_active and grant.expires_at and _as_utc(grant.expires_at) > current
+                if grant
+                and grant.is_active
+                and grant.expires_at
+                and _as_utc(grant.expires_at) > current
                 else current
             )
             expires_at = existing_expiry + timedelta(days=plan.duration_days)
@@ -390,8 +393,10 @@ class BillingRepository:
         if await session.get(VipTrialClaim, user_id) is not None:
             return False
         grant = await session.get(VipGrant, user_id)
-        if grant and grant.is_active and (
-            grant.expires_at is None or _as_utc(grant.expires_at) > current
+        if (
+            grant
+            and grant.is_active
+            and (grant.expires_at is None or _as_utc(grant.expires_at) > current)
         ):
             return False
         paid_count = int(
