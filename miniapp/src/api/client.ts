@@ -1,5 +1,11 @@
 import type { LevelsPayload } from "./levels";
-import type { GroupsV2CardData } from "./groups-v2";
+import type {
+  GroupAnalyticsPayload,
+  GroupAwardsPayload,
+  GroupOverviewPayload,
+  GroupRankingPayload,
+  GroupsV2CardData,
+} from "./groups-v2";
 import type {
   Achievement,
   AchievementEventPayload,
@@ -80,6 +86,28 @@ export const api = {
         method: "PUT",
         body: JSON.stringify({ is_favorite: isFavorite }),
       },
+    ),
+  groupOverview: (chatId: number, period: Period) =>
+    request<GroupOverviewPayload>(`/groups/${chatId}/overview?period=${period}`),
+  groupRanking: (chatId: number, metric: Metric, period: Period) =>
+    request<GroupRankingPayload>(
+      `/groups/${chatId}/ranking?metric=${metric}&period=${period}`,
+    ),
+  groupAnalytics: (chatId: number, period: Period) =>
+    request<GroupAnalyticsPayload>(`/groups/${chatId}/analytics?period=${period}`),
+  groupAwards: (chatId: number, period: Period) =>
+    request<GroupAwardsPayload>(`/groups/${chatId}/awards?period=${period}`),
+  sendGroupReport: (chatId: number) =>
+    request<{ ok: boolean }>(`/groups/${chatId}/report-now`, { method: "POST" }),
+  pauseGroupAnalytics: (chatId: number) =>
+    request<{ telegram_chat_id: number; is_paused: boolean }>(
+      `/groups/${chatId}/analytics/pause`,
+      { method: "POST" },
+    ),
+  resumeGroupAnalytics: (chatId: number) =>
+    request<{ telegram_chat_id: number; is_paused: boolean }>(
+      `/groups/${chatId}/analytics/resume`,
+      { method: "POST" },
     ),
   group: (chatId: number, period: Period) =>
     request<GroupDashboard>(`/groups/${chatId}?period=${period}`),

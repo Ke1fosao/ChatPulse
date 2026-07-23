@@ -7,6 +7,7 @@ import { VipApp } from "./vip/VipApp";
 import "./styles/global.css";
 import "./styles/group-settings.css";
 import "./styles/groups-v2.css";
+import "./styles/group-center.css";
 import "./styles/achievement-celebration.css";
 import "./styles/achievement-collection.css";
 import "./styles/achievement-card-fixes.css";

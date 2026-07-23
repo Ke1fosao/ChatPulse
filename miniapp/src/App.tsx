@@ -5,8 +5,6 @@ import type { GroupsV2CardData } from "./api/groups-v2";
 import type {
   Achievement,
   GroupCardData,
-  GroupDashboard,
-  GroupSettings,
   HomePayload,
   Metric,
   Period,
@@ -18,7 +16,7 @@ import { LevelsDialog } from "./components/LevelsDialog";
 import { ShareCardDialog } from "./components/ShareCardDialog";
 import { AchievementCelebrationLayer } from "./features/achievements/AchievementCelebration";
 import { AchievementsPage } from "./features/achievements/AchievementsPage";
-import { GroupDashboardPage } from "./features/groups/GroupDashboardPage";
+import { GroupCenterPage } from "./features/groups/GroupCenterPage";
 import { GroupsPage } from "./features/groups/GroupsPage";
 import { HomePage } from "./features/home/HomePage";
 import { ProfilePage } from "./features/profile/ProfilePage";
@@ -36,8 +34,6 @@ export function App() {
   const [groups, setGroups] = useState<GroupsV2CardData[]>([]);
   const [achievements, setAchievements] = useState<Achievement[]>([]);
   const [selectedGroup, setSelectedGroup] = useState<GroupCardData | null>(null);
-  const [dashboard, setDashboard] = useState<GroupDashboard | null>(null);
-  const [groupPeriod, setGroupPeriod] = useState<Period>("week");
   const [ranking, setRanking] = useState<RankingPayload | null>(null);
   const [rankingGroupId, setRankingGroupId] = useState<number | null>(null);
   const [rankingMetric, setRankingMetric] = useState<Metric>("xp");
@@ -78,25 +74,6 @@ export function App() {
     void loadCore();
   }, [loadCore]);
 
-  const loadDashboard = useCallback(
-    async (group: GroupCardData, period: Period = groupPeriod) => {
-      setSecondaryLoading(true);
-      setError("");
-      try {
-        const payload = await api.group(group.telegram_chat_id, period);
-        setSelectedGroup(group);
-        setDashboard(payload);
-        setGroupPeriod(period);
-      } catch (reason) {
-        setError(reason instanceof Error ? reason.message : "Не вдалося відкрити групу.");
-        notify("error");
-      } finally {
-        setSecondaryLoading(false);
-      }
-    },
-    [groupPeriod],
-  );
-
   const loadRanking = useCallback(async () => {
     if (rankingGroupId === null) {
       setRanking(null);
@@ -117,25 +94,12 @@ export function App() {
   }, [activeTab, loadRanking]);
 
   useEffect(
-    () =>
-      bindBackButton(
-        selectedGroup
-          ? () => {
-              setSelectedGroup(null);
-              setDashboard(null);
-            }
-          : null,
-      ),
+    () => bindBackButton(selectedGroup ? () => setSelectedGroup(null) : null),
     [selectedGroup],
   );
 
-  const closeDashboard = () => {
-    setSelectedGroup(null);
-    setDashboard(null);
-  };
-
   const openGroup = (group: GroupCardData) => {
-    void loadDashboard(group, "week");
+    setSelectedGroup(group);
   };
 
   const toggleFavorite = useCallback(
@@ -166,20 +130,6 @@ export function App() {
     [],
   );
 
-  const saveSettings = async (settings: Partial<GroupSettings>) => {
-    if (!selectedGroup) throw new Error("Групу не вибрано.");
-    const updated = await api.updateSettings(selectedGroup.telegram_chat_id, settings);
-    setDashboard((current) => (current ? { ...current, settings: updated } : current));
-    return updated;
-  };
-
-  const resetGroup = async () => {
-    if (!selectedGroup) throw new Error("Групу не вибрано.");
-    await api.resetGroup(selectedGroup.telegram_chat_id);
-    await loadDashboard(selectedGroup, groupPeriod);
-    await loadCore();
-  };
-
   const refreshAchievements = async () => {
     setSecondaryLoading(true);
     try {
@@ -191,16 +141,8 @@ export function App() {
 
   const renderedPage = useMemo(() => {
     if (!home) return null;
-    if (selectedGroup && dashboard) {
-      return (
-        <GroupDashboardPage
-          data={dashboard}
-          onBack={closeDashboard}
-          onPeriodChange={(period) => void loadDashboard(selectedGroup, period)}
-          onSaveSettings={saveSettings}
-          onReset={resetGroup}
-        />
-      );
+    if (selectedGroup) {
+      return <GroupCenterPage group={selectedGroup} onBack={() => setSelectedGroup(null)} />;
     }
     if (activeTab === "groups") {
       return (
@@ -260,12 +202,9 @@ export function App() {
   }, [
     activeTab,
     achievements,
-    dashboard,
-    groupPeriod,
     groups,
     home,
     loadCore,
-    loadDashboard,
     loadRanking,
     ranking,
     rankingGroupId,
@@ -279,9 +218,7 @@ export function App() {
   if (!isTelegramContext()) {
     return (
       <main className="standalone-screen">
-        <span>
-          <Sparkles size={32} />
-        </span>
+        <span><Sparkles size={32} /></span>
         <h1>Відкрий ChatPulse через Telegram</h1>
         <p>Mini App авторизується без паролів — напряму через твій Telegram-профіль.</p>
       </main>
@@ -291,14 +228,10 @@ export function App() {
   if (loading) {
     return (
       <main className="boot-screen">
-        <span className="boot-logo">
-          <Sparkles />
-        </span>
+        <span className="boot-logo"><Sparkles /></span>
         <h1>ChatPulse</h1>
         <p>Збираємо твій пульс…</p>
-        <div className="boot-progress">
-          <span />
-        </div>
+        <div className="boot-progress"><span /></div>
       </main>
     );
   }
@@ -306,9 +239,7 @@ export function App() {
   if (!home) {
     return (
       <main className="standalone-screen">
-        <span className="standalone-screen__error">
-          <AlertTriangle size={30} />
-        </span>
+        <span className="standalone-screen__error"><AlertTriangle size={30} /></span>
         <h1>Не вдалося відкрити профіль</h1>
         <p>{error || "Спробуй оновити Mini App."}</p>
         <button className="primary-button" type="button" onClick={() => void loadCore()}>
@@ -323,7 +254,7 @@ export function App() {
       <AppShell
         activeTab={activeTab}
         onTabChange={(tab) => {
-          closeDashboard();
+          setSelectedGroup(null);
           setActiveTab(tab);
         }}
         badge={secondaryLoading ? "SYNC" : "LIVE"}
@@ -339,7 +270,7 @@ export function App() {
       <LevelsDialog open={levelsOpen} onClose={() => setLevelsOpen(false)} />
       <AchievementCelebrationLayer
         onOpenCollection={() => {
-          closeDashboard();
+          setSelectedGroup(null);
           setActiveTab("achievements");
           void refreshAchievements();
         }}
