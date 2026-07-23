@@ -13,6 +13,8 @@ import { GroupCard } from "../../components/GroupCard";
 import { ProfileHero } from "../../components/ProfileHero";
 import { StatCard } from "../../components/StatCard";
 import { usePremium } from "../../premium/PremiumContext";
+import { openTelegramLink } from "../../telegram/sdk";
+import { OnboardingCard } from "../onboarding/OnboardingCard";
 import { YearSummaryCard } from "../year/YearSummaryCard";
 
 interface HomePageProps {
@@ -40,6 +42,8 @@ export function HomePage({
         onShare={onShareProfile}
         onOpenLevels={onOpenLevels}
       />
+
+      <OnboardingCard onboarding={data.onboarding} onOpenTelegramLink={openTelegramLink} />
 
       <section className="stats-grid stats-grid--home">
         <StatCard
