@@ -7,6 +7,7 @@ import type {
   GroupSettings,
   HomePayload,
   Metric,
+  OnboardingPayload,
   Period,
   RankingPayload,
 } from "./types";
@@ -61,7 +62,8 @@ async function requestBlob(path: string): Promise<Blob> {
 }
 
 export const api = {
-  home: () => request<HomePayload>("/home"),
+  home: () => request<Omit<HomePayload, "onboarding">>("/home"),
+  onboarding: () => request<OnboardingPayload>("/onboarding"),
   levels: () => request<LevelsPayload>("/levels"),
   groups: async () => (await request<{ groups: GroupCardData[] }>("/groups")).groups,
   group: (chatId: number, period: Period) =>
