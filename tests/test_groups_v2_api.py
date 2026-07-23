@@ -63,6 +63,52 @@ def test_groups_v2_list_and_favorite_contracts() -> None:
     repository.set_favorite.assert_awaited_once_with(101, -1001, True)
 
 
+def test_groups_v2_repairs_stale_bot_status(monkeypatch) -> None:
+    app = create_app(build_settings())
+    app.dependency_overrides[get_miniapp_user] = current_user
+    repository = SimpleNamespace(
+        list_groups=AsyncMock(
+            side_effect=[
+                [
+                    {
+                        "telegram_chat_id": -1001,
+                        "title": "Group",
+                        "status": {"id": "needs_setup"},
+                    }
+                ],
+                [
+                    {
+                        "telegram_chat_id": -1001,
+                        "title": "Group",
+                        "status": {"id": "active"},
+                    }
+                ],
+            ]
+        )
+    )
+    access = SimpleNamespace(
+        check_admin=AsyncMock(return_value=False),
+        check_member=AsyncMock(return_value=True),
+        get_bot_status=AsyncMock(return_value="administrator"),
+    )
+    reconcile = AsyncMock(return_value=True)
+    monkeypatch.setattr(
+        "app.api.miniapp.groups_v2.reconcile_group_bot_status",
+        reconcile,
+    )
+
+    with TestClient(app) as client:
+        app.state.groups_v2_repository = repository
+        app.state.telegram_access_service = access
+        response = client.get("/api/miniapp/v1/groups-v2")
+
+    assert response.status_code == 200
+    assert response.json()["groups"][0]["status"]["id"] == "active"
+    assert repository.list_groups.await_count == 2
+    access.get_bot_status.assert_awaited_once_with(-1001)
+    reconcile.assert_awaited_once()
+
+
 def test_split_group_endpoints_return_independent_payloads() -> None:
     app = create_app(build_settings())
     app.dependency_overrides[get_miniapp_user] = current_user
