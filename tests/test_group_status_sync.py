@@ -41,7 +41,9 @@ async def test_message_refresh_keeps_known_administrator_status(tmp_path) -> Non
 
 
 @pytest.mark.asyncio
-async def test_authoritative_telegram_status_repairs_stale_database_value(tmp_path) -> None:
+async def test_authoritative_telegram_status_repairs_stale_database_value(
+    tmp_path,
+) -> None:
     database = Database(f"sqlite+aiosqlite:///{tmp_path / 'reconcile.db'}")
     await database.create_schema()
     repository = ActivityRepository(database.session_factory)
@@ -72,7 +74,9 @@ async def test_bot_identity_is_resolved_once_for_status_checks() -> None:
     bot = SimpleNamespace(
         get_me=AsyncMock(return_value=SimpleNamespace(id=777)),
         get_chat_member=AsyncMock(
-            return_value=SimpleNamespace(status=SimpleNamespace(value="administrator"))
+            return_value=SimpleNamespace(
+                status=SimpleNamespace(value="administrator")
+            )
         ),
     )
     service = TelegramAccessService(bot)
