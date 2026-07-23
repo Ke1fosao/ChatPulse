@@ -129,10 +129,8 @@ class AchievementMiniAppRepository(MiniAppRepository):
                     .select_from(AchievementUnlockRecord)
                     .where(
                         AchievementUnlockRecord.telegram_user_id == user_id,
-                        AchievementUnlockRecord.earned_at
-                        >= datetime(year, 1, 1, tzinfo=UTC),
-                        AchievementUnlockRecord.earned_at
-                        < datetime(year + 1, 1, 1, tzinfo=UTC),
+                        AchievementUnlockRecord.earned_at >= datetime(year, 1, 1, tzinfo=UTC),
+                        AchievementUnlockRecord.earned_at < datetime(year + 1, 1, 1, tzinfo=UTC),
                     )
                 )
                 or 0
@@ -146,8 +144,7 @@ class AchievementMiniAppRepository(MiniAppRepository):
                 "best_streak": best_streak,
                 "top_month": top_month,
                 "monthly_xp": [
-                    {"month": month, "xp": monthly_xp.get(month, 0)}
-                    for month in range(1, 13)
+                    {"month": month, "xp": monthly_xp.get(month, 0)} for month in range(1, 13)
                 ],
                 "achievements_count": achievements_count,
             }
