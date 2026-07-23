@@ -74,9 +74,7 @@ async def test_bot_identity_is_resolved_once_for_status_checks() -> None:
     bot = SimpleNamespace(
         get_me=AsyncMock(return_value=SimpleNamespace(id=777)),
         get_chat_member=AsyncMock(
-            return_value=SimpleNamespace(
-                status=SimpleNamespace(value="administrator")
-            )
+            return_value=SimpleNamespace(status=SimpleNamespace(value="administrator"))
         ),
     )
     service = TelegramAccessService(bot)
