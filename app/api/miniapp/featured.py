@@ -86,9 +86,9 @@ async def profile_card_showcase(
     )
     payload["user"]["photo_url"] = user.photo_url
     payload["account"] = account.to_dict()
-    payload["featured_achievements"] = (
-        await request.app.state.featured_achievement_repository.list_featured(user.telegram_id)
-    )
+    payload[
+        "featured_achievements"
+    ] = await request.app.state.featured_achievement_repository.list_featured(user.telegram_id)
     image = render_profile_card(payload)
     return Response(
         content=image,
