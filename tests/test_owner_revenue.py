@@ -14,42 +14,76 @@ async def revenue_repository(tmp_path):
     await database.create_schema()
     now = datetime(2026, 7, 23, 12, 0, tzinfo=UTC)
     async with database.session_factory() as session, session.begin():
-        session.add_all([
-            User(telegram_id=1, first_name="Owner", username="owner"),
-            User(telegram_id=10, first_name="Trial", username="trial"),
-            User(telegram_id=20, first_name="Monthly", username="monthly"),
-            BotOwner(key="primary", telegram_user_id=1, claimed_at=now),
-        ])
+        session.add_all(
+            [
+                User(telegram_id=1, first_name="Owner", username="owner"),
+                User(telegram_id=10, first_name="Trial", username="trial"),
+                User(telegram_id=20, first_name="Monthly", username="monthly"),
+                BotOwner(key="primary", telegram_user_id=1, claimed_at=now),
+            ]
+        )
         trial_intent = VipInvoiceIntent(
-            payload="trial", telegram_user_id=10, product_code="trial_7d",
-            stars_amount=1, is_recurring=False, status="paid", created_at=now - timedelta(days=10),
+            payload="trial",
+            telegram_user_id=10,
+            product_code="trial_7d",
+            stars_amount=1,
+            is_recurring=False,
+            status="paid",
+            created_at=now - timedelta(days=10),
         )
         monthly_intent = VipInvoiceIntent(
-            payload="monthly", telegram_user_id=20, product_code="monthly_30d",
-            stars_amount=59, is_recurring=True, status="open", created_at=now - timedelta(days=2),
+            payload="monthly",
+            telegram_user_id=20,
+            product_code="monthly_30d",
+            stars_amount=59,
+            is_recurring=True,
+            status="open",
+            created_at=now - timedelta(days=2),
         )
         session.add_all([trial_intent, monthly_intent])
         await session.flush()
         trial_payment = VipPayment(
-            invoice_intent_id=trial_intent.id, telegram_user_id=10, product_code="trial_7d",
-            stars_amount=1, telegram_payment_charge_id="charge-trial", status="paid",
-            paid_at=now - timedelta(days=10), granted_until=now - timedelta(days=3),
+            invoice_intent_id=trial_intent.id,
+            telegram_user_id=10,
+            product_code="trial_7d",
+            stars_amount=1,
+            telegram_payment_charge_id="charge-trial",
+            status="paid",
+            paid_at=now - timedelta(days=10),
+            granted_until=now - timedelta(days=3),
         )
         monthly_payment = VipPayment(
-            invoice_intent_id=monthly_intent.id, telegram_user_id=20, product_code="monthly_30d",
-            stars_amount=59, telegram_payment_charge_id="charge-monthly", status="paid",
-            is_recurring=True, is_first_recurring=True,
+            invoice_intent_id=monthly_intent.id,
+            telegram_user_id=20,
+            product_code="monthly_30d",
+            stars_amount=59,
+            telegram_payment_charge_id="charge-monthly",
+            status="paid",
+            is_recurring=True,
+            is_first_recurring=True,
             subscription_expiration_date=now + timedelta(days=28),
-            paid_at=now - timedelta(days=2), granted_until=now + timedelta(days=28),
+            paid_at=now - timedelta(days=2),
+            granted_until=now + timedelta(days=28),
         )
         session.add_all([trial_payment, monthly_payment])
         await session.flush()
-        session.add(VipTrialClaim(telegram_user_id=10, payment_id=trial_payment.id, claimed_at=now - timedelta(days=10)))
-        session.add(VipGrant(
-            telegram_user_id=20, is_active=True, starts_at=now - timedelta(days=2),
-            expires_at=now + timedelta(days=28), granted_by_owner_id=0,
-            grant_reason="Telegram Stars · monthly_30d",
-        ))
+        session.add(
+            VipTrialClaim(
+                telegram_user_id=10,
+                payment_id=trial_payment.id,
+                claimed_at=now - timedelta(days=10),
+            )
+        )
+        session.add(
+            VipGrant(
+                telegram_user_id=20,
+                is_active=True,
+                starts_at=now - timedelta(days=2),
+                expires_at=now + timedelta(days=28),
+                granted_by_owner_id=0,
+                grant_reason="Telegram Stars · monthly_30d",
+            )
+        )
     yield OwnerRevenueRepository(database.session_factory), database, now
     await database.dispose()
 
@@ -88,7 +122,9 @@ async def test_transactions_support_search_and_notes(revenue_repository) -> None
 
 
 @pytest.mark.asyncio
-async def test_refund_eligibility_blocks_non_latest_or_owner_granted_access(revenue_repository) -> None:
+async def test_refund_eligibility_blocks_non_latest_or_owner_granted_access(
+    revenue_repository,
+) -> None:
     repository, database, now = revenue_repository
     transactions = await repository.list_transactions(limit=50, offset=0)
     monthly = next(item for item in transactions["items"] if item["product_code"] == "monthly_30d")

@@ -97,6 +97,10 @@ export interface VipMutationResult {
 export interface RevenueSummary {
   period_days: number;
   stars: number;
+  stars_today: number;
+  stars_7d: number;
+  stars_30d: number;
+  stars_all_time: number;
   payments: number;
   unique_payers: number;
   average_payment: number;
@@ -108,6 +112,8 @@ export interface RevenueSummary {
   refunds: number;
   refunded_stars: number;
   expiring_7d: number;
+  trial_previews: number;
+  trial_invoices: number;
   trial_paid: number;
   trial_converted: number;
   trial_conversion_percent: number;

@@ -9,7 +9,8 @@ from typing import Any
 from sqlalchemy import String, cast, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
-from app.billing_models import VipInvoiceIntent, VipPayment, VipTrialClaim
+from app.billing_models import VipInvoiceIntent, VipPayment
+from app.vip_product_models import VipProductEvent
 from app.models import User, VipGrant, utc_now
 from app.owner_revenue_models import OwnerPaymentNote
 
@@ -21,7 +22,9 @@ def _as_utc(value: datetime) -> datetime:
 
 
 def _display_name(user: User) -> str:
-    return " ".join(part for part in (user.first_name, user.last_name) if part).strip() or str(user.telegram_id)
+    return " ".join(part for part in (user.first_name, user.last_name) if part).strip() or str(
+        user.telegram_id
+    )
 
 
 class OwnerRevenueRepository:
@@ -33,11 +36,7 @@ class OwnerRevenueRepository:
         start = current - timedelta(days=max(1, min(days, 366)))
         async with self._session_factory() as session:
             period_rows = list(
-                (
-                    await session.scalars(
-                        select(VipPayment).where(VipPayment.paid_at >= start)
-                    )
-                ).all()
+                (await session.scalars(select(VipPayment).where(VipPayment.paid_at >= start))).all()
             )
             all_paid = list(
                 (
@@ -58,12 +57,9 @@ class OwnerRevenueRepository:
                     )
                 ).all()
             )
-            intents = {
-                int(row.id): row
-                for row in (
-                    await session.scalars(select(VipInvoiceIntent))
-                ).all()
-            }
+            intent_rows = list((await session.scalars(select(VipInvoiceIntent))).all())
+            intents = {int(row.id): row for row in intent_rows}
+            product_events = list((await session.scalars(select(VipProductEvent))).all())
 
         paid = [row for row in period_rows if row.status == "paid"]
         refunded = [row for row in period_rows if row.status == "refunded"]
@@ -78,7 +74,9 @@ class OwnerRevenueRepository:
             if intent and intent.status != "canceled":
                 recurring_users.add(int(row.telegram_user_id))
 
-        trial_users = {int(row.telegram_user_id) for row in all_paid if row.product_code == "trial_7d"}
+        trial_users = {
+            int(row.telegram_user_id) for row in all_paid if row.product_code == "trial_7d"
+        }
         converted_users = {
             user_id
             for user_id in trial_users
@@ -92,13 +90,43 @@ class OwnerRevenueRepository:
         expiring_7d = sum(
             1
             for row in active_grants
-            if row.expires_at
-            and current < _as_utc(row.expires_at) <= current + timedelta(days=7)
+            if row.expires_at and current < _as_utc(row.expires_at) <= current + timedelta(days=7)
         )
         stars = sum(int(row.stars_amount) for row in paid)
+        stars_today = sum(
+            int(row.stars_amount)
+            for row in all_paid
+            if _as_utc(row.paid_at).date() == current.date()
+        )
+        stars_7d = sum(
+            int(row.stars_amount)
+            for row in all_paid
+            if _as_utc(row.paid_at) >= current - timedelta(days=7)
+        )
+        stars_30d = sum(
+            int(row.stars_amount)
+            for row in all_paid
+            if _as_utc(row.paid_at) >= current - timedelta(days=30)
+        )
+        stars_all_time = sum(int(row.stars_amount) for row in all_paid)
+        preview_users = {
+            int(row.telegram_user_id)
+            for row in product_events
+            if row.event_type in {"vip_viewed", "vip_feature_previewed"}
+            and _as_utc(row.created_at) >= start
+        }
+        trial_invoice_users = {
+            int(row.telegram_user_id)
+            for row in intent_rows
+            if row.product_code == "trial_7d" and _as_utc(row.created_at) >= start
+        }
         return {
             "period_days": days,
             "stars": stars,
+            "stars_today": stars_today,
+            "stars_7d": stars_7d,
+            "stars_30d": stars_30d,
+            "stars_all_time": stars_all_time,
             "payments": len(paid),
             "unique_payers": len(payer_ids),
             "average_payment": round(stars / len(paid), 2) if paid else 0,
@@ -110,16 +138,18 @@ class OwnerRevenueRepository:
             "refunds": len(refunded),
             "refunded_stars": sum(int(row.stars_amount) for row in refunded),
             "expiring_7d": expiring_7d,
+            "trial_previews": len(preview_users),
+            "trial_invoices": len(trial_invoice_users),
             "trial_paid": len(trial_users),
             "trial_converted": len(converted_users),
-            "trial_conversion_percent": round(
-                len(converted_users) * 100 / len(trial_users), 1
-            )
+            "trial_conversion_percent": round(len(converted_users) * 100 / len(trial_users), 1)
             if trial_users
             else 0,
         }
 
-    async def get_timeline(self, *, days: int = 30, now: datetime | None = None) -> list[dict[str, Any]]:
+    async def get_timeline(
+        self, *, days: int = 30, now: datetime | None = None
+    ) -> list[dict[str, Any]]:
         current = _as_utc(now or utc_now())
         safe_days = max(1, min(days, 366))
         start_date = (current - timedelta(days=safe_days - 1)).date()
@@ -127,7 +157,10 @@ class OwnerRevenueRepository:
             rows = list(
                 (
                     await session.scalars(
-                        select(VipPayment).where(VipPayment.paid_at >= datetime.combine(start_date, datetime.min.time(), tzinfo=UTC))
+                        select(VipPayment).where(
+                            VipPayment.paid_at
+                            >= datetime.combine(start_date, datetime.min.time(), tzinfo=UTC)
+                        )
                     )
                 ).all()
             )
@@ -151,7 +184,9 @@ class OwnerRevenueRepository:
             for index in range(safe_days)
         ]
 
-    async def get_plan_distribution(self, *, days: int = 30, now: datetime | None = None) -> list[dict[str, Any]]:
+    async def get_plan_distribution(
+        self, *, days: int = 30, now: datetime | None = None
+    ) -> list[dict[str, Any]]:
         current = _as_utc(now or utc_now())
         start = current - timedelta(days=max(1, min(days, 366)))
         async with self._session_factory() as session:
@@ -172,7 +207,9 @@ class OwnerRevenueRepository:
             bucket["stars"] += int(row.stars_amount)
         return [
             {"product_code": code, **values}
-            for code, values in sorted(buckets.items(), key=lambda item: item[1]["stars"], reverse=True)
+            for code, values in sorted(
+                buckets.items(), key=lambda item: item[1]["stars"], reverse=True
+            )
         ]
 
     async def list_transactions(
@@ -188,7 +225,9 @@ class OwnerRevenueRepository:
         now: datetime | None = None,
     ) -> dict[str, Any]:
         current = _as_utc(now or utc_now())
-        statement = select(VipPayment, User).join(User, User.telegram_id == VipPayment.telegram_user_id)
+        statement = select(VipPayment, User).join(
+            User, User.telegram_id == VipPayment.telegram_user_id
+        )
         normalized = (query or "").strip().casefold()
         if normalized:
             pattern = f"%{normalized}%"
@@ -208,7 +247,9 @@ class OwnerRevenueRepository:
         if recurring is not None:
             statement = statement.where(VipPayment.is_recurring.is_(recurring))
         if days:
-            statement = statement.where(VipPayment.paid_at >= current - timedelta(days=min(days, 366)))
+            statement = statement.where(
+                VipPayment.paid_at >= current - timedelta(days=min(days, 366))
+            )
 
         async with self._session_factory() as session:
             total = int(
@@ -245,19 +286,25 @@ class OwnerRevenueRepository:
                 select(OwnerPaymentNote).where(OwnerPaymentNote.payment_id == payment_id)
             )
             history = (
-                await session.execute(
-                    select(VipPayment)
-                    .where(VipPayment.telegram_user_id == payment.telegram_user_id)
-                    .order_by(VipPayment.paid_at.desc())
+                (
+                    await session.execute(
+                        select(VipPayment)
+                        .where(VipPayment.telegram_user_id == payment.telegram_user_id)
+                        .order_by(VipPayment.paid_at.desc())
+                    )
                 )
-            ).scalars().all()
+                .scalars()
+                .all()
+            )
             grant = await session.get(VipGrant, int(payment.telegram_user_id))
         payload = self._serialize_payment(payment, user)
         payload["note"] = self._serialize_note(note) if note else None
         payload["history"] = [self._serialize_payment(item, user) for item in history]
         payload["vip_grant"] = {
             "is_active": bool(grant and grant.is_active),
-            "expires_at": _as_utc(grant.expires_at).isoformat() if grant and grant.expires_at else None,
+            "expires_at": _as_utc(grant.expires_at).isoformat()
+            if grant and grant.expires_at
+            else None,
             "granted_by_owner_id": int(grant.granted_by_owner_id or 0) if grant else None,
             "reason": grant.grant_reason if grant else None,
         }
@@ -323,12 +370,20 @@ class OwnerRevenueRepository:
                 .order_by(VipPayment.paid_at.desc(), VipPayment.id.desc())
             )
             if latest is None or int(latest.id) != int(payment.id):
-                return {"eligible": False, "reason": "Повернути можна лише останню активну покупку."}
+                return {
+                    "eligible": False,
+                    "reason": "Повернути можна лише останню активну покупку.",
+                }
             grant = await session.get(VipGrant, int(payment.telegram_user_id))
             if grant and int(grant.granted_by_owner_id or 0) != 0:
                 return {"eligible": False, "reason": "Поточний VIP був подарований власником."}
             if grant and payment.granted_until and grant.expires_at:
-                if abs((_as_utc(grant.expires_at) - _as_utc(payment.granted_until)).total_seconds()) > 60:
+                if (
+                    abs(
+                        (_as_utc(grant.expires_at) - _as_utc(payment.granted_until)).total_seconds()
+                    )
+                    > 60
+                ):
                     return {"eligible": False, "reason": "VIP-період уже змінено іншою операцією."}
             return {
                 "eligible": True,
@@ -337,8 +392,12 @@ class OwnerRevenueRepository:
                 "charge_id": payment.telegram_payment_charge_id,
                 "stars": int(payment.stars_amount),
                 "product_code": payment.product_code,
-                "active_until": _as_utc(payment.granted_until).isoformat() if payment.granted_until else None,
-                "is_active": bool(payment.granted_until and _as_utc(payment.granted_until) > current),
+                "active_until": _as_utc(payment.granted_until).isoformat()
+                if payment.granted_until
+                else None,
+                "is_active": bool(
+                    payment.granted_until and _as_utc(payment.granted_until) > current
+                ),
             }
 
     async def apply_refund(
@@ -369,7 +428,9 @@ class OwnerRevenueRepository:
             )
             grant = await session.get(VipGrant, int(payment.telegram_user_id))
             if grant is not None:
-                previous_until = _as_utc(previous.granted_until) if previous and previous.granted_until else None
+                previous_until = (
+                    _as_utc(previous.granted_until) if previous and previous.granted_until else None
+                )
                 if previous_until and previous_until > current:
                     grant.is_active = True
                     grant.expires_at = previous_until
@@ -394,17 +455,35 @@ class OwnerRevenueRepository:
                 break
         buffer = io.StringIO()
         writer = csv.writer(buffer)
-        writer.writerow([
-            "paid_at", "telegram_user_id", "username", "product_code", "stars",
-            "status", "recurring", "granted_until", "refunded_at", "charge_id",
-        ])
+        writer.writerow(
+            [
+                "paid_at",
+                "telegram_user_id",
+                "username",
+                "product_code",
+                "stars",
+                "status",
+                "recurring",
+                "granted_until",
+                "refunded_at",
+                "charge_id",
+            ]
+        )
         for item in rows:
-            writer.writerow([
-                item["paid_at"], item["telegram_user_id"], item.get("username") or "",
-                item["product_code"], item["stars_amount"], item["status"],
-                item["is_recurring"], item.get("granted_until") or "",
-                item.get("refunded_at") or "", item["telegram_payment_charge_id"],
-            ])
+            writer.writerow(
+                [
+                    item["paid_at"],
+                    item["telegram_user_id"],
+                    item.get("username") or "",
+                    item["product_code"],
+                    item["stars_amount"],
+                    item["status"],
+                    item["is_recurring"],
+                    item.get("granted_until") or "",
+                    item.get("refunded_at") or "",
+                    item["telegram_payment_charge_id"],
+                ]
+            )
         return buffer.getvalue().encode("utf-8-sig")
 
     @staticmethod
@@ -420,9 +499,17 @@ class OwnerRevenueRepository:
             "is_recurring": bool(payment.is_recurring),
             "is_first_recurring": bool(payment.is_first_recurring),
             "paid_at": _as_utc(payment.paid_at).isoformat(),
-            "granted_until": _as_utc(payment.granted_until).isoformat() if payment.granted_until else None,
-            "subscription_expiration_date": _as_utc(payment.subscription_expiration_date).isoformat() if payment.subscription_expiration_date else None,
-            "refunded_at": _as_utc(payment.refunded_at).isoformat() if payment.refunded_at else None,
+            "granted_until": _as_utc(payment.granted_until).isoformat()
+            if payment.granted_until
+            else None,
+            "subscription_expiration_date": _as_utc(
+                payment.subscription_expiration_date
+            ).isoformat()
+            if payment.subscription_expiration_date
+            else None,
+            "refunded_at": _as_utc(payment.refunded_at).isoformat()
+            if payment.refunded_at
+            else None,
             "refund_reason": payment.refund_reason,
             "telegram_payment_charge_id": payment.telegram_payment_charge_id,
         }

@@ -108,10 +108,13 @@ export function OwnerPayments() {
   const metrics = useMemo(() => {
     if (!summary) return [];
     return [
-      { label: `Stars · ${days} дн.`, value: `${summary.stars} ⭐`, note: `${summary.payments} оплат`, icon: Star },
+      { label: "Stars сьогодні", value: `${summary.stars_today} ⭐`, note: "успішні оплати", icon: Star },
+      { label: "Stars · 7 днів", value: `${summary.stars_7d} ⭐`, note: "чистий дохід", icon: ArrowUpRight },
+      { label: "Stars · 30 днів", value: `${summary.stars_30d} ⭐`, note: `${summary.payments} оплат у фільтрі`, icon: CircleDollarSign },
+      { label: "Stars · весь час", value: `${summary.stars_all_time} ⭐`, note: "без повернених", icon: WalletCards },
       { label: "MRR", value: `${summary.mrr_stars} ⭐`, note: `${summary.active_subscriptions} підписок`, icon: RotateCcw },
       { label: "ARPPU", value: `${summary.arppu_stars} ⭐`, note: `${summary.unique_payers} платників`, icon: Users },
-      { label: "Trial → paid", value: `${summary.trial_conversion_percent}%`, note: `${summary.trial_converted}/${summary.trial_paid}`, icon: ArrowUpRight },
+      { label: "Trial → paid", value: `${summary.trial_conversion_percent}%`, note: `${summary.trial_previews} preview · ${summary.trial_invoices} invoice · ${summary.trial_converted} paid`, icon: ArrowUpRight },
       { label: "Повернення", value: `${summary.refunded_stars} ⭐`, note: `${summary.refunds} операцій`, icon: ArrowDownRight },
       { label: "VIP завершується", value: summary.expiring_7d, note: "у наступні 7 днів", icon: CalendarClock },
     ];

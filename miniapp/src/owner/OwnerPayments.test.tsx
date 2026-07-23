@@ -23,6 +23,10 @@ beforeEach(() => {
   mockedApi.summary.mockResolvedValue({
     period_days: 30,
     stars: 208,
+    stars_today: 59,
+    stars_7d: 208,
+    stars_30d: 208,
+    stars_all_time: 350,
     payments: 4,
     unique_payers: 3,
     average_payment: 52,
@@ -34,6 +38,8 @@ beforeEach(() => {
     refunds: 1,
     refunded_stars: 1,
     expiring_7d: 1,
+    trial_previews: 5,
+    trial_invoices: 2,
     trial_paid: 2,
     trial_converted: 1,
     trial_conversion_percent: 50,
@@ -62,7 +68,8 @@ beforeEach(() => {
 it("renders Stars KPIs, funnel and transaction list", async () => {
   render(<OwnerPayments />);
 
-  expect(await screen.findByText("208 ⭐")).toBeInTheDocument();
+  expect(await screen.findAllByText("208 ⭐")).toHaveLength(2);
+  expect(screen.getByText("350 ⭐")).toBeInTheDocument();
   expect(screen.getByText("59 ⭐")).toBeInTheDocument();
   expect(screen.getByText("50%")).toBeInTheDocument();
   expect(screen.getByText("Monthly User")).toBeInTheDocument();

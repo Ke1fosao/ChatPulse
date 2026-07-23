@@ -69,7 +69,9 @@ async def transactions(
     _owner: Annotated[TelegramMiniAppUser, Depends(get_owner_user)],
     q: Annotated[str | None, Query(max_length=128)] = None,
     product: Annotated[str | None, Query(max_length=32)] = None,
-    payment_status: Annotated[Literal["paid", "refunded", "refund_required"] | None, Query()] = None,
+    payment_status: Annotated[
+        Literal["paid", "refunded", "refund_required"] | None, Query()
+    ] = None,
     recurring: Annotated[bool | None, Query()] = None,
     days: Annotated[int | None, Query(ge=1, le=366)] = None,
     limit: Annotated[int, Query(ge=1, le=100)] = 50,
@@ -121,7 +123,9 @@ async def update_payment_note(
     except LookupError as error:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(error)) from error
     except ValueError as error:
-        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(error)) from error
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(error)
+        ) from error
 
 
 @router.post("/transactions/{payment_id}/refund")
@@ -162,7 +166,9 @@ async def owner_subscription_state(
     except LookupError as error:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(error)) from error
     except ValueError as error:
-        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(error)) from error
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(error)
+        ) from error
 
 
 @router.get("/export.csv")
