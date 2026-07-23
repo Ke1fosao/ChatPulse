@@ -76,7 +76,8 @@ async def history(
     user: Annotated[TelegramMiniAppUser, Depends(get_miniapp_user)],
     limit: Annotated[int, Query(ge=1, le=50)] = 20,
 ) -> dict:
-    return {"payments": await _billing(request).list_history(user.telegram_id, limit=limit)}
+    payments = await _billing(request).list_history(user.telegram_id, limit=limit)
+    return {"payments": payments}
 
 
 @router.post("/invoice")
@@ -101,18 +102,18 @@ async def create_invoice(
 
     plan = get_vip_plan(payload.plan_code)
     bot: Bot = request.app.state.bot
-    kwargs = {
+    invoice_arguments = {
         "title": plan.title,
         "description": plan.description,
         "payload": intent["payload"],
-        "provider_token": None,
+        "provider_token": "",
         "currency": "XTR",
         "prices": [LabeledPrice(label=plan.short_title, amount=plan.stars)],
     }
     if plan.subscription_period is not None:
-        kwargs["subscription_period"] = plan.subscription_period
+        invoice_arguments["subscription_period"] = plan.subscription_period
     try:
-        invoice_url = await bot.create_invoice_link(**kwargs)
+        invoice_url = await bot.create_invoice_link(**invoice_arguments)
     except Exception as error:
         await _billing(request).invalidate_invoice(intent["payload"])
         raise HTTPException(
