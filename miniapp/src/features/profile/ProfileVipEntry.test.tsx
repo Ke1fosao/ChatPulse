@@ -21,6 +21,24 @@ function payload(plan: "free" | "vip" | "owner"): HomePayload {
       vip_expires_at: plan === "vip" ? "2026-08-23T10:00:00+00:00" : null,
       entitlements: plan === "free" ? [] : ["premium.all"],
     },
+    onboarding: {
+      completed_steps: 3,
+      total_steps: 3,
+      is_complete: true,
+      primary_action: "done",
+      add_group_url: null,
+      linked_group: null,
+      steps: [
+        { id: "start", title: "Запусти ChatPulse", description: "Готово", completed: true },
+        { id: "group", title: "Додай у групу", description: "Готово", completed: true },
+        {
+          id: "activity",
+          title: "Створи перший пульс",
+          description: "Готово",
+          completed: true,
+        },
+      ],
+    },
     global_progress: {
       xp_total: 100,
       level: 2,
