@@ -78,103 +78,8 @@ export interface GroupCardData {
   current_streak: number;
   rank?: number | null;
   period: Summary;
-  trend?: number | null;
-  is_admin: boolean;
-  last_activity_at: string;
-}
-
-export interface AchievementChain {
-  key: string;
-  stage: number;
-  total: number;
-}
-
-export interface Achievement {
-  code: string;
-  title: string;
-  description: string;
-  category: string;
-  rarity: AchievementRarity;
-  scope: "group" | "global";
-  icon: string;
-  visual_theme: string;
-  hidden: boolean;
-  important: boolean;
-  earned: boolean;
-  earned_at?: string | null;
-  group_title?: string | null;
-  progress: number;
-  threshold: number;
-  comparator?: "gte" | "lte";
-  chain?: AchievementChain | null;
-  reward_xp: number;
-  version: number;
-  season_key?: string | null;
-}
-
-interface AchievementEventBase {
-  event_id: number;
-  created_at: string;
-}
-
-export interface AchievementUnlockEventPayload extends AchievementEventBase {
-  event_type: "unlock";
-  achievement: Achievement;
-}
-
-export interface AchievementCollectionUpdateEventPayload extends AchievementEventBase {
-  event_type: "collection_update";
-  summary: {
-    count: number;
-    achievements: Achievement[];
-  };
-}
-
-export type AchievementEventPayload =
-  | AchievementUnlockEventPayload
-  | AchievementCollectionUpdateEventPayload;
-
-export interface RecentAchievement {
-  code: string;
-  title: string;
-  description: string;
-  rarity: AchievementRarity;
-  earned_at: string;
-  group_title: string;
-}
-
-export type OnboardingStepId = "start" | "group" | "activity";
-
-export interface OnboardingStep {
-  id: OnboardingStepId;
-  title: string;
-  description: string;
-  completed: boolean;
-}
-
-export interface OnboardingPayload {
-  completed_steps: number;
-  total_steps: number;
-  is_complete: boolean;
-  primary_action: "add_group" | "send_message" | "done";
-  add_group_url: string | null;
-  linked_group?: {
-    telegram_chat_id: number;
-    title: string;
-    username?: string | null;
-  } | null;
-  steps: OnboardingStep[];
-}
-
-export interface HomePayload {
-  user: UserSummary;
-  account: AccountAccess;
-  onboarding: OnboardingPayload;
-  global_progress: GlobalProgress;
-  quick_stats: QuickStats;
-  activity_series: ActivityPoint[];
-  recent_achievements: RecentAchievement[];
-  groups: GroupCardData[];
+  is_admin?: boolean;
+  settings?: GroupSettings;
 }
 
 export interface RankingRow {
@@ -183,35 +88,89 @@ export interface RankingRow {
   display_name: string;
   username?: string | null;
   value: number;
-  metric: Metric;
-  is_current_user: boolean;
-  account_plan?: "free" | "vip" | "owner";
+  level: number;
+  tier?: string;
+  streak?: number;
 }
 
 export interface RankingPayload {
+  chat_id: number;
   metric: Metric;
   period: Period;
   rows: RankingRow[];
   current_user?: RankingRow | null;
 }
 
-export interface HeatmapPoint {
-  weekday: number;
-  bucket: "night" | "morning" | "day";
-  value: number;
+export interface Achievement {
+  code: string;
+  title: string;
+  description: string;
+  icon: string;
+  category: string;
+  rarity: AchievementRarity;
+  earned: boolean;
+  earned_at?: string | null;
+  progress?: number;
+  target?: number;
+  is_secret?: boolean;
+  near_complete?: boolean;
+  tier?: string;
+  featured?: boolean;
+}
+
+export interface AchievementEventPayload {
+  id: number;
+  achievement_code: string;
+  title: string;
+  description: string;
+  icon: string;
+  rarity: AchievementRarity;
+  earned_at: string;
+  telegram_chat_id?: number | null;
+  group_title?: string | null;
+  seen_at?: string | null;
+  shared_at?: string | null;
 }
 
 export interface GroupSettings {
-  is_paused: boolean;
+  timezone: string;
   weekly_reports_enabled: boolean;
-  timezone: "Europe/Kyiv" | "Europe/Warsaw" | "Europe/Berlin";
   report_weekday: number;
-  report_time: string;
+  report_hour: number;
+  report_minute: number;
   report_card_theme: ReportTheme;
+  is_paused: boolean;
   track_messages: boolean;
   track_media: boolean;
   track_replies: boolean;
   track_reactions: boolean;
+}
+
+export interface OnboardingPayload {
+  completed: boolean;
+  dismissed: boolean;
+  steps: Array<{
+    id: string;
+    title: string;
+    description: string;
+    completed: boolean;
+  }>;
+}
+
+export interface HomePayload {
+  user: UserSummary;
+  account: AccountAccess;
+  progress: GlobalProgress;
+  quick_stats: QuickStats;
+  activity: ActivityPoint[];
+  top_groups: GroupCardData[];
+  onboarding: OnboardingPayload;
+}
+
+export interface HeatmapPoint {
+  date: string;
+  count: number;
+  intensity: number;
 }
 
 export interface GroupDashboard {
@@ -262,6 +221,13 @@ export interface GroupDashboard {
   capabilities?: { is_admin: boolean };
 }
 
+export interface ApiErrorDetail {
+  code?: string;
+  message?: string;
+  reason?: string | null;
+  [key: string]: unknown;
+}
+
 export interface ApiErrorBody {
-  detail?: string;
+  detail?: string | ApiErrorDetail;
 }
