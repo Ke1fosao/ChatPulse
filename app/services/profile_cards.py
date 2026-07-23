@@ -183,7 +183,12 @@ def render_profile_card(payload: dict[str, Any]) -> bytes:
     draw.text((366, 560), progress_label, font=small_font, fill=(137, 147, 174))
 
     metrics = (
-        ("МІСЦЕ", f"#{int(progress.get('rank', 0)) or '—'}", "у глобальному рейтингу", (91, 63, 145)),
+        (
+            "МІСЦЕ",
+            f"#{int(progress.get('rank', 0)) or '—'}",
+            "у глобальному рейтингу",
+            (91, 63, 145),
+        ),
         ("ПОВІДОМЛЕННЯ", str(int(quick.get("messages_7d", 0))), "за останні 7 днів", (31, 83, 102)),
         ("ЗАХИСТ", str(int(quick.get("protection_left", 0))), "днів залишилось", (27, 89, 77)),
     )
