@@ -39,17 +39,39 @@ export function ProfilePage({
         onOpenLevels={onOpenLevels}
       />
 
-      <section className={`account-plan-card ${data.account.is_owner ? "account-plan-card--owner" : data.account.is_vip ? "account-plan-card--vip" : "account-plan-card--free"}`}>
+      <section
+        className={`account-plan-card ${
+          data.account.is_owner
+            ? "account-plan-card--owner"
+            : data.account.is_vip
+              ? "account-plan-card--vip"
+              : "account-plan-card--free"
+        }`}
+      >
         <span><Crown size={22} /></span>
         <div>
-          <p>{data.account.is_owner ? "Owner · Creator" : data.account.is_vip ? "VIP-клієнт" : "Стандартний учасник"}</p>
-          <strong>{data.account.is_owner ? "Ти створив і контролюєш ChatPulse" : data.account.is_vip ? "Усі premium-функції активні" : "Базовий доступ до аналітики"}</strong>
+          <p>
+            {data.account.is_owner
+              ? "Owner · Creator"
+              : data.account.is_vip
+                ? "VIP-клієнт"
+                : "Стандартний учасник"}
+          </p>
+          <strong>
+            {data.account.is_owner
+              ? "Ти створив і контролюєш ChatPulse"
+              : data.account.is_vip
+                ? "Усі premium-функції активні"
+                : "Базовий доступ до аналітики"}
+          </strong>
           <small>
             {data.account.is_owner
               ? "Роль захищена Telegram ID та серверною перевіркою"
               : data.account.is_vip
                 ? data.account.vip_expires_at
-                  ? `VIP діє до ${new Intl.DateTimeFormat("uk-UA", { dateStyle: "medium" }).format(new Date(data.account.vip_expires_at))}`
+                  ? `VIP діє до ${new Intl.DateTimeFormat("uk-UA", {
+                      dateStyle: "medium",
+                    }).format(new Date(data.account.vip_expires_at))}`
                   : "Безстроковий VIP-доступ"
                 : "Premium-функції відкриваються через VIP"}
           </small>
@@ -73,8 +95,32 @@ export function ProfilePage({
       </section>
 
       <section className="profile-actions panel">
+        <button
+          type="button"
+          className="profile-vip-action"
+          onClick={() => window.location.assign("/miniapp/vip")}
+        >
+          <span><Crown size={20} /></span>
+          <div>
+            <strong>
+              {data.account.is_owner || data.account.is_vip
+                ? "Керувати ChatPulse VIP"
+                : "Спробувати VIP за 1 ⭐"}
+            </strong>
+            <small>
+              {data.account.is_owner || data.account.is_vip
+                ? "Тарифи, експорт, досягнення та підписка"
+                : "7 днів усіх premium-функцій без автопродовження"}
+            </small>
+          </div>
+          <ExternalLink size={18} />
+        </button>
         {data.account.is_owner ? (
-          <button type="button" className="profile-owner-action" onClick={() => window.location.assign("/miniapp/owner")}>
+          <button
+            type="button"
+            className="profile-owner-action"
+            onClick={() => window.location.assign("/miniapp/owner")}
+          >
             <span><Crown size={20} /></span>
             <div><strong>Owner Panel</strong><small>Користувачі, VIP, групи та аудит</small></div>
             <ExternalLink size={18} />
@@ -111,8 +157,8 @@ export function ProfilePage({
       </section>
 
       <section className="profile-info-list panel">
-        <div><BellRing size={18} /><span>Важливі рівні й досягнення приходять у Telegram</span></div>
-        <div><Info size={18} /><span>Натисни на рівень, щоб побачити всю систему прогресу</span></div>
+        <div><BellRing size={18} /><span>Важливі рівні, платежі та досягнення приходять у Telegram</span></div>
+        <div><Info size={18} /><span>VIP не додає XP і не впливає на чесність рейтингів</span></div>
       </section>
     </div>
   );
