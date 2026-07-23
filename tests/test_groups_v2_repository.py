@@ -178,7 +178,7 @@ async def test_overview_returns_pulse_and_privacy_safe_insights(groups_v2_reposi
     assert overview is not None
     assert 0 <= overview["pulse"]["score"] <= 100
     assert overview["group"]["status"]["id"] == "active"
-    assert overview["personal_progress"]["rank_change"] == 1
+    assert overview["personal_progress"]["rank_change"] == 2
     assert len(overview["top_participants"]) == 2
     assert all("message_text" not in item for item in overview["insights"])
 

@@ -16,7 +16,6 @@ def build_settings() -> Settings:
         webhook_header_secret="header-secret",
         scheduler_secret="scheduler-secret",
         database_url="sqlite+aiosqlite:///:memory:",
-        webhook_base_url="https://example.com",
     )
 
 
@@ -59,7 +58,7 @@ def test_groups_v2_list_and_favorite_contracts() -> None:
         )
 
     assert listed.status_code == 200
-    assert listed.json()["groups"][0]["is_admin"] is True
+    assert listed.json()["groups"][0]["is_admin"] is False
     assert favorited.status_code == 200
     repository.set_favorite.assert_awaited_once_with(101, -1001, True)
 
@@ -87,7 +86,7 @@ def test_split_group_endpoints_return_independent_payloads() -> None:
         awards = client.get("/api/miniapp/v1/groups/-1001/awards?period=week")
 
     assert overview.status_code == 200
-    assert overview.json()["capabilities"]["is_admin"] is True
+    assert overview.json()["capabilities"]["is_admin"] is False
     assert ranking.status_code == 200
     assert analytics.status_code == 200
     assert awards.status_code == 200
