@@ -22,6 +22,7 @@ async def featured_repository(tmp_path):
                 bot_status="administrator",
             )
         )
+        codes = ["messages_10", "messages_100", "messages_500", "replies_10", "replies_50"]
         session.add_all(
             [
                 AchievementUnlockRecord(
@@ -29,23 +30,13 @@ async def featured_repository(tmp_path):
                     telegram_chat_id=-1001,
                     scope="group",
                     scope_key="group:-1001",
-                    achievement_code="first_steps",
+                    achievement_code=code,
                     rarity="common",
-                    final_progress=10,
+                    final_progress=(index + 1) * 10,
                     definition_version=2,
-                    earned_at=datetime(2026, 7, 23, 10, 0, tzinfo=UTC),
-                ),
-                AchievementUnlockRecord(
-                    telegram_user_id=202,
-                    telegram_chat_id=-1001,
-                    scope="group",
-                    scope_key="group:-1001",
-                    achievement_code="xp_100",
-                    rarity="uncommon",
-                    final_progress=100,
-                    definition_version=2,
-                    earned_at=datetime(2026, 7, 23, 11, 0, tzinfo=UTC),
-                ),
+                    earned_at=datetime(2026, 7, 23, 10 + index, 0, tzinfo=UTC),
+                )
+                for index, code in enumerate(codes)
             ]
         )
     yield FeaturedAchievementRepository(database.session_factory)
@@ -53,38 +44,41 @@ async def featured_repository(tmp_path):
 
 
 @pytest.mark.asyncio
-async def test_user_can_pin_and_reorder_earned_achievements(featured_repository) -> None:
-    first = await featured_repository.set_featured_codes(
-        202,
-        ["first_steps", "xp_100"],
-    )
-    reordered = await featured_repository.set_featured_codes(
-        202,
-        ["xp_100", "first_steps"],
-    )
+async def test_user_can_pin_and_reorder_five_earned_achievements(featured_repository) -> None:
+    codes = ["messages_10", "messages_100", "messages_500", "replies_10", "replies_50"]
 
-    assert [item["code"] for item in first] == ["first_steps", "xp_100"]
-    assert [item["slot"] for item in reordered] == [1, 2]
-    assert [item["code"] for item in reordered] == ["xp_100", "first_steps"]
+    first = await featured_repository.set_featured_codes(202, codes)
+    reordered = await featured_repository.set_featured_codes(202, list(reversed(codes)))
+
+    assert [item["code"] for item in first] == codes
+    assert [item["slot"] for item in reordered] == [1, 2, 3, 4, 5]
+    assert [item["code"] for item in reordered] == list(reversed(codes))
 
 
 @pytest.mark.asyncio
-async def test_user_cannot_pin_unearned_or_more_than_three_achievements(
+async def test_user_cannot_pin_unearned_or_more_than_five_achievements(
     featured_repository,
 ) -> None:
     with pytest.raises(ValueError, match="отримані"):
-        await featured_repository.set_featured_codes(202, ["xp_500"])
+        await featured_repository.set_featured_codes(202, ["messages_1000"])
 
-    with pytest.raises(ValueError, match="не більше трьох"):
+    with pytest.raises(ValueError, match="не більше пʼяти"):
         await featured_repository.set_featured_codes(
             202,
-            ["first_steps", "xp_100", "xp_500", "xp_1000"],
+            [
+                "messages_10",
+                "messages_100",
+                "messages_500",
+                "replies_10",
+                "replies_50",
+                "messages_1000",
+            ],
         )
 
 
 @pytest.mark.asyncio
 async def test_user_can_clear_featured_achievements(featured_repository) -> None:
-    await featured_repository.set_featured_codes(202, ["first_steps"])
+    await featured_repository.set_featured_codes(202, ["messages_10"])
 
     assert await featured_repository.set_featured_codes(202, []) == []
     assert await featured_repository.list_featured(202) == []
