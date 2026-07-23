@@ -6,6 +6,7 @@ from aiogram.types import Message
 from app.bot.keyboards import open_miniapp_keyboard, private_start_keyboard
 from app.domain import UserData
 from app.repositories.activity import ActivityRepository
+from app.repositories.engagement import EngagementRepository
 from app.repositories.miniapp import MiniAppRepository
 from app.repositories.owner import OwnerClaimResult, OwnerRepository
 
@@ -25,23 +26,51 @@ def _user_data(message: Message) -> UserData | None:
     )
 
 
+def _onboarding_text(onboarding: dict) -> str:
+    if onboarding["is_complete"]:
+        return (
+            "✅ <b>Налаштування завершено</b>\n"
+            "ChatPulse уже збирає статистику, XP, серії та досягнення."
+        )
+    lines = [
+        f"🚀 <b>Швидкий старт — {onboarding['completed_steps']}/3</b>",
+        "",
+    ]
+    for index, step in enumerate(onboarding["steps"], start=1):
+        icon = "✅" if step["completed"] else "○"
+        lines.append(f"{icon} <b>{index}. {step['title']}</b>")
+        if not step["completed"]:
+            lines.append(f"   {step['description']}")
+    return "\n".join(lines)
+
+
 @router.message(CommandStart(), F.chat.type == ChatType.PRIVATE)
 async def start_command(
     message: Message,
     bot: Bot,
     repository: ActivityRepository,
+    engagement_repository: EngagementRepository,
     miniapp_url: str | None = None,
 ) -> None:
     user = _user_data(message)
-    if user is not None:
-        await repository.upsert_user(user)
+    if user is None:
+        return
+    await repository.upsert_user(user)
+    await engagement_repository.mark_private_started(user.telegram_id, now=message.date)
     bot_info = await bot.get_me()
+    bot_username = bot_info.username or "ChatPulseBot"
+    onboarding = await engagement_repository.get_onboarding(
+        user.telegram_id,
+        bot_username=bot_username,
+        now=message.date,
+    )
     await message.answer(
         "⚡ <b>ChatPulse</b> перетворює активність у групах на красиву аналітику, "
         "XP, рівні, серії та досягнення.\n\n"
-        "Відкрий особистий Mini App, щоб побачити глобальний профіль, усі групи, "
-        "рейтинги й детальну статистику. Тексти повідомлень не зберігаються.",
-        reply_markup=private_start_keyboard(bot_info.username, miniapp_url),
+        f"{_onboarding_text(onboarding)}\n\n"
+        "Відкрий Mini App, щоб бачити прогрес у реальному часі. "
+        "Тексти повідомлень і файли не зберігаються.",
+        reply_markup=private_start_keyboard(bot_username, miniapp_url),
         parse_mode="HTML",
     )
 
