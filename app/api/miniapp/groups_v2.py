@@ -7,6 +7,7 @@ from app.api.miniapp.auth import TelegramMiniAppUser
 from app.api.miniapp.dependencies import get_miniapp_user
 from app.api.miniapp.schemas import MiniAppPeriod, RankingMetric
 from app.repositories.groups_v2 import GroupsV2Repository
+from app.services.group_status_sync import reconcile_group_bot_status
 from app.services.weekly_reports import send_weekly_report
 
 router = APIRouter(prefix="/api/miniapp/v1", tags=["miniapp-groups-v2"])
@@ -57,12 +58,43 @@ def _not_found() -> HTTPException:
     )
 
 
+async def _reconcile_bot_statuses(
+    request: Request,
+    user_id: int,
+    items: list[dict],
+) -> list[dict]:
+    access_service = request.app.state.telegram_access_service
+    get_bot_status = getattr(access_service, "get_bot_status", None)
+    if not callable(get_bot_status):
+        return items
+
+    changed = False
+    for item in items:
+        chat_id = int(item["telegram_chat_id"])
+        current_status = await get_bot_status(chat_id)
+        if current_status is None:
+            continue
+        changed = (
+            await reconcile_group_bot_status(
+                request.app.state.database.session_factory,
+                chat_id,
+                current_status,
+            )
+            or changed
+        )
+
+    if not changed:
+        return items
+    return await _repository(request).list_groups(user_id)
+
+
 @router.get("/groups-v2")
 async def groups_v2(
     request: Request,
     user: Annotated[TelegramMiniAppUser, Depends(get_miniapp_user)],
 ) -> dict[str, list[dict]]:
     items = await _repository(request).list_groups(user.telegram_id)
+    items = await _reconcile_bot_statuses(request, user.telegram_id, items)
     for item in items:
         item["is_admin"] = await _admin_display_flag(
             request,
