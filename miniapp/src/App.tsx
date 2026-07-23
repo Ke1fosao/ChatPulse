@@ -1,6 +1,7 @@
 import { AlertTriangle, RefreshCw, Sparkles } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { api, ApiError } from "./api/client";
+import type { GroupsV2CardData } from "./api/groups-v2";
 import type {
   Achievement,
   GroupCardData,
@@ -32,7 +33,7 @@ import {
 export function App() {
   const [activeTab, setActiveTab] = useState<TabId>("home");
   const [home, setHome] = useState<HomePayload | null>(null);
-  const [groups, setGroups] = useState<GroupCardData[]>([]);
+  const [groups, setGroups] = useState<GroupsV2CardData[]>([]);
   const [achievements, setAchievements] = useState<Achievement[]>([]);
   const [selectedGroup, setSelectedGroup] = useState<GroupCardData | null>(null);
   const [dashboard, setDashboard] = useState<GroupDashboard | null>(null);
@@ -137,6 +138,34 @@ export function App() {
     void loadDashboard(group, "week");
   };
 
+  const toggleFavorite = useCallback(
+    async (group: GroupsV2CardData, nextValue: boolean) => {
+      setGroups((current) =>
+        current.map((item) =>
+          item.telegram_chat_id === group.telegram_chat_id
+            ? { ...item, is_favorite: nextValue }
+            : item,
+        ),
+      );
+      try {
+        await api.setGroupFavorite(group.telegram_chat_id, nextValue);
+        notify("success");
+      } catch (reason) {
+        setGroups((current) =>
+          current.map((item) =>
+            item.telegram_chat_id === group.telegram_chat_id
+              ? { ...item, is_favorite: !nextValue }
+              : item,
+          ),
+        );
+        setError(reason instanceof Error ? reason.message : "Не вдалося оновити обране.");
+        notify("error");
+        throw reason;
+      }
+    },
+    [],
+  );
+
   const saveSettings = async (settings: Partial<GroupSettings>) => {
     if (!selectedGroup) throw new Error("Групу не вибрано.");
     const updated = await api.updateSettings(selectedGroup.telegram_chat_id, settings);
@@ -174,7 +203,14 @@ export function App() {
       );
     }
     if (activeTab === "groups") {
-      return <GroupsPage groups={groups} onOpenGroup={openGroup} onRefresh={loadCore} />;
+      return (
+        <GroupsPage
+          groups={groups}
+          onOpenGroup={openGroup}
+          onToggleFavorite={toggleFavorite}
+          onRefresh={loadCore}
+        />
+      );
     }
     if (activeTab === "rankings") {
       return (
@@ -237,12 +273,15 @@ export function App() {
     rankingPeriod,
     secondaryLoading,
     selectedGroup,
+    toggleFavorite,
   ]);
 
   if (!isTelegramContext()) {
     return (
       <main className="standalone-screen">
-        <span><Sparkles size={32} /></span>
+        <span>
+          <Sparkles size={32} />
+        </span>
         <h1>Відкрий ChatPulse через Telegram</h1>
         <p>Mini App авторизується без паролів — напряму через твій Telegram-профіль.</p>
       </main>
@@ -252,10 +291,14 @@ export function App() {
   if (loading) {
     return (
       <main className="boot-screen">
-        <span className="boot-logo"><Sparkles /></span>
+        <span className="boot-logo">
+          <Sparkles />
+        </span>
         <h1>ChatPulse</h1>
         <p>Збираємо твій пульс…</p>
-        <div className="boot-progress"><span /></div>
+        <div className="boot-progress">
+          <span />
+        </div>
       </main>
     );
   }
@@ -263,7 +306,9 @@ export function App() {
   if (!home) {
     return (
       <main className="standalone-screen">
-        <span className="standalone-screen__error"><AlertTriangle size={30} /></span>
+        <span className="standalone-screen__error">
+          <AlertTriangle size={30} />
+        </span>
         <h1>Не вдалося відкрити профіль</h1>
         <p>{error || "Спробуй оновити Mini App."}</p>
         <button className="primary-button" type="button" onClick={() => void loadCore()}>
