@@ -70,7 +70,7 @@ it("renders Stars KPIs, funnel and transaction list", async () => {
 
   expect(await screen.findAllByText("208 ⭐")).toHaveLength(2);
   expect(screen.getByText("350 ⭐")).toBeInTheDocument();
-  expect(screen.getByText("59 ⭐")).toBeInTheDocument();
+  expect(screen.getAllByText("59 ⭐").length).toBeGreaterThanOrEqual(2);
   expect(screen.getByText("50%")).toBeInTheDocument();
   expect(screen.getByText("Monthly User")).toBeInTheDocument();
   expect(screen.getByText("Оплати та підписки")).toBeInTheDocument();
