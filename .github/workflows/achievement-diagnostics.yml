@@ -1,0 +1,58 @@
+name: Achievement diagnostics
+
+on:
+  pull_request:
+    branches: [main]
+
+jobs:
+  frontend-diagnostics:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: miniapp
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: miniapp/package-lock.json
+      - run: npm install --no-audit --no-fund
+      - name: Frontend test tail
+        shell: bash
+        run: |
+          set -o pipefail
+          npm test -- --run 2>&1 | tail -n 180
+      - name: Typecheck tail
+        if: always()
+        shell: bash
+        run: |
+          set -o pipefail
+          npm run typecheck 2>&1 | tail -n 180
+
+  backend-diagnostics:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: pip install -q -e ".[dev]"
+      - name: Ruff tail
+        shell: bash
+        run: |
+          set -o pipefail
+          ruff check . 2>&1 | tail -n 180
+      - name: Format tail
+        if: always()
+        shell: bash
+        run: |
+          set -o pipefail
+          ruff format --check . 2>&1 | tail -n 180
+      - name: Pytest tail
+        if: always()
+        shell: bash
+        run: |
+          set -o pipefail
+          pytest -q 2>&1 | tail -n 180
