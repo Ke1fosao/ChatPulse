@@ -1,16 +1,9 @@
 import { cleanup, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { api } from "../api/client";
 import { openInvoice } from "../telegram/sdk";
 import { VipApp } from "./VipApp";
 import { vipApi } from "./vipApi";
-
-vi.mock("../api/client", () => ({
-  api: {
-    groups: vi.fn(),
-  },
-}));
 
 vi.mock("../telegram/sdk", () => ({
   bindBackButton: vi.fn(() => () => undefined),
@@ -22,27 +15,18 @@ vi.mock("../telegram/sdk", () => ({
 
 vi.mock("./vipApi", () => ({
   VipApiError: class VipApiError extends Error {
-    constructor(
-      message: string,
-      public readonly status: number,
-    ) {
+    constructor(message: string, public readonly status: number) {
       super(message);
     }
   },
-  saveBlob: vi.fn(),
   vipApi: {
     plans: vi.fn(),
     history: vi.fn(),
     invoice: vi.fn(),
     subscription: vi.fn(),
-    exportGroup: vi.fn(),
-    featured: vi.fn(),
-    updateFeatured: vi.fn(),
-    achievements: vi.fn(),
   },
 }));
 
-const mockedApi = vi.mocked(api);
 const mockedVip = vi.mocked(vipApi);
 const mockedOpenInvoice = vi.mocked(openInvoice);
 
@@ -61,7 +45,7 @@ function plansPayload(isVip = false) {
       trial_available: !isVip,
       active_subscription: null,
     },
-    benefits: ["CSV та PDF-експорт аналітики", "Три закріплені досягнення у профілі"],
+    benefits: ["Розширена аналітика у групах", "Premium-теми та профіль"],
     plans: [
       {
         code: "trial_7d" as const,
@@ -118,9 +102,6 @@ function plansPayload(isVip = false) {
 function primeApi() {
   mockedVip.plans.mockResolvedValue(plansPayload());
   mockedVip.history.mockResolvedValue([]);
-  mockedVip.featured.mockResolvedValue([]);
-  mockedVip.achievements.mockResolvedValue([]);
-  mockedApi.groups.mockResolvedValue([]);
 }
 
 describe("VipApp", () => {
@@ -131,7 +112,7 @@ describe("VipApp", () => {
 
   afterEach(() => cleanup());
 
-  it("shows the one-Star trial and all inexpensive plans", async () => {
+  it("keeps only purchase and management content", async () => {
     render(<VipApp />);
 
     expect(await screen.findByText("Спробуй VIP за 1 ⭐")).toBeInTheDocument();
@@ -139,12 +120,11 @@ describe("VipApp", () => {
     expect(screen.getByText("30 днів")).toBeInTheDocument();
     expect(screen.getByText("90 днів")).toBeInTheDocument();
     expect(screen.getByText("365 днів")).toBeInTheDocument();
-    expect(screen.getByText("59")).toBeInTheDocument();
-    expect(screen.getByText("149")).toBeInTheDocument();
-    expect(screen.getByText("499")).toBeInTheDocument();
+    expect(screen.queryByText("Завантажити аналітику")).not.toBeInTheDocument();
+    expect(screen.queryByText("Закріплені досягнення")).not.toBeInTheDocument();
   });
 
-  it("opens Telegram invoice and refreshes status after a paid trial", async () => {
+  it("confirms the plan before opening Telegram invoice", async () => {
     const user = userEvent.setup();
     mockedVip.invoice.mockResolvedValue({ invoice_url: "https://t.me/$invoice" });
     mockedOpenInvoice.mockResolvedValue("paid");
@@ -155,11 +135,14 @@ describe("VipApp", () => {
     render(<VipApp />);
     await user.click(await screen.findByRole("button", { name: "Спробувати" }));
 
+    expect(screen.getByText("Без автоматичного продовження")).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Оплатити 1 ⭐" }));
+
     await waitFor(() => {
       expect(mockedVip.invoice).toHaveBeenCalledWith("trial_7d");
       expect(mockedOpenInvoice).toHaveBeenCalledWith("https://t.me/$invoice");
       expect(mockedVip.plans).toHaveBeenCalledTimes(2);
     });
-    expect(await screen.findByText("ChatPulse VIP")).toBeInTheDocument();
+    expect(await screen.findByText("VIP активовано")).toBeInTheDocument();
   });
 });

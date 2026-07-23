@@ -1,19 +1,16 @@
 import {
-  Award,
   Check,
   ChevronLeft,
   Clock3,
   Crown,
-  Download,
   RefreshCw,
   ShieldCheck,
   Sparkles,
   Star,
   XCircle,
 } from "lucide-react";
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { api } from "../api/client";
-import type { Achievement, GroupCardData } from "../api/types";
+import { useCallback, useEffect, useState } from "react";
+import { VipConfirmSheet } from "../premium/VipConfirmSheet";
 import {
   bindBackButton,
   initTelegram,
@@ -21,8 +18,8 @@ import {
   notify,
   openInvoice,
 } from "../telegram/sdk";
-import type { FeaturedAchievement, VipPayment, VipPlansPayload, VipPlan } from "./types";
-import { saveBlob, vipApi, VipApiError } from "./vipApi";
+import type { VipPayment, VipPlansPayload, VipPlan } from "./types";
+import { vipApi, VipApiError } from "./vipApi";
 
 const productLabels: Record<string, string> = {
   trial_7d: "Пробний VIP · 7 днів",
@@ -34,35 +31,21 @@ const productLabels: Record<string, string> = {
 export function VipApp() {
   const [data, setData] = useState<VipPlansPayload | null>(null);
   const [payments, setPayments] = useState<VipPayment[]>([]);
-  const [groups, setGroups] = useState<GroupCardData[]>([]);
-  const [achievements, setAchievements] = useState<Achievement[]>([]);
-  const [featured, setFeatured] = useState<FeaturedAchievement[]>([]);
-  const [selectedCodes, setSelectedCodes] = useState<string[]>([]);
-  const [selectedGroupId, setSelectedGroupId] = useState<number | null>(null);
+  const [selectedPlan, setSelectedPlan] = useState<VipPlan | null>(null);
+  const [successPlan, setSuccessPlan] = useState<VipPlan | null>(null);
   const [busy, setBusy] = useState("");
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
+  const source = new URLSearchParams(window.location.search).get("source");
 
   const load = useCallback(async () => {
     setLoading(true);
     setError("");
     try {
-      const [plansPayload, history, groupItems, achievementItems, featuredItems] =
-        await Promise.all([
-          vipApi.plans(),
-          vipApi.history(),
-          api.groups(),
-          vipApi.achievements(),
-          vipApi.featured(),
-        ]);
+      const [plansPayload, history] = await Promise.all([vipApi.plans(), vipApi.history()]);
       setData(plansPayload);
       setPayments(history);
-      setGroups(groupItems);
-      setAchievements(achievementItems);
-      setFeatured(featuredItems);
-      setSelectedCodes(featuredItems.map((item) => item.code));
-      setSelectedGroupId((current) => current ?? groupItems[0]?.telegram_chat_id ?? null);
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : "Не вдалося відкрити VIP.");
       notify("error");
@@ -77,12 +60,7 @@ export function VipApp() {
     return bindBackButton(() => window.location.assign("/miniapp"));
   }, [load]);
 
-  const earnedAchievements = useMemo(
-    () => achievements.filter((item) => item.earned && !item.hidden).slice(0, 30),
-    [achievements],
-  );
-
-  const buy = async (plan: VipPlan) => {
+  const confirmBuy = async (plan: VipPlan) => {
     setBusy(plan.code);
     setError("");
     setMessage("");
@@ -91,14 +69,17 @@ export function VipApp() {
       const invoiceStatus = await openInvoice(invoice.invoice_url);
       if (invoiceStatus === "paid") {
         notify("success");
-        setMessage("Оплату прийнято. Оновлюємо VIP-статус…");
-        await delay(900);
+        setSelectedPlan(null);
+        setSuccessPlan(plan);
+        await delay(450);
         await load();
       } else if (invoiceStatus === "cancelled") {
+        setSelectedPlan(null);
         setMessage("Оплату скасовано. Зірочки не списані.");
       } else if (invoiceStatus === "failed") {
         throw new Error("Telegram не зміг завершити оплату.");
       } else {
+        setSelectedPlan(null);
         setMessage("Рахунок відкрито. Статус оновиться після підтвердження Telegram.");
       }
     } catch (reason) {
@@ -124,45 +105,12 @@ export function VipApp() {
     }
   };
 
-  const exportAnalytics = async (format: "csv" | "pdf") => {
-    if (selectedGroupId === null) return;
-    setBusy(`export-${format}`);
-    setError("");
-    try {
-      const blob = await vipApi.exportGroup(selectedGroupId, format);
-      saveBlob(blob, `chatpulse-analytics.${format}`);
-      notify("success");
-    } catch (reason) {
-      setError(reason instanceof Error ? reason.message : "Не вдалося створити експорт.");
-    } finally {
-      setBusy("");
+  const returnToFeatures = () => {
+    if (source && window.history.length > 1) {
+      window.history.back();
+      return;
     }
-  };
-
-  const toggleFeatured = (code: string) => {
-    setSelectedCodes((current) => {
-      if (current.includes(code)) return current.filter((item) => item !== code);
-      if (current.length >= 3) {
-        setMessage("Можна вибрати максимум три досягнення.");
-        return current;
-      }
-      return [...current, code];
-    });
-  };
-
-  const saveFeatured = async () => {
-    setBusy("featured");
-    setError("");
-    try {
-      const items = await vipApi.updateFeatured(selectedCodes);
-      setFeatured(items);
-      setMessage("Закріплені досягнення оновлено.");
-      notify("success");
-    } catch (reason) {
-      setError(reason instanceof Error ? reason.message : "Не вдалося зберегти досягнення.");
-    } finally {
-      setBusy("");
-    }
+    window.location.assign("/miniapp");
   };
 
   if (!isTelegramContext()) {
@@ -202,9 +150,7 @@ export function VipApp() {
   return (
     <main className="vip-page">
       <header className="vip-header">
-        <button type="button" aria-label="Назад" onClick={() => window.location.assign("/miniapp")}>
-          <ChevronLeft />
-        </button>
+        <button type="button" aria-label="Назад" onClick={() => window.location.assign("/miniapp")}><ChevronLeft /></button>
         <div><span>CHATPULSE</span><strong>VIP</strong></div>
         <Crown />
       </header>
@@ -218,9 +164,19 @@ export function VipApp() {
             ? "Усі можливості активні назавжди"
             : data.billing.vip_expires_at
               ? `Діє до ${formatDate(data.billing.vip_expires_at)}`
-              : "Без переваг у XP — лише більше аналітики та оформлення"}
+              : "VIP-функції відкриваються прямо у відповідних розділах"}
         </span>
       </section>
+
+      {successPlan ? (
+        <section className="vip-success-card" role="status">
+          <span><Crown size={28} /></span>
+          <p>VIP активовано</p>
+          <h2>{successPlan.title}</h2>
+          <small>{data.billing.vip_expires_at ? `Діє до ${formatDate(data.billing.vip_expires_at)}` : "Статус оновлено"}</small>
+          <button type="button" onClick={returnToFeatures}>Переглянути VIP-можливості</button>
+        </section>
+      ) : null}
 
       {message ? <button className="vip-message" type="button" onClick={() => setMessage("")}><Check /> {message}</button> : null}
       {error ? <button className="vip-error" type="button" onClick={() => setError("")}><XCircle /> {error}</button> : null}
@@ -234,12 +190,8 @@ export function VipApp() {
               <h3>{plan.short_title}</h3>
               <div className="vip-plan__price"><strong>{plan.stars}</strong><span>⭐</span></div>
               <p>{plan.description}</p>
-              <button
-                type="button"
-                disabled={!plan.available || Boolean(busy)}
-                onClick={() => void buy(plan)}
-              >
-                {busy === plan.code ? <RefreshCw className="spin" /> : <Crown />}
+              <button type="button" disabled={!plan.available || Boolean(busy)} onClick={() => setSelectedPlan(plan)}>
+                <Crown />
                 {!plan.available ? "Недоступно" : plan.code === "trial_7d" ? "Спробувати" : "Придбати"}
               </button>
             </article>
@@ -248,9 +200,10 @@ export function VipApp() {
       </section>
 
       <section className="vip-section vip-benefits">
-        <div className="vip-section__heading"><div><p>МОЖЛИВОСТІ</p><h2>Що входить</h2></div><ShieldCheck /></div>
+        <div className="vip-section__heading"><div><p>МОЖЛИВОСТІ</p><h2>Free та VIP</h2></div><ShieldCheck /></div>
         <div className="vip-benefit-list">
           {data.benefits.map((benefit) => <div key={benefit}><Check /><span>{benefit}</span></div>)}
+          <div><Check /><span>Жодних бонусів до XP — рейтинг залишається чесним</span></div>
         </div>
       </section>
 
@@ -258,51 +211,11 @@ export function VipApp() {
         <section className="vip-section vip-subscription">
           <div className="vip-section__heading"><div><p>ПІДПИСКА</p><h2>Автопродовження</h2></div><Clock3 /></div>
           <p>Поточний період діє до <strong>{formatDate(subscription.expires_at)}</strong>.</p>
-          <button
-            type="button"
-            disabled={busy === "subscription"}
-            onClick={() => void changeSubscription(!subscription.is_canceled)}
-          >
+          <button type="button" disabled={busy === "subscription"} onClick={() => void changeSubscription(!subscription.is_canceled)}>
             {subscription.is_canceled ? "Відновити автопродовження" : "Вимкнути автопродовження"}
           </button>
         </section>
       ) : null}
-
-      <section className="vip-section vip-export">
-        <div className="vip-section__heading"><div><p>ЕКСПОРТ</p><h2>Завантажити аналітику</h2></div><Download /></div>
-        <select value={selectedGroupId ?? ""} onChange={(event) => setSelectedGroupId(Number(event.target.value))}>
-          {groups.map((group) => <option value={group.telegram_chat_id} key={group.telegram_chat_id}>{group.title}</option>)}
-        </select>
-        <div className="vip-export__buttons">
-          <button type="button" disabled={!premium || selectedGroupId === null || Boolean(busy)} onClick={() => void exportAnalytics("csv")}>CSV</button>
-          <button type="button" disabled={!premium || selectedGroupId === null || Boolean(busy)} onClick={() => void exportAnalytics("pdf")}>PDF</button>
-        </div>
-        {!premium ? <small>Експорт відкривається після активації VIP.</small> : null}
-      </section>
-
-      <section className="vip-section vip-featured">
-        <div className="vip-section__heading"><div><p>ПРОФІЛЬ</p><h2>Закріплені досягнення</h2></div><Award /></div>
-        <p>Обери до трьох отриманих нагород. Зараз закріплено: {featured.length}/3.</p>
-        <div className="vip-featured__list">
-          {earnedAchievements.map((achievement) => {
-            const selected = selectedCodes.includes(achievement.code);
-            return (
-              <button
-                type="button"
-                className={selected ? "is-selected" : ""}
-                key={achievement.code}
-                onClick={() => toggleFeatured(achievement.code)}
-                disabled={!premium}
-              >
-                <span>{achievement.icon}</span><div><strong>{achievement.title}</strong><small>{achievement.description}</small></div>{selected ? <Check /> : null}
-              </button>
-            );
-          })}
-        </div>
-        <button className="vip-featured__save" type="button" disabled={!premium || busy === "featured"} onClick={() => void saveFeatured()}>
-          Зберегти вибір
-        </button>
-      </section>
 
       <section className="vip-section vip-history">
         <div className="vip-section__heading"><div><p>ІСТОРІЯ</p><h2>Платежі Stars</h2></div><Clock3 /></div>
@@ -314,6 +227,8 @@ export function VipApp() {
           </article>
         )) : <p className="vip-history__empty">Покупок ще не було.</p>}
       </section>
+
+      <VipConfirmSheet plan={selectedPlan} busy={Boolean(busy)} onCancel={() => setSelectedPlan(null)} onConfirm={(plan) => void confirmBuy(plan)} />
     </main>
   );
 }

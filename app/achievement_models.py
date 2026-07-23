@@ -100,7 +100,7 @@ class AchievementProgress(Base):
 class FeaturedAchievement(Base):
     __tablename__ = "featured_achievements"
     __table_args__ = (
-        CheckConstraint("slot BETWEEN 1 AND 3", name="ck_featured_achievement_slot"),
+        CheckConstraint("slot BETWEEN 1 AND 5", name="ck_featured_achievement_slot"),
         UniqueConstraint(
             "telegram_user_id",
             "scope_key",

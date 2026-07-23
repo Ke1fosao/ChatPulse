@@ -1,4 +1,4 @@
-import { Crown, Medal } from "lucide-react";
+import { Crown, Medal, Star } from "lucide-react";
 import type { RankingRow } from "../api/types";
 
 interface LeaderboardProps {
@@ -19,17 +19,18 @@ export function Leaderboard({ rows, compact = false }: LeaderboardProps) {
           key={row.telegram_user_id}
         >
           <span className={`rank rank--${Math.min(row.rank, 4)}`}>
-            {row.rank === 1 ? (
-              <Crown size={19} />
-            ) : row.rank <= 3 ? (
-              <Medal size={18} />
-            ) : (
-              row.rank
-            )}
+            {row.rank === 1 ? <Crown size={19} /> : row.rank <= 3 ? <Medal size={18} /> : row.rank}
           </span>
           <span className="leader-avatar">{row.display_name.slice(0, 1).toUpperCase()}</span>
           <span className="leader-name">
-            <strong>{row.display_name}</strong>
+            <span className="leader-name__identity">
+              <strong>{row.display_name}</strong>
+              {row.account_plan === "owner" ? (
+                <i className="ranking-plan-badge is-owner"><Crown size={10} /> OWNER</i>
+              ) : row.account_plan === "vip" ? (
+                <i className="ranking-plan-badge is-vip"><Star size={10} /> VIP</i>
+              ) : null}
+            </span>
             <small>{row.username ? `@${row.username}` : "учасник"}</small>
           </span>
           <strong className="leader-value">{row.value.toLocaleString("uk-UA")}</strong>

@@ -1,0 +1,142 @@
+.vip-sheet-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding: 12px;
+  background: rgba(2, 4, 9, 0.72);
+  backdrop-filter: blur(8px);
+}
+
+.vip-confirm-sheet {
+  position: relative;
+  width: min(100%, 520px);
+  padding: 24px 18px calc(18px + env(safe-area-inset-bottom));
+  border: 1px solid rgba(255, 211, 105, 0.24);
+  border-radius: 26px 26px 20px 20px;
+  background:
+    radial-gradient(circle at 50% 0%, rgba(255, 207, 104, 0.17), transparent 34%),
+    #11131d;
+  box-shadow: 0 -24px 70px rgba(0, 0, 0, 0.46);
+  text-align: center;
+}
+
+.vip-confirm-sheet__close {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border: 0;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.06);
+  color: #aab0bf;
+}
+
+.vip-confirm-sheet__icon {
+  display: grid;
+  place-items: center;
+  width: 58px;
+  height: 58px;
+  margin: 0 auto 12px;
+  border-radius: 20px;
+  background: linear-gradient(135deg, #ffd467, #ff9b42);
+  color: #211604;
+}
+
+.vip-confirm-sheet > p {
+  margin: 0;
+  color: #ffd66e;
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 0.13em;
+}
+
+.vip-confirm-sheet h2 {
+  margin: 6px 0 4px;
+  color: #fff;
+}
+
+.vip-confirm-sheet > strong {
+  color: #ffe6a0;
+  font-size: 28px;
+}
+
+.vip-confirm-sheet__details {
+  display: grid;
+  gap: 9px;
+  margin: 18px 0;
+  text-align: left;
+}
+
+.vip-confirm-sheet__details span {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #c4c9d5;
+  font-size: 13px;
+}
+
+.vip-confirm-sheet__details svg {
+  color: #74e3a4;
+}
+
+.vip-confirm-sheet__pay,
+.vip-success-card button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  min-height: 48px;
+  border: 0;
+  border-radius: 15px;
+  background: linear-gradient(135deg, #ffd265, #ff9b42);
+  color: #211604;
+  font-weight: 900;
+}
+
+.vip-success-card {
+  display: grid;
+  justify-items: center;
+  gap: 7px;
+  padding: 22px;
+  border: 1px solid rgba(115, 232, 164, 0.28);
+  border-radius: 22px;
+  background:
+    radial-gradient(circle at 50% 0%, rgba(94, 230, 151, 0.16), transparent 44%),
+    rgba(17, 27, 24, 0.86);
+  text-align: center;
+}
+
+.vip-success-card > span {
+  display: grid;
+  place-items: center;
+  width: 56px;
+  height: 56px;
+  border-radius: 20px;
+  background: rgba(103, 232, 157, 0.13);
+  color: #76e5a5;
+}
+
+.vip-success-card p,
+.vip-success-card h2,
+.vip-success-card small {
+  margin: 0;
+}
+
+.vip-success-card p {
+  color: #76e5a5;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.vip-success-card small {
+  margin-bottom: 8px;
+  color: #aeb6c5;
+}

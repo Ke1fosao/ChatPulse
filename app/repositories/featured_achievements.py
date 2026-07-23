@@ -9,6 +9,8 @@ from app.achievement_models import AchievementUnlockRecord, FeaturedAchievement
 from app.achievements.catalog import ACHIEVEMENT_BY_CODE
 from app.models import utc_now
 
+MAX_FEATURED_ACHIEVEMENTS = 5
+
 
 class FeaturedAchievementRepository:
     def __init__(self, session_factory: async_sessionmaker[AsyncSession]) -> None:
@@ -41,8 +43,8 @@ class FeaturedAchievementRepository:
 
     async def set_featured_codes(self, user_id: int, codes: list[str]) -> list[dict[str, Any]]:
         normalized = list(dict.fromkeys(code.strip() for code in codes if code.strip()))
-        if len(normalized) > 3:
-            raise ValueError("Можна закріпити не більше трьох досягнень.")
+        if len(normalized) > MAX_FEATURED_ACHIEVEMENTS:
+            raise ValueError("Можна закріпити не більше пʼяти досягнень.")
 
         async with self._session_factory() as session, session.begin():
             selected: dict[str, AchievementUnlockRecord] = {}

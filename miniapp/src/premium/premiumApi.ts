@@ -1,0 +1,62 @@
+import { getInitData } from "../telegram/sdk";
+import type {
+  PremiumAnalyticsPayload,
+  PremiumAnalyticsPeriod,
+  PremiumContextPayload,
+  VipPlacementEvent,
+  YearSummaryPayload,
+} from "./types";
+
+async function premiumRequest<T>(path: string, init?: RequestInit): Promise<T> {
+  const headers = new Headers(init?.headers);
+  headers.set("Accept", "application/json");
+  const initData = getInitData();
+  if (initData) headers.set("X-Telegram-Init-Data", initData);
+  if (init?.body) headers.set("Content-Type", "application/json");
+  const response = await fetch(`/api/miniapp/v1/premium${path}`, { ...init, headers });
+  if (!response.ok) {
+    let message = "Не вдалося завантажити VIP-статус.";
+    try {
+      const body = (await response.json()) as { detail?: string };
+      if (body.detail) message = body.detail;
+    } catch {
+      // Keep the stable user-facing fallback.
+    }
+    throw new Error(message);
+  }
+  return (await response.json()) as T;
+}
+
+export const premiumApi = {
+  context: () => premiumRequest<PremiumContextPayload>("/context"),
+  yearSummary: (year: number) =>
+    premiumRequest<YearSummaryPayload>(`/year-summary?year=${year}`),
+  analytics: (
+    chatId: number,
+    period: PremiumAnalyticsPeriod,
+    compare: PremiumAnalyticsPeriod | null = null,
+  ) => {
+    const params = new URLSearchParams({ period });
+    if (compare) params.set("compare", compare);
+    return premiumRequest<PremiumAnalyticsPayload>(
+      `/groups/${chatId}/analytics?${params.toString()}`,
+    );
+  },
+  rankingPlans: (chatId: number) =>
+    premiumRequest<{ plans: Record<string, "free" | "vip" | "owner"> }>(
+      `/groups/${chatId}/ranking-plans`,
+    ),
+  reportTheme: (
+    chatId: number,
+    theme: "telegram_wave" | "clean_light" | "aurora_gold",
+  ) =>
+    premiumRequest<{ report_card_theme: string }>(`/groups/${chatId}/report-theme`, {
+      method: "PUT",
+      body: JSON.stringify({ theme }),
+    }),
+  event: (payload: VipPlacementEvent) =>
+    premiumRequest<{ event: { id: number } }>("/events", {
+      method: "POST",
+      body: JSON.stringify({ ...payload, metadata: payload.metadata ?? {} }),
+    }),
+};

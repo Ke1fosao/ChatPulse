@@ -1,0 +1,216 @@
+.vip-inline-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  width: fit-content;
+  padding: 5px 9px;
+  border: 1px solid rgba(255, 211, 105, 0.32);
+  border-radius: 999px;
+  background: linear-gradient(135deg, rgba(255, 205, 92, 0.17), rgba(255, 148, 65, 0.08));
+  color: #ffd97a;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+}
+
+.vip-inline-badge.is-owner {
+  border-color: rgba(173, 125, 255, 0.42);
+  background: linear-gradient(135deg, rgba(147, 88, 255, 0.2), rgba(255, 183, 77, 0.1));
+  color: #d9bdff;
+}
+
+.vip-inline-badge.is-compact {
+  padding: 3px 6px;
+  font-size: 9px;
+}
+
+.vip-upgrade-card {
+  position: relative;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 12px;
+  overflow: hidden;
+  padding: 18px;
+  border: 1px solid rgba(255, 211, 105, 0.22);
+  border-radius: 22px;
+  background:
+    radial-gradient(circle at 90% 0%, rgba(255, 207, 104, 0.16), transparent 38%),
+    linear-gradient(145deg, rgba(25, 27, 40, 0.98), rgba(14, 16, 25, 0.98));
+  box-shadow: 0 18px 42px rgba(0, 0, 0, 0.24);
+}
+
+.vip-upgrade-card__preview {
+  grid-column: 1 / -1;
+  min-height: 76px;
+  overflow: hidden;
+  border-radius: 16px;
+  opacity: 0.54;
+  filter: blur(1.6px) saturate(0.72);
+  pointer-events: none;
+}
+
+.vip-upgrade-card__lock {
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  border-radius: 14px;
+  background: rgba(255, 210, 105, 0.12);
+  color: #ffd469;
+}
+
+.vip-upgrade-card__copy p {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0 0 4px;
+  color: #ffd469;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.vip-upgrade-card__copy h3 {
+  margin: 0;
+  color: #fff;
+  font-size: 18px;
+}
+
+.vip-upgrade-card__copy span {
+  display: block;
+  margin-top: 5px;
+  color: #aeb4c4;
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.vip-upgrade-card__copy em {
+  display: block;
+  margin-top: 8px;
+  color: #fff1be;
+  font-size: 12px;
+  font-style: normal;
+  font-weight: 750;
+}
+
+.vip-upgrade-card > button {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 46px;
+  border: 0;
+  border-radius: 15px;
+  background: linear-gradient(135deg, #ffd265, #ff9c42);
+  color: #1d1405;
+  font-weight: 850;
+}
+
+.premium-analytics-block {
+  display: grid;
+  gap: 14px;
+}
+
+.premium-period-preview button:disabled {
+  opacity: 0.48;
+  color: #d8caa7;
+}
+
+.premium-chart-preview {
+  display: flex;
+  align-items: end;
+  gap: 8px;
+  min-height: 90px;
+  padding: 12px 16px;
+  background: linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.01));
+}
+
+.premium-chart-preview i {
+  flex: 1;
+  min-height: 25%;
+  border-radius: 7px 7px 2px 2px;
+  background: linear-gradient(180deg, #ffd66f, rgba(255, 166, 66, 0.28));
+}
+
+.premium-chart-preview i:nth-child(2) { min-height: 56%; }
+.premium-chart-preview i:nth-child(3) { min-height: 39%; }
+.premium-chart-preview i:nth-child(4) { min-height: 78%; }
+.premium-chart-preview i:nth-child(5) { min-height: 62%; }
+.premium-chart-preview i:nth-child(6) { min-height: 92%; }
+
+.premium-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 9px;
+}
+
+.premium-summary-grid article {
+  padding: 13px 10px;
+  border: 1px solid rgba(255, 211, 105, 0.14);
+  border-radius: 15px;
+  background: rgba(255, 255, 255, 0.035);
+}
+
+.premium-summary-grid span {
+  display: block;
+  color: #9299aa;
+  font-size: 10px;
+}
+
+.premium-summary-grid strong {
+  display: block;
+  margin-top: 5px;
+  color: #fff;
+  font-size: 18px;
+}
+
+.premium-export-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 8px;
+  padding: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.premium-export-row span {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  color: #bbc0cf;
+  font-size: 12px;
+}
+
+.premium-export-row button {
+  min-width: 52px;
+  padding: 9px;
+  border: 1px solid rgba(255, 211, 105, 0.22);
+  border-radius: 11px;
+  background: rgba(255, 211, 105, 0.08);
+  color: #ffdc7b;
+  font-weight: 800;
+}
+
+.premium-analytics-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 88px;
+  color: #aab0bf;
+}
+
+.account-plan-card {
+  width: 100%;
+  text-align: left;
+}
+
+.account-plan-card__title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}

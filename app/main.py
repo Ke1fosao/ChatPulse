@@ -13,6 +13,7 @@ from fastapi.responses import FileResponse, HTMLResponse
 from app.api.billing.routes import router as billing_router
 from app.api.internal_achievements import router as internal_achievement_router
 from app.api.miniapp.featured import router as featured_achievement_router
+from app.api.miniapp.premium import router as premium_router
 from app.api.miniapp.routes import router as miniapp_router
 from app.api.owner.routes import router as owner_router
 from app.bot.setup import build_dispatcher
@@ -26,7 +27,9 @@ from app.repositories.miniapp_gamification import MiniAppGamificationRepository
 from app.repositories.miniapp_v2 import AchievementMiniAppRepository
 from app.repositories.owner import OwnerRepository
 from app.repositories.owner_panel import OwnerPanelRepository
+from app.repositories.vip_product_events import VipProductEventRepository
 from app.services.telegram_access import TelegramAccessService
+from app.services.vip_lifecycle import VipLifecycleService
 from app.services.weekly_reports import send_due_weekly_reports
 
 logger = logging.getLogger("chatpulse.webhook")
@@ -62,6 +65,8 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         owner_repository = OwnerRepository(database.session_factory)
         owner_panel_repository = OwnerPanelRepository(database.session_factory)
         billing_repository = BillingRepository(database.session_factory)
+        vip_product_event_repository = VipProductEventRepository(database.session_factory)
+        vip_lifecycle_service = VipLifecycleService(database.session_factory)
         bot = Bot(resolved_settings.bot_token)
         telegram_access_service = TelegramAccessService(
             bot,
@@ -85,6 +90,8 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         app.state.owner_repository = owner_repository
         app.state.owner_panel_repository = owner_panel_repository
         app.state.billing_repository = billing_repository
+        app.state.vip_product_event_repository = vip_product_event_repository
+        app.state.vip_lifecycle_service = vip_lifecycle_service
         app.state.telegram_access_service = telegram_access_service
         app.state.bot = bot
         app.state.dispatcher = dispatcher
@@ -114,17 +121,18 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             await bot.session.close()
             await database.dispose()
 
-    app = FastAPI(title="ChatPulse", version="0.7.0", lifespan=lifespan)
+    app = FastAPI(title="ChatPulse", version="0.8.0", lifespan=lifespan)
     app.state.settings = resolved_settings
     app.include_router(miniapp_router)
     app.include_router(featured_achievement_router)
+    app.include_router(premium_router)
     app.include_router(billing_router)
     app.include_router(owner_router)
     app.include_router(internal_achievement_router)
 
     @app.get("/health")
     async def health() -> dict[str, str]:
-        return {"status": "ok", "service": "chatpulse", "version": "0.7.0"}
+        return {"status": "ok", "service": "chatpulse", "version": "0.8.0"}
 
     @app.post(resolved_settings.webhook_path)
     async def telegram_webhook(
@@ -168,6 +176,19 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             return {"ok": False}
         return {"ok": True}
 
+    def require_scheduler_secret(value: str | None) -> None:
+        expected_secret = resolved_settings.scheduler_secret
+        if not expected_secret:
+            raise HTTPException(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                detail="Scheduler secret is not configured",
+            )
+        if value is None or not hmac.compare_digest(value, expected_secret):
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Invalid scheduler secret",
+            )
+
     @app.post("/internal/weekly-reports")
     async def weekly_reports(
         request: Request,
@@ -176,25 +197,24 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             alias="X-ChatPulse-Scheduler-Secret",
         ),
     ) -> dict[str, int | bool]:
-        expected_secret = resolved_settings.scheduler_secret
-        if not expected_secret:
-            raise HTTPException(
-                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-                detail="Scheduler secret is not configured",
-            )
-        if scheduler_secret is None or not hmac.compare_digest(
-            scheduler_secret,
-            expected_secret,
-        ):
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="Invalid scheduler secret",
-            )
+        require_scheduler_secret(scheduler_secret)
         sent = await send_due_weekly_reports(
             request.app.state.bot,
             request.app.state.repository,
         )
         return {"ok": True, "sent": sent}
+
+    @app.post("/internal/vip-lifecycle")
+    async def vip_lifecycle(
+        request: Request,
+        scheduler_secret: str | None = Header(
+            default=None,
+            alias="X-ChatPulse-Scheduler-Secret",
+        ),
+    ) -> dict[str, int | bool]:
+        require_scheduler_secret(scheduler_secret)
+        result = await request.app.state.vip_lifecycle_service.send_due(request.app.state.bot)
+        return {"ok": True, **result}
 
     @app.get("/miniapp", include_in_schema=False)
     @app.get("/miniapp/", include_in_schema=False)

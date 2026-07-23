@@ -12,7 +12,7 @@ router = APIRouter(prefix="/api/miniapp/v1", tags=["featured-achievements"])
 class FeaturedAchievementUpdate(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
-    codes: list[str] = Field(default_factory=list, max_length=3)
+    codes: list[str] = Field(default_factory=list, max_length=5)
 
 
 @router.get("/featured-achievements")

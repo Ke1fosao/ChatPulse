@@ -1,0 +1,82 @@
+.featured-achievements-block {
+  display: grid;
+  gap: 14px;
+  margin: 14px 0 18px;
+}
+
+.featured-achievements-block.panel {
+  padding: 16px;
+}
+
+.featured-slot-row {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.featured-slot-row > span {
+  display: grid;
+  place-items: center;
+  min-height: 54px;
+  border: 1px dashed rgba(255, 211, 105, 0.25);
+  border-radius: 14px;
+  background: rgba(255, 211, 105, 0.04);
+  color: rgba(255, 220, 123, 0.55);
+}
+
+.featured-slot-row.is-active > span {
+  display: flex;
+  gap: 5px;
+  border-style: solid;
+}
+
+.featured-slot-row b {
+  font-size: 19px;
+}
+
+.featured-achievement-options {
+  display: grid;
+  gap: 8px;
+  max-height: 360px;
+  overflow-y: auto;
+}
+
+.featured-achievement-options button {
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  padding: 11px;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.025);
+  color: #fff;
+  text-align: left;
+}
+
+.featured-achievement-options button.is-selected {
+  border-color: rgba(255, 211, 105, 0.4);
+  background: rgba(255, 211, 105, 0.08);
+}
+
+.featured-achievement-options button > span {
+  font-size: 21px;
+  text-align: center;
+}
+
+.featured-achievement-options strong,
+.featured-achievement-options small {
+  display: block;
+}
+
+.featured-achievement-options small {
+  margin-top: 3px;
+  color: #9299aa;
+  font-size: 11px;
+}
+
+.featured-achievement-message {
+  margin: 0;
+  color: #ffd876;
+  font-size: 12px;
+}

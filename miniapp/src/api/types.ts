@@ -1,7 +1,7 @@
 export type Period = "week" | "month" | "all";
 export type Metric = "xp" | "messages" | "reactions" | "replies" | "streak";
 export type TabId = "home" | "groups" | "rankings" | "achievements" | "profile";
-export type ReportTheme = "dark_pulse" | "telegram_wave" | "clean_light";
+export type ReportTheme = "dark_pulse" | "telegram_wave" | "clean_light" | "aurora_gold";
 export type AchievementRarity =
   | "common"
   | "uncommon"
@@ -161,6 +161,7 @@ export interface RankingRow {
   value: number;
   metric: Metric;
   is_current_user: boolean;
+  account_plan?: "free" | "vip" | "owner";
 }
 
 export interface RankingPayload {

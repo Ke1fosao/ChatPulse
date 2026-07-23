@@ -1,0 +1,51 @@
+.leader-name__identity {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.ranking-plan-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  flex: 0 0 auto;
+  padding: 3px 5px;
+  border-radius: 999px;
+  font-size: 8px;
+  font-style: normal;
+  font-weight: 900;
+  letter-spacing: 0.05em;
+}
+
+.ranking-plan-badge.is-vip {
+  border: 1px solid rgba(255, 211, 105, 0.3);
+  background: rgba(255, 211, 105, 0.1);
+  color: #ffdc78;
+}
+
+.ranking-plan-badge.is-owner {
+  border: 1px solid rgba(177, 125, 255, 0.36);
+  background: rgba(159, 94, 255, 0.12);
+  color: #d9bdff;
+}
+
+.podium-slot .ranking-plan-badge {
+  margin-top: 2px;
+}
+
+.premium-setting-hint {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  margin-top: 12px;
+  padding: 11px;
+  border: 1px solid rgba(255, 211, 105, 0.2);
+  border-radius: 13px;
+  background: rgba(255, 211, 105, 0.06);
+  color: #ffd875;
+  font-size: 12px;
+  font-weight: 800;
+}
