@@ -15,33 +15,42 @@ import type {
   OwnerSession,
   OwnerTab,
   OwnerUser,
-  VipFilter,
-  VipGrantPayload,
-  VipRevokePayload,
+  OwnerUserFilters,
 } from "./types";
+
+const initialUserFilters: OwnerUserFilters = {
+  query: "",
+  vip: "all",
+  status: "all",
+  role: "all",
+  payment: "all",
+  tag: "",
+  sort: "activity_desc",
+  limit: 50,
+  offset: 0,
+};
 
 export function OwnerApp() {
   const [session, setSession] = useState<OwnerSession | null>(null);
   const [overview, setOverview] = useState<OwnerOverviewData | null>(null);
   const [users, setUsers] = useState<OwnerUser[]>([]);
   const [usersTotal, setUsersTotal] = useState(0);
+  const [userFilters, setUserFilters] = useState<OwnerUserFilters>(initialUserFilters);
   const [groups, setGroups] = useState<OwnerGroup[]>([]);
   const [groupsTotal, setGroupsTotal] = useState(0);
   const [audit, setAudit] = useState<OwnerAuditEntry[]>([]);
   const [activeTab, setActiveTab] = useState<OwnerTab>("overview");
-  const [query, setQuery] = useState("");
   const [groupQuery, setGroupQuery] = useState("");
-  const [vipFilter, setVipFilter] = useState<VipFilter>("all");
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [forbidden, setForbidden] = useState(false);
   const [error, setError] = useState("");
 
   const loadUsers = useCallback(async () => {
-    const payload = await ownerApi.users(query, vipFilter, 50, 0);
+    const payload = await ownerApi.users(userFilters);
     setUsers(payload.items);
     setUsersTotal(payload.total);
-  }, [query, vipFilter]);
+  }, [userFilters]);
 
   const loadGroups = useCallback(async () => {
     const payload = await ownerApi.groups(groupQuery, 50, 0);
@@ -54,6 +63,10 @@ export function OwnerApp() {
     setAudit(payload.items);
   }, []);
 
+  const refreshOverview = useCallback(async () => {
+    setOverview(await ownerApi.overview());
+  }, []);
+
   const boot = useCallback(async () => {
     setLoading(true);
     setError("");
@@ -61,18 +74,27 @@ export function OwnerApp() {
     try {
       const ownerSession = await ownerApi.session();
       setSession(ownerSession);
-      const [overviewPayload, userPayload, groupPayload, auditPayload] = await Promise.all([
-        ownerApi.overview(),
-        ownerApi.users("", "all", 50, 0),
-        ownerApi.groups("", 50, 0),
-        ownerApi.audit(75),
-      ]);
-      setOverview(overviewPayload);
+      const userPayload = await ownerApi.users(initialUserFilters);
       setUsers(userPayload.items);
       setUsersTotal(userPayload.total);
-      setGroups(groupPayload.items);
-      setGroupsTotal(groupPayload.total);
-      setAudit(auditPayload.items);
+
+      if (ownerSession.actor.is_owner) {
+        const [overviewPayload, groupPayload, auditPayload] = await Promise.all([
+          ownerApi.overview(),
+          ownerApi.groups("", 50, 0),
+          ownerApi.audit(75),
+        ]);
+        setOverview(overviewPayload);
+        setGroups(groupPayload.items);
+        setGroupsTotal(groupPayload.total);
+        setAudit(auditPayload.items);
+        setActiveTab("overview");
+      } else {
+        setOverview(null);
+        setGroups([]);
+        setAudit([]);
+        setActiveTab("users");
+      }
       notify("success");
     } catch (reason) {
       const status = reason instanceof OwnerApiError
@@ -105,7 +127,7 @@ export function OwnerApp() {
   }, [activeTab, loadUsers, session]);
 
   useEffect(() => {
-    if (!session || activeTab !== "groups") return;
+    if (!session?.actor.is_owner || activeTab !== "groups") return;
     const timer = window.setTimeout(() => {
       setBusy(true);
       void loadGroups()
@@ -115,31 +137,24 @@ export function OwnerApp() {
     return () => window.clearTimeout(timer);
   }, [activeTab, loadGroups, session]);
 
-  const refreshOverview = async () => {
-    setOverview(await ownerApi.overview());
-  };
-
-  const grantVip = async (userId: number, payload: VipGrantPayload) => {
+  const refreshUsersAfterMutation = useCallback(async () => {
+    if (!session) return;
     setBusy(true);
     try {
-      await ownerApi.grantVip(userId, payload);
-      await Promise.all([loadUsers(), refreshOverview(), loadAudit()]);
+      const requests: Array<Promise<unknown>> = [loadUsers()];
+      if (session.actor.is_owner) {
+        requests.push(refreshOverview(), loadAudit());
+      }
+      await Promise.all(requests);
       notify("success");
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : "Не вдалося оновити дані користувача.");
+      notify("error");
+      throw reason;
     } finally {
       setBusy(false);
     }
-  };
-
-  const revokeVip = async (userId: number, payload: VipRevokePayload) => {
-    setBusy(true);
-    try {
-      await ownerApi.revokeVip(userId, payload);
-      await Promise.all([loadUsers(), refreshOverview(), loadAudit()]);
-      notify("success");
-    } finally {
-      setBusy(false);
-    }
-  };
+  }, [loadAudit, loadUsers, refreshOverview, session]);
 
   const updateGroup = async (chatId: number, values: Partial<OwnerGroup>) => {
     setBusy(true);
@@ -158,23 +173,21 @@ export function OwnerApp() {
   };
 
   const page = useMemo(() => {
-    if (!overview) return null;
+    if (!session) return null;
     if (activeTab === "users") {
       return (
         <OwnerUsers
           users={users}
           total={usersTotal}
           loading={busy}
-          query={query}
-          vipFilter={vipFilter}
-          onQueryChange={setQuery}
-          onVipFilterChange={setVipFilter}
-          onRefresh={() => void loadUsers()}
-          onGrant={grantVip}
-          onRevoke={revokeVip}
+          filters={userFilters}
+          permissions={session.actor.permissions}
+          onFiltersChange={setUserFilters}
+          onRefresh={refreshUsersAfterMutation}
         />
       );
     }
+    if (!session.actor.is_owner) return null;
     if (activeTab === "groups") {
       return (
         <OwnerGroups
@@ -188,13 +201,11 @@ export function OwnerApp() {
         />
       );
     }
-    if (activeTab === "payments") {
-      return <OwnerPayments />;
-    }
+    if (activeTab === "payments") return <OwnerPayments />;
     if (activeTab === "audit") {
       return <OwnerAudit items={audit} loading={busy} onRefresh={() => void loadAudit()} />;
     }
-    return <OwnerOverview data={overview} />;
+    return overview ? <OwnerOverview data={overview} /> : null;
   }, [
     activeTab,
     audit,
@@ -204,12 +215,12 @@ export function OwnerApp() {
     groupsTotal,
     loadAudit,
     loadGroups,
-    loadUsers,
     overview,
-    query,
+    refreshUsersAfterMutation,
+    session,
+    userFilters,
     users,
     usersTotal,
-    vipFilter,
   ]);
 
   if (!isTelegramContext()) {
@@ -217,7 +228,7 @@ export function OwnerApp() {
       <main className="owner-gate">
         <LockKeyhole size={34} />
         <h1>Відкрий Owner Panel через Telegram</h1>
-        <p>Авторизація власника працює лише через підписаний Telegram Mini App session.</p>
+        <p>Захищена авторизація працює лише через підписану Telegram Mini App session.</p>
       </main>
     );
   }
@@ -238,7 +249,7 @@ export function OwnerApp() {
       <main className="owner-gate owner-gate--danger">
         <LockKeyhole size={34} />
         <h1>Owner Panel закрито</h1>
-        <p>{error || "Цей маршрут доступний лише єдиному власнику ChatPulse."}</p>
+        <p>{error || "Цей маршрут доступний лише команді ChatPulse."}</p>
         <button type="button" onClick={() => window.location.assign("/miniapp")}>Повернутися в ChatPulse</button>
       </main>
     );
@@ -247,14 +258,14 @@ export function OwnerApp() {
   return (
     <OwnerShell session={session} activeTab={activeTab} onTabChange={setActiveTab} busy={busy}>
       {error ? (
-        <button type="button" className="owner-error-banner" onClick={() => setError("")}>
+        <button type="button" className="owner-error-banner" onClick={() => setError("") }>
           <AlertTriangle size={16} /> {error}
         </button>
       ) : null}
       {page ?? (
         <div className="owner-empty">
-          <RefreshCw size={20} /> Не вдалося завантажити огляд.
-          <button type="button" onClick={() => void boot()}>Повторити</button>
+          <RefreshCw size={20} /> Цей розділ недоступний для вашої ролі.
+          <button type="button" onClick={() => setActiveTab("users")}>До користувачів</button>
         </div>
       )}
     </OwnerShell>

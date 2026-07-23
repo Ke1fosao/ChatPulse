@@ -5,6 +5,7 @@ import app.billing_models  # noqa: F401
 import app.engagement_models  # noqa: F401
 import app.groups_v2_models  # noqa: F401
 import app.owner_revenue_models  # noqa: F401
+import app.user_control_models  # noqa: F401
 import app.vip_product_models  # noqa: F401
 from app.models import Base
 
