@@ -86,9 +86,7 @@ class AchievementGamificationRepository(GamificationRepository):
         user: User,
         earned: list[AchievementEarned],
     ) -> None:
-        group_reward = sum(
-            max(0, int(item.reward_xp)) for item in earned if item.scope == "group"
-        )
+        group_reward = sum(max(0, int(item.reward_xp)) for item in earned if item.scope == "group")
         global_reward = sum(max(0, int(item.reward_xp)) for item in earned)
         if group_reward:
             member.xp_total += group_reward
