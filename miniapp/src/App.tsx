@@ -2,15 +2,7 @@ import { AlertTriangle, RefreshCw, Sparkles } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { api, ApiError } from "./api/client";
 import type { GroupsV2CardData } from "./api/groups-v2";
-import type {
-  Achievement,
-  GroupCardData,
-  HomePayload,
-  Metric,
-  Period,
-  RankingPayload,
-  TabId,
-} from "./api/types";
+import type { Achievement, GroupCardData, HomePayload, TabId } from "./api/types";
 import { AppShell } from "./components/AppShell";
 import { LevelsDialog } from "./components/LevelsDialog";
 import { ShareCardDialog } from "./components/ShareCardDialog";
@@ -21,7 +13,6 @@ import { GroupCenterPage } from "./features/groups/GroupCenterPage";
 import { GroupsPage } from "./features/groups/GroupsPage";
 import { HomePage } from "./features/home/HomePage";
 import { ProfilePage } from "./features/profile/ProfilePage";
-import { RankingsPage } from "./features/rankings/RankingsPage";
 import {
   bindBackButton,
   initTelegram,
@@ -35,10 +26,6 @@ export function App() {
   const [groups, setGroups] = useState<GroupsV2CardData[]>([]);
   const [achievements, setAchievements] = useState<Achievement[]>([]);
   const [selectedGroup, setSelectedGroup] = useState<GroupCardData | null>(null);
-  const [ranking, setRanking] = useState<RankingPayload | null>(null);
-  const [rankingGroupId, setRankingGroupId] = useState<number | null>(null);
-  const [rankingMetric, setRankingMetric] = useState<Metric>("xp");
-  const [rankingPeriod, setRankingPeriod] = useState<Period>("week");
   const [loading, setLoading] = useState(true);
   const [secondaryLoading, setSecondaryLoading] = useState(false);
   const [error, setError] = useState("");
@@ -59,8 +46,6 @@ export function App() {
       setHome(homePayload);
       setGroups(groupPayload);
       setAchievements(achievementPayload);
-      const initialGroupId = rankingGroupId ?? groupPayload[0]?.telegram_chat_id ?? null;
-      setRankingGroupId(initialGroupId);
       notify("success");
     } catch (reason) {
       if (reason instanceof ApiError && reason.code === "ACCOUNT_BLOCKED") {
@@ -75,31 +60,12 @@ export function App() {
     } finally {
       setLoading(false);
     }
-  }, [rankingGroupId]);
+  }, []);
 
   useEffect(() => {
     initTelegram();
     void loadCore();
   }, [loadCore]);
-
-  const loadRanking = useCallback(async () => {
-    if (rankingGroupId === null) {
-      setRanking(null);
-      return;
-    }
-    setSecondaryLoading(true);
-    try {
-      setRanking(await api.rankings(rankingGroupId, rankingMetric, rankingPeriod));
-    } catch (reason) {
-      setError(reason instanceof Error ? reason.message : "Не вдалося завантажити рейтинг.");
-    } finally {
-      setSecondaryLoading(false);
-    }
-  }, [rankingGroupId, rankingMetric, rankingPeriod]);
-
-  useEffect(() => {
-    if (activeTab === "rankings") void loadRanking();
-  }, [activeTab, loadRanking]);
 
   useEffect(
     () => bindBackButton(selectedGroup ? () => setSelectedGroup(null) : null),
@@ -162,22 +128,6 @@ export function App() {
         />
       );
     }
-    if (activeTab === "rankings") {
-      return (
-        <RankingsPage
-          groups={groups}
-          ranking={ranking}
-          loading={secondaryLoading}
-          selectedGroupId={rankingGroupId}
-          metric={rankingMetric}
-          period={rankingPeriod}
-          onGroupChange={setRankingGroupId}
-          onMetricChange={setRankingMetric}
-          onPeriodChange={setRankingPeriod}
-          onRefresh={() => void loadRanking()}
-        />
-      );
-    }
     if (activeTab === "achievements") {
       return (
         <AchievementsPage
@@ -213,11 +163,6 @@ export function App() {
     groups,
     home,
     loadCore,
-    loadRanking,
-    ranking,
-    rankingGroupId,
-    rankingMetric,
-    rankingPeriod,
     secondaryLoading,
     selectedGroup,
     toggleFavorite,
