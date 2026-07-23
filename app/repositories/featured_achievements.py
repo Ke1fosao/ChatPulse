@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from dataclasses import dataclass
 from typing import Any
 
 from sqlalchemy import delete, select
@@ -7,9 +8,15 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from app.achievement_models import AchievementUnlockRecord, FeaturedAchievement
 from app.achievements.catalog import ACHIEVEMENT_BY_CODE
-from app.models import utc_now
+from app.models import MemberAchievement, utc_now
 
 MAX_FEATURED_ACHIEVEMENTS = 5
+
+
+@dataclass(frozen=True, slots=True)
+class EarnedAchievementSource:
+    achievement_code: str
+    scope_key: str
 
 
 class FeaturedAchievementRepository:
@@ -47,9 +54,9 @@ class FeaturedAchievementRepository:
             raise ValueError("Можна закріпити не більше пʼяти досягнень.")
 
         async with self._session_factory() as session, session.begin():
-            selected: dict[str, AchievementUnlockRecord] = {}
+            selected: dict[str, EarnedAchievementSource] = {}
             if normalized:
-                rows = list(
+                canonical_rows = list(
                     (
                         await session.scalars(
                             select(AchievementUnlockRecord)
@@ -61,8 +68,41 @@ class FeaturedAchievementRepository:
                         )
                     ).all()
                 )
-                for row in rows:
-                    selected.setdefault(row.achievement_code, row)
+                for row in canonical_rows:
+                    selected.setdefault(
+                        row.achievement_code,
+                        EarnedAchievementSource(
+                            achievement_code=row.achievement_code,
+                            scope_key=row.scope_key,
+                        ),
+                    )
+
+                # Achievement System 2.0 still exposes valid legacy unlocks in the
+                # collection. Accept those too, otherwise users see an earned
+                # achievement but receive "only earned achievements" on save.
+                missing_codes = [code for code in normalized if code not in selected]
+                if missing_codes:
+                    legacy_rows = list(
+                        (
+                            await session.scalars(
+                                select(MemberAchievement)
+                                .where(
+                                    MemberAchievement.telegram_user_id == user_id,
+                                    MemberAchievement.achievement_code.in_(missing_codes),
+                                )
+                                .order_by(MemberAchievement.earned_at.desc())
+                            )
+                        ).all()
+                    )
+                    for row in legacy_rows:
+                        selected.setdefault(
+                            row.achievement_code,
+                            EarnedAchievementSource(
+                                achievement_code=row.achievement_code,
+                                scope_key=f"group:{int(row.telegram_chat_id)}",
+                            ),
+                        )
+
                 missing = [code for code in normalized if code not in selected]
                 if missing:
                     raise ValueError("Можна закріплювати лише отримані досягнення.")
@@ -72,12 +112,12 @@ class FeaturedAchievementRepository:
             )
             created_at = utc_now()
             for slot, code in enumerate(normalized, start=1):
-                unlock = selected[code]
+                source = selected[code]
                 session.add(
                     FeaturedAchievement(
                         telegram_user_id=user_id,
                         slot=slot,
-                        scope_key=unlock.scope_key,
+                        scope_key=source.scope_key,
                         achievement_code=code,
                         created_at=created_at,
                     )
