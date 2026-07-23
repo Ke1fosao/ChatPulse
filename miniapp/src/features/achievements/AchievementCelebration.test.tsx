@@ -56,7 +56,17 @@ function achievement(
     reward_xp: 25,
     version: 2,
     season_key: null,
-  };
+    earned_instances: [
+      {
+        scope_key: "group:-1001",
+        telegram_chat_id: -1001,
+        group_title: "ChatPulse Team",
+        earned_at: "2026-07-22T10:00:00Z",
+        progress: 100,
+      },
+    ],
+    primary_scope_key: "group:-1001",
+  } as Achievement;
 }
 
 function event(
@@ -86,17 +96,32 @@ beforeEach(() => {
 });
 
 describe("AchievementCelebrationLayer", () => {
-  it("renders a rarity-specific full-screen celebration and acknowledges it", async () => {
+  it.each([
+    ["common", "toast"],
+    ["uncommon", "toast"],
+    ["rare", "modal"],
+    ["epic", "modal"],
+    ["legendary", "fullscreen"],
+    ["secret", "fullscreen"],
+  ] as const)("renders %s unlocks in %s mode", async (rarity, mode) => {
+    mocks.achievementEvents.mockResolvedValue([event(1, `Mode ${rarity}`, rarity)]);
+
+    render(<AchievementCelebrationLayer onOpenCollection={vi.fn()} />);
+
+    expect(await screen.findByText(`Mode ${rarity}`)).toBeInTheDocument();
+    expect(
+      document.querySelector(`.achievement-celebration--${mode}`),
+    ).not.toBeNull();
+    expect(screen.getByText("+25 XP")).toBeInTheDocument();
+  });
+
+  it("acknowledges a legendary celebration", async () => {
     const user = userEvent.setup();
-    mocks.achievementEvents.mockResolvedValue([
-      event(1, "Номер один", "legendary"),
-    ]);
+    mocks.achievementEvents.mockResolvedValue([event(1, "Номер один", "legendary")]);
 
     render(<AchievementCelebrationLayer onOpenCollection={vi.fn()} />);
 
     expect(await screen.findByText("Номер один")).toBeInTheDocument();
-    expect(document.querySelector(".achievement-celebration--legendary")).not.toBeNull();
-
     await user.click(screen.getByRole("button", { name: "Продовжити" }));
 
     await waitFor(() => expect(mocks.markAchievementSeen).toHaveBeenCalledWith(1));
