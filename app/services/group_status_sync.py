@@ -23,10 +23,9 @@ async def upsert_group_from_message(
     bot_status = "member"
     async with repository._session_factory() as session:
         group = await session.get(ChatGroup, data.telegram_chat_id)
-        if (
-            group is not None
-            and normalize_bot_status(group.bot_status) in PRIVILEGED_BOT_STATUSES
-        ):
+        if group is not None and normalize_bot_status(
+            group.bot_status
+        ) in PRIVILEGED_BOT_STATUSES:
             bot_status = normalize_bot_status(group.bot_status)
 
     await repository.upsert_group(
