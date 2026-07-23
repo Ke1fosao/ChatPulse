@@ -65,11 +65,27 @@ class OwnerPaymentService:
             )
             raise RuntimeError("Telegram не підтвердив повернення Stars.") from error
 
-        result = await self._revenue.apply_refund(
-            payment_id,
-            reason=normalized_reason,
-            now=current,
-        )
+        try:
+            result = await self._revenue.apply_refund(
+                payment_id,
+                reason=normalized_reason,
+                now=current,
+            )
+        except Exception as error:
+            await self._billing.mark_refund_required(
+                eligibility["charge_id"],
+                reason=f"owner_refund_local_sync_failed:{type(error).__name__}",
+            )
+            await self._audit(
+                owner_user_id,
+                "payment.refund_failed",
+                payment_id,
+                {"stage": "local_sync", "error_type": type(error).__name__},
+                current,
+            )
+            raise RuntimeError(
+                "Stars повернено, але локальний статус потребує синхронізації."
+            ) from error
         await self._audit(
             owner_user_id,
             "payment.refunded",
