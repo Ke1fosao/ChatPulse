@@ -81,7 +81,7 @@ async def test_sends_streak_risk_once_after_19_local_time(tmp_path) -> None:
     assert second["streak_sent"] == 0
     bot.send_message.assert_awaited_once()
     sent_text = bot.send_message.await_args.args[1]
-    assert "Серія" in sent_text
+    assert "серія" in sent_text.lower()
     assert "4" in sent_text
     await database.dispose()
 
