@@ -15,7 +15,7 @@ async def seed_users(database: Database) -> tuple[AdminActor, UserControlReposit
     async with database.session_factory() as session, session.begin():
         session.add_all(
             [
-                User(telegram_id=101, username="owner", first_name="Owner"),
+                User(telegram_id=101, username="veheblya", first_name="Owner"),
                 User(
                     telegram_id=202,
                     username="member",
@@ -25,7 +25,7 @@ async def seed_users(database: Database) -> tuple[AdminActor, UserControlReposit
                 ),
             ]
         )
-    await OwnerRepository(database.session_factory).claim_owner(101, "owner")
+    await OwnerRepository(database.session_factory).claim_owner(101, "veheblya")
     actor = AdminActor(
         telegram_user_id=101,
         role="owner",
