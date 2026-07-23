@@ -6,6 +6,7 @@ import {
   LayoutDashboard,
   ShieldCheck,
   Users,
+  WalletCards,
 } from "lucide-react";
 import type { ReactNode } from "react";
 import type { OwnerSession, OwnerTab } from "./types";
@@ -23,6 +24,7 @@ const tabs: Array<{ id: OwnerTab; label: string; icon: typeof LayoutDashboard }>
   { id: "overview", label: "Огляд", icon: LayoutDashboard },
   { id: "users", label: "Користувачі", icon: Users },
   { id: "groups", label: "Групи", icon: Activity },
+  { id: "payments", label: "Оплати", icon: WalletCards },
   { id: "audit", label: "Аудит", icon: History },
 ];
 
@@ -81,7 +83,7 @@ export function OwnerShell({
 
       <main className="owner-content">{children}</main>
 
-      <nav className="owner-nav" aria-label="Owner Panel">
+      <nav className="owner-nav owner-nav--five" aria-label="Owner Panel">
         {tabs.map((tab) => {
           const Icon = tab.icon;
           return (
