@@ -43,6 +43,11 @@ export interface VipPayment {
   refunded_at: string | null;
 }
 
+export interface FeaturedAchievementSelection {
+  code: string;
+  scope_key: string;
+}
+
 export interface FeaturedAchievement extends Achievement {
   slot: number;
   scope_key: string;
