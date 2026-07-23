@@ -145,6 +145,12 @@ async def update_subscription(
         user.telegram_id,
         canceled=payload.canceled,
     )
+    await request.app.state.vip_lifecycle_service.notify_subscription_state(
+        bot,
+        user_id=user.telegram_id,
+        charge_id=control["telegram_payment_charge_id"],
+        canceled=payload.canceled,
+    )
     return {"ok": True, "canceled": payload.canceled}
 
 
