@@ -28,7 +28,7 @@ describe("OnboardingCard", () => {
     render(<OnboardingCard onboarding={incomplete} onOpenTelegramLink={openLink} />);
 
     expect(screen.getByText("1 із 3")).toBeInTheDocument();
-    expect(screen.getByText("Додай у групу")).toBeInTheDocument();
+    expect(screen.getAllByText("Додай у групу")).toHaveLength(2);
     fireEvent.click(screen.getByRole("button", { name: "Додати в групу" }));
     expect(openLink).toHaveBeenCalledWith(incomplete.add_group_url);
   });
