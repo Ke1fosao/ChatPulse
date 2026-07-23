@@ -1,0 +1,50 @@
+name: Owner User Control Diagnostics
+
+on:
+  push:
+    branches:
+      - feature/owner-user-control-clean
+  workflow_dispatch:
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: miniapp/package-lock.json
+      - name: Install backend
+        run: pip install -q -e ".[dev]"
+      - name: Install frontend
+        working-directory: miniapp
+        run: npm install --no-audit --no-fund
+      - name: Collect diagnostics
+        shell: bash
+        run: |
+          mkdir -p diagnostics
+          set +e
+          ruff check . > diagnostics/ruff-check.txt 2>&1
+          echo $? > diagnostics/ruff-check.exit
+          ruff format --check . > diagnostics/ruff-format.txt 2>&1
+          echo $? > diagnostics/ruff-format.exit
+          pytest -q > diagnostics/pytest.txt 2>&1
+          echo $? > diagnostics/pytest.exit
+          cd miniapp
+          npm test -- --run > ../diagnostics/frontend-test.txt 2>&1
+          echo $? > ../diagnostics/frontend-test.exit
+          npm run typecheck > ../diagnostics/typecheck.txt 2>&1
+          echo $? > ../diagnostics/typecheck.exit
+          npm run build > ../diagnostics/build.txt 2>&1
+          echo $? > ../diagnostics/build.exit
+          exit 0
+      - uses: actions/upload-artifact@v4
+        with:
+          name: owner-user-control-diagnostics
+          path: diagnostics
+          if-no-files-found: error
