@@ -39,6 +39,14 @@ export const premiumApi = {
       `/groups/${chatId}/analytics?${params.toString()}`,
     );
   },
+  reportTheme: (
+    chatId: number,
+    theme: "telegram_wave" | "clean_light" | "aurora_gold",
+  ) =>
+    premiumRequest<{ report_card_theme: string }>(`/groups/${chatId}/report-theme`, {
+      method: "PUT",
+      body: JSON.stringify({ theme }),
+    }),
   event: (payload: VipPlacementEvent) =>
     premiumRequest<{ event: { id: number } }>("/events", {
       method: "POST",
