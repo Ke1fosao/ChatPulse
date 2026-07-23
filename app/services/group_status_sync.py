@@ -22,11 +22,18 @@ async def upsert_group_from_message(
     """Refresh group metadata without downgrading known administrator privileges."""
 
     bot_status = "member"
-    session_factory = getattr(repository, "_session_factory", None)
+    try:
+        session_factory = repository._session_factory
+    except AttributeError:
+        session_factory = None
+
     if session_factory is not None:
         async with session_factory() as session:
             group = await session.get(ChatGroup, data.telegram_chat_id)
-            if group is not None and normalize_bot_status(group.bot_status) in PRIVILEGED_BOT_STATUSES:
+            if (
+                group is not None
+                and normalize_bot_status(group.bot_status) in PRIVILEGED_BOT_STATUSES
+            ):
                 bot_status = normalize_bot_status(group.bot_status)
 
     await repository.upsert_group(
