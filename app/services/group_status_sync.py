@@ -23,9 +23,7 @@ async def upsert_group_from_message(
     bot_status = "member"
     async with repository._session_factory() as session:
         group = await session.get(ChatGroup, data.telegram_chat_id)
-        if group is not None and normalize_bot_status(
-            group.bot_status
-        ) in PRIVILEGED_BOT_STATUSES:
+        if group is not None and normalize_bot_status(group.bot_status) in PRIVILEGED_BOT_STATUSES:
             bot_status = normalize_bot_status(group.bot_status)
 
     await repository.upsert_group(
@@ -52,10 +50,7 @@ async def reconcile_group_bot_status(
             return False
 
         is_active = normalized in ACTIVE_BOT_STATUSES
-        if (
-            normalize_bot_status(group.bot_status) == normalized
-            and group.is_active == is_active
-        ):
+        if normalize_bot_status(group.bot_status) == normalized and group.is_active == is_active:
             return False
 
         group.bot_status = normalized
