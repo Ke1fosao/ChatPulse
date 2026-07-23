@@ -237,9 +237,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         ),
     ) -> dict[str, int | bool]:
         require_scheduler_secret(scheduler_secret)
-        vip_result = await request.app.state.vip_lifecycle_service.send_due(
-            request.app.state.bot
-        )
+        vip_result = await request.app.state.vip_lifecycle_service.send_due(request.app.state.bot)
         retention_result = await request.app.state.retention_lifecycle_service.send_due(
             request.app.state.bot
         )
