@@ -1,21 +1,84 @@
-from datetime import UTC, datetime, timedelta
+from collections import Counter
+from datetime import UTC, date, datetime, timedelta
 
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from app.achievements.engine import AchievementEvent, AchievementSnapshot
 from app.domain import AchievementEarned
-from app.models import ChatGroup, DailyActivity, GroupMember, User, utc_now
+from app.models import (
+    BotOwner,
+    ChatGroup,
+    DailyActivity,
+    GroupMember,
+    StreakProtectionUsage,
+    User,
+    VipGrant,
+    utc_now,
+)
 from app.repositories.achievements import AchievementRepository
 from app.repositories.gamification import GamificationRepository
+from app.services.gamification import MONTHLY_PROTECTION_DAYS
+
+VIP_MONTHLY_PROTECTION_DAYS = 5
 
 
 class AchievementGamificationRepository(GamificationRepository):
-    """Adds Achievement System 2.0 without changing the stable XP pipeline."""
+    """Adds Achievement System 2.0 and premium streak protection to the XP pipeline."""
 
     def __init__(self, session_factory: async_sessionmaker[AsyncSession]) -> None:
         super().__init__(session_factory)
         self._achievement_v2 = AchievementRepository(session_factory)
+
+    async def _consume_protections(
+        self,
+        session: AsyncSession,
+        chat_id: int,
+        user_id: int,
+        missing_dates: list[date],
+    ) -> bool:
+        if not missing_dates:
+            return True
+
+        now = utc_now()
+        owner = await session.get(BotOwner, "primary")
+        grant = await session.get(VipGrant, user_id)
+        is_owner = bool(owner and int(owner.telegram_user_id) == user_id)
+        is_vip = bool(
+            grant
+            and grant.is_active
+            and (grant.expires_at is None or self._aware(grant.expires_at) > now)
+        )
+        limit = VIP_MONTHLY_PROTECTION_DAYS if is_owner or is_vip else MONTHLY_PROTECTION_DAYS
+
+        required = Counter(item.replace(day=1) for item in missing_dates)
+        usages: dict[date, StreakProtectionUsage] = {}
+        for month_start, needed in required.items():
+            usage = await session.get(
+                StreakProtectionUsage,
+                (chat_id, user_id, month_start),
+            )
+            if usage is None:
+                usage = StreakProtectionUsage(
+                    telegram_chat_id=chat_id,
+                    telegram_user_id=user_id,
+                    month_start=month_start,
+                    used_days=0,
+                )
+                session.add(usage)
+                await session.flush()
+            if usage.used_days + needed > limit:
+                return False
+            usages[month_start] = usage
+        for month_start, needed in required.items():
+            usages[month_start].used_days += needed
+        return True
+
+    @staticmethod
+    def _aware(value: datetime) -> datetime:
+        if value.tzinfo is None:
+            return value.replace(tzinfo=UTC)
+        return value.astimezone(UTC)
 
     async def _award_new_achievements(
         self,
