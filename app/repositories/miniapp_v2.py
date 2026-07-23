@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import UTC, datetime, timedelta
+from datetime import UTC, date, datetime, timedelta
 from typing import Any, Literal
 from zoneinfo import ZoneInfo
 
@@ -75,6 +75,81 @@ class AchievementMiniAppRepository(MiniAppRepository):
                 **selected_payload,
                 "comparison": comparison_payload,
                 "trends": trends,
+            }
+
+    async def get_year_summary(self, user_id: int, year: int) -> dict[str, Any] | None:
+        start = date(year, 1, 1)
+        end = date(year, 12, 31)
+        async with self._session_factory() as session:
+            user = await session.get(User, user_id)
+            if user is None:
+                return None
+
+            memberships = await self._memberships(session, user_id)
+            rows = (
+                await session.execute(
+                    select(
+                        DailyActivity.activity_date,
+                        DailyActivity.messages_count,
+                        DailyActivity.xp_earned,
+                    ).where(
+                        DailyActivity.telegram_user_id == user_id,
+                        DailyActivity.activity_date >= start,
+                        DailyActivity.activity_date <= end,
+                    )
+                )
+            ).all()
+
+            messages_count = sum(int(row.messages_count or 0) for row in rows)
+            xp_earned = sum(int(row.xp_earned or 0) for row in rows)
+            active_days = len(
+                {
+                    row.activity_date
+                    for row in rows
+                    if int(row.messages_count or 0) > 0 or int(row.xp_earned or 0) > 0
+                }
+            )
+            monthly_xp: dict[int, int] = {}
+            for row in rows:
+                month = int(row.activity_date.month)
+                monthly_xp[month] = monthly_xp.get(month, 0) + int(row.xp_earned or 0)
+
+            top_month = (
+                max(monthly_xp, key=lambda month: (monthly_xp[month], -month))
+                if monthly_xp
+                else None
+            )
+            best_streak = max(
+                (int(member.longest_streak) for _group, member in memberships),
+                default=0,
+            )
+            achievements_count = int(
+                await session.scalar(
+                    select(func.count())
+                    .select_from(AchievementUnlockRecord)
+                    .where(
+                        AchievementUnlockRecord.telegram_user_id == user_id,
+                        AchievementUnlockRecord.earned_at
+                        >= datetime(year, 1, 1, tzinfo=UTC),
+                        AchievementUnlockRecord.earned_at
+                        < datetime(year + 1, 1, 1, tzinfo=UTC),
+                    )
+                )
+                or 0
+            )
+            return {
+                "year": year,
+                "messages_count": messages_count,
+                "xp_earned": xp_earned,
+                "active_days": active_days,
+                "groups_count": len(memberships),
+                "best_streak": best_streak,
+                "top_month": top_month,
+                "monthly_xp": [
+                    {"month": month, "xp": monthly_xp.get(month, 0)}
+                    for month in range(1, 13)
+                ],
+                "achievements_count": achievements_count,
             }
 
     async def get_achievements(
