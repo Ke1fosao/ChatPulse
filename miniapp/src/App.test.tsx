@@ -2,6 +2,7 @@ import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { App } from "./App";
+import { api, ApiError } from "./api/client";
 
 vi.mock("./api/client", () => ({
   api: {
@@ -77,9 +78,20 @@ vi.mock("./api/client", () => ({
     updateSettings: vi.fn(),
     resetGroup: vi.fn(),
   },
-  ApiError: class ApiError extends Error {},
+  ApiError: class ApiError extends Error {
+    constructor(
+      message: string,
+      public readonly status: number,
+      public readonly code?: string,
+      public readonly reason?: string | null,
+    ) {
+      super(message);
+    }
+  },
   downloadBlob: vi.fn(),
 }));
+
+const mockedApi = vi.mocked(api);
 
 describe("App", () => {
   beforeEach(() => vi.clearAllMocks());
@@ -101,5 +113,22 @@ describe("App", () => {
       await screen.findByRole("dialog", { name: "Усі рівні ChatPulse" }),
     ).toBeInTheDocument();
     expect(screen.getByText("50")).toBeInTheDocument();
+  });
+
+  it("renders a final blocked screen without a retry loop", async () => {
+    mockedApi.home.mockRejectedValueOnce(
+      new ApiError(
+        "Доступ до ChatPulse обмежено адміністратором.",
+        403,
+        "ACCOUNT_BLOCKED",
+        "Порушення правил спільноти",
+      ),
+    );
+
+    render(<App />);
+
+    expect(await screen.findByRole("heading", { name: "Акаунт заблоковано" })).toBeInTheDocument();
+    expect(screen.getByText("Порушення правил спільноти")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /Повторити/ })).not.toBeInTheDocument();
   });
 });

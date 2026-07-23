@@ -33,6 +33,7 @@ from app.repositories.miniapp_v2 import AchievementMiniAppRepository
 from app.repositories.owner import OwnerRepository
 from app.repositories.owner_panel import OwnerPanelRepository
 from app.repositories.owner_revenue import OwnerRevenueRepository
+from app.repositories.user_control import UserControlRepository
 from app.repositories.vip_product_events import VipProductEventRepository
 from app.services.owner_payments import OwnerPaymentService
 from app.services.retention_lifecycle import RetentionLifecycleService
@@ -77,6 +78,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         owner_repository = OwnerRepository(database.session_factory)
         owner_panel_repository = OwnerPanelRepository(database.session_factory)
         owner_revenue_repository = OwnerRevenueRepository(database.session_factory)
+        user_control_repository = UserControlRepository(database.session_factory)
         owner_payment_service = OwnerPaymentService(database.session_factory)
         billing_repository = BillingRepository(database.session_factory)
         engagement_repository = EngagementRepository(database.session_factory)
@@ -99,6 +101,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             owner_repository=owner_repository,
             billing_repository=billing_repository,
             engagement_repository=engagement_repository,
+            user_control_repository=user_control_repository,
         )
 
         app.state.database = database
@@ -111,6 +114,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         app.state.owner_repository = owner_repository
         app.state.owner_panel_repository = owner_panel_repository
         app.state.owner_revenue_repository = owner_revenue_repository
+        app.state.user_control_repository = user_control_repository
         app.state.owner_payment_service = owner_payment_service
         app.state.billing_repository = billing_repository
         app.state.engagement_repository = engagement_repository

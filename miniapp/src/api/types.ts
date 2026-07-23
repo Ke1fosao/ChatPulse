@@ -262,6 +262,13 @@ export interface GroupDashboard {
   capabilities?: { is_admin: boolean };
 }
 
+export interface ApiErrorDetail {
+  code?: string;
+  message?: string;
+  reason?: string | null;
+  [key: string]: unknown;
+}
+
 export interface ApiErrorBody {
-  detail?: string;
+  detail?: string | ApiErrorDetail;
 }

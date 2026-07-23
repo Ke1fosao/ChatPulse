@@ -8,7 +8,7 @@ import {
   Users,
   WalletCards,
 } from "lucide-react";
-import type { ReactNode } from "react";
+import { useMemo, type ReactNode } from "react";
 import type { OwnerSession, OwnerTab } from "./types";
 import { useOwnerViewport } from "./useOwnerViewport";
 
@@ -28,6 +28,13 @@ const tabs: Array<{ id: OwnerTab; label: string; icon: typeof LayoutDashboard }>
   { id: "audit", label: "Аудит", icon: History },
 ];
 
+const roleLabels = {
+  owner: "OWNER",
+  admin: "ADMIN",
+  moderator: "MODERATOR",
+  support: "SUPPORT",
+} as const;
+
 export function OwnerShell({
   session,
   activeTab,
@@ -36,6 +43,11 @@ export function OwnerShell({
   busy = false,
 }: OwnerShellProps) {
   useOwnerViewport();
+  const availableTabs = useMemo(
+    () => session.actor.is_owner ? tabs : tabs.filter((tab) => tab.id === "users"),
+    [session.actor.is_owner],
+  );
+  const RoleIcon = session.actor.is_owner ? Crown : ShieldCheck;
 
   return (
     <div className="owner-shell">
@@ -72,19 +84,22 @@ export function OwnerShell({
           )}
         </div>
         <div>
-          <p>Єдиний власник</p>
+          <p>{session.actor.is_owner ? "Єдиний власник" : "Команда ChatPulse"}</p>
           <strong>{session.owner.display_name}</strong>
           <small>
             {session.owner.username ? `@${session.owner.username}` : `ID ${session.owner.telegram_id}`}
           </small>
         </div>
-        <span className="owner-role-pill"><Crown size={13} /> OWNER</span>
+        <span className="owner-role-pill"><RoleIcon size={13} /> {roleLabels[session.actor.role]}</span>
       </section>
 
       <main className="owner-content">{children}</main>
 
-      <nav className="owner-nav owner-nav--five" aria-label="Owner Panel">
-        {tabs.map((tab) => {
+      <nav
+        className={`owner-nav${availableTabs.length === 5 ? " owner-nav--five" : " owner-nav--single"}`}
+        aria-label="Owner Panel"
+      >
+        {availableTabs.map((tab) => {
           const Icon = tab.icon;
           return (
             <button
