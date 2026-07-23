@@ -14,11 +14,13 @@
   --nav-gap: 5px;
   --nav-padding: 6px;
   position: relative;
+  inset: auto;
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: var(--nav-gap);
   width: 100%;
   min-height: 74px;
+  margin: 0;
   padding: var(--nav-padding);
   overflow: hidden;
   border: 1px solid rgba(255, 255, 255, 0.1);
