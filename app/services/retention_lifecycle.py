@@ -8,9 +8,9 @@ from aiogram import Bot
 from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup, WebAppInfo
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
+from app.models import utc_now
 from app.repositories.engagement import EngagementRepository
 from app.repositories.miniapp_v2 import AchievementMiniAppRepository
-from app.models import utc_now
 
 
 def _as_utc(value: datetime) -> datetime:
@@ -164,7 +164,7 @@ class RetentionLifecycleService:
         chat_id: int,
         group_title: str,
         report_key: str,
-        ranks: dict[int, int],
+        ranks: dict[int, int] | None = None,
         now: datetime | None = None,
     ) -> int:
         current = _as_utc(now or utc_now())
@@ -172,13 +172,14 @@ class RetentionLifecycleService:
             period_start = date.fromisoformat(report_key)
         except ValueError:
             period_start = current.date() - timedelta(days=current.weekday())
+        resolved_ranks = ranks or await self._engagement.get_group_xp_ranks(chat_id)
         user_ids = await self._engagement.list_weekly_user_ids(
             chat_id,
             since=current - timedelta(days=8),
         )
         sent = 0
         for user_id in user_ids:
-            rank = ranks.get(user_id)
+            rank = resolved_ranks.get(user_id)
             rank_line = ""
             if rank is not None:
                 change = await self._engagement.update_rank_snapshot(
