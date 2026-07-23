@@ -132,9 +132,7 @@ class EngagementRepository:
                 )
             ).all()
             connected = bool(active_links or membership_rows)
-            first_activity = any(
-                int(row.GroupMember.messages_count) > 0 for row in membership_rows
-            )
+            first_activity = any(int(row.GroupMember.messages_count) > 0 for row in membership_rows)
             completed_flags = (started, connected, first_activity)
             completed_steps = sum(completed_flags)
             is_complete = completed_steps == 3
