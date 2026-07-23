@@ -1,5 +1,10 @@
 import { getInitData } from "../telegram/sdk";
-import type { PremiumContextPayload, VipPlacementEvent } from "./types";
+import type {
+  PremiumAnalyticsPayload,
+  PremiumAnalyticsPeriod,
+  PremiumContextPayload,
+  VipPlacementEvent,
+} from "./types";
 
 async function premiumRequest<T>(path: string, init?: RequestInit): Promise<T> {
   const headers = new Headers(init?.headers);
@@ -23,6 +28,17 @@ async function premiumRequest<T>(path: string, init?: RequestInit): Promise<T> {
 
 export const premiumApi = {
   context: () => premiumRequest<PremiumContextPayload>("/context"),
+  analytics: (
+    chatId: number,
+    period: PremiumAnalyticsPeriod,
+    compare: PremiumAnalyticsPeriod | null = null,
+  ) => {
+    const params = new URLSearchParams({ period });
+    if (compare) params.set("compare", compare);
+    return premiumRequest<PremiumAnalyticsPayload>(
+      `/groups/${chatId}/analytics?${params.toString()}`,
+    );
+  },
   event: (payload: VipPlacementEvent) =>
     premiumRequest<{ event: { id: number } }>("/events", {
       method: "POST",
