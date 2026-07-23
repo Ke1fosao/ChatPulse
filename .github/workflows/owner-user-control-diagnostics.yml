@@ -1,6 +1,7 @@
 name: Owner User Control Diagnostics
 
 on:
+  pull_request:
   push:
     branches:
       - feature/owner-user-control-clean
