@@ -1,6 +1,6 @@
 export type Period = "week" | "month" | "all";
 export type Metric = "xp" | "messages" | "reactions" | "replies" | "streak";
-export type TabId = "home" | "groups" | "rankings" | "achievements" | "profile";
+export type TabId = "home" | "groups" | "achievements" | "profile";
 export type ReportTheme = "dark_pulse" | "telegram_wave" | "clean_light" | "aurora_gold";
 export type AchievementRarity =
   | "common"
