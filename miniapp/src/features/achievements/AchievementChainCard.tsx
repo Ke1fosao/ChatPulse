@@ -11,11 +11,12 @@ interface AchievementChainCardProps {
 export function AchievementChainCard({ item, onOpen }: AchievementChainCardProps) {
   const achievement = item.featuredAchievement;
   const label = chainLabels[item.chainKey] ?? item.chainKey.replaceAll("_", " ");
+  const nearComplete = !item.earned && !item.hidden && item.progressPercent >= 70;
   return (
     <button
       className={`achievement-chain-card achievement-card--${achievement.rarity} ${
         item.earned ? "is-earned" : "is-progress"
-      }`}
+      } ${nearComplete ? "is-near" : ""}`}
       type="button"
       onClick={() => onOpen(item)}
     >
@@ -29,14 +30,28 @@ export function AchievementChainCard({ item, onOpen }: AchievementChainCardProps
             <small>ЛАНЦЮЖОК · {item.completedStages}/{item.totalStages}</small>
             <strong>{label}</strong>
           </div>
-          <em>{rarityLabel[achievement.rarity]}</em>
+          <span className="achievement-card__badges">
+            {nearComplete ? (
+              <em className="achievement-card__badge achievement-card__badge--near">МАЙЖЕ</em>
+            ) : null}
+            <em className="achievement-card__badge achievement-card__badge--rarity">
+              {rarityLabel[achievement.rarity]}
+            </em>
+          </span>
         </div>
         <p>
-          {item.nextAchievement
-            ? `Наступна нагорода: «${item.nextAchievement.title}»`
-            : "Усі етапи цього ланцюжка виконані"}
+          {item.nextAchievement ? (
+            <>
+              Наступна нагорода: <strong>{item.nextAchievement.title}</strong>
+            </>
+          ) : (
+            "Усі етапи цього ланцюжка виконані"
+          )}
         </p>
-        <div className="achievement-chain-card__progress">
+        <div
+          className="achievement-chain-card__progress"
+          aria-label={`Прогрес ${item.progressPercent}%`}
+        >
           <span style={{ width: `${item.progressPercent}%` }} />
         </div>
         <div className="achievement-chain-card__meta">
