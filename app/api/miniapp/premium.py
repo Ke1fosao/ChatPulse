@@ -60,6 +60,16 @@ async def _require_admin(request: Request, chat_id: int, user_id: int) -> None:
         )
 
 
+async def _require_member(request: Request, chat_id: int, user_id: int) -> None:
+    if not request.app.state.settings.webhook_base_url:
+        return
+    if not await request.app.state.telegram_access_service.check_member(chat_id, user_id):
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Групу не знайдено або доступ відсутній.",
+        )
+
+
 @router.get("/context")
 async def premium_context(
     request: Request,
@@ -99,17 +109,33 @@ async def premium_group_analytics(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Групу не знайдено або доступ відсутній.",
         )
-    if request.app.state.settings.webhook_base_url:
-        is_member = await request.app.state.telegram_access_service.check_member(
-            chat_id,
-            user.telegram_id,
-        )
-        if not is_member:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="Групу не знайдено або доступ відсутній.",
-            )
+    await _require_member(request, chat_id, user.telegram_id)
     return payload
+
+
+@router.get("/groups/{chat_id}/ranking-plans")
+async def ranking_account_plans(
+    chat_id: int,
+    request: Request,
+    user: Annotated[TelegramMiniAppUser, Depends(get_miniapp_user)],
+) -> dict[str, dict[str, str]]:
+    ranking = await request.app.state.miniapp_repository.get_rankings(
+        user.telegram_id,
+        chat_id,
+        "xp",
+        "week",
+    )
+    if ranking is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Групу не знайдено або доступ відсутній.",
+        )
+    await _require_member(request, chat_id, user.telegram_id)
+    plans: dict[str, str] = {}
+    for row in ranking["rows"]:
+        member_id = int(row["telegram_user_id"])
+        plans[str(member_id)] = (await _account(request, member_id)).plan
+    return {"plans": plans}
 
 
 @router.put("/groups/{chat_id}/report-theme")
