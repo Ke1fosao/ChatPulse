@@ -1,0 +1,32 @@
+name: Groups 2.0 format artifact
+
+on:
+  push:
+    branches:
+      - feat/groups-2-backend
+    paths:
+      - .github/workflows/groups-v2-format-artifact.yml
+
+jobs:
+  format:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feat/groups-2-backend
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -q ruff
+      - run: ruff format app tests
+      - name: Package formatted files
+        run: |
+          git diff --name-only -- app tests > formatted-files.txt
+          tar -czf groups-v2-formatted.tgz -T formatted-files.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: groups-v2-formatted
+          path: |
+            groups-v2-formatted.tgz
+            formatted-files.txt
+          retention-days: 1
