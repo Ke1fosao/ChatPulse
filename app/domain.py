@@ -44,6 +44,8 @@ class AchievementEarned:
     title: str
     description: str
     important: bool
+    reward_xp: int = 0
+    scope: str = "group"
 
 
 @dataclass(frozen=True, slots=True)
