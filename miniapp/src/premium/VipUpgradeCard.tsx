@@ -1,4 +1,5 @@
 import { Crown, LockKeyhole, Sparkles } from "lucide-react";
+import type { ReactNode } from "react";
 
 interface VipUpgradeCardProps {
   title: string;
@@ -6,7 +7,7 @@ interface VipUpgradeCardProps {
   source: string;
   featureKey?: string | null;
   trialAvailable?: boolean;
-  preview?: React.ReactNode;
+  preview?: ReactNode;
   onOpen?(source: string, featureKey?: string | null): void;
 }
 
