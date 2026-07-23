@@ -89,6 +89,14 @@ export interface AchievementChain {
   total: number;
 }
 
+export interface AchievementEarnedInstance {
+  scope_key: string;
+  telegram_chat_id: number | null;
+  group_title: string | null;
+  earned_at: string;
+  progress: number;
+}
+
 export interface Achievement {
   code: string;
   title: string;
@@ -110,6 +118,8 @@ export interface Achievement {
   reward_xp: number;
   version: number;
   season_key?: string | null;
+  earned_instances?: AchievementEarnedInstance[];
+  primary_scope_key?: string | null;
 }
 
 interface AchievementEventBase {
