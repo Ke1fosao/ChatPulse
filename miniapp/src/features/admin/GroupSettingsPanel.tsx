@@ -2,6 +2,7 @@ import {
   ArrowLeft,
   CheckCircle2,
   Clock3,
+  Crown,
   Image,
   MessageCircle,
   Palette,
@@ -13,19 +14,23 @@ import {
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import type { GroupSettings, ReportTheme } from "../../api/types";
+import { usePremium } from "../../premium/PremiumContext";
+import { premiumApi } from "../../premium/premiumApi";
 import { notify } from "../../telegram/sdk";
 
 interface GroupSettingsPanelProps {
+  chatId?: number;
   settings: GroupSettings;
   onSave(settings: Partial<GroupSettings>): Promise<GroupSettings>;
   onReset(): Promise<void>;
   onBack(): void;
 }
 
-const themes: Array<{ value: ReportTheme; label: string }> = [
-  { value: "dark_pulse", label: "Dark Pulse" },
-  { value: "telegram_wave", label: "Telegram Wave" },
-  { value: "clean_light", label: "Clean Light" },
+const themes: Array<{ value: ReportTheme; label: string; premium: boolean }> = [
+  { value: "dark_pulse", label: "Dark Pulse", premium: false },
+  { value: "telegram_wave", label: "Telegram Wave", premium: true },
+  { value: "clean_light", label: "Clean Light", premium: true },
+  { value: "aurora_gold", label: "Aurora Gold", premium: true },
 ];
 
 const days = [
@@ -39,6 +44,7 @@ const days = [
 ];
 
 export function GroupSettingsPanel({
+  chatId,
   settings,
   onSave,
   onReset,
@@ -49,6 +55,7 @@ export function GroupSettingsPanel({
   const [confirmReset, setConfirmReset] = useState(false);
   const [message, setMessage] = useState("");
   const [messageKind, setMessageKind] = useState<"success" | "error">("success");
+  const premium = usePremium();
 
   useEffect(() => {
     setDraft(settings);
@@ -75,6 +82,39 @@ export function GroupSettingsPanel({
       setDraft((current) => ({ ...current, [key]: previous }));
       setMessageKind("error");
       setMessage(error instanceof Error ? error.message : "Не вдалося зберегти");
+      notify("error");
+    } finally {
+      setPendingKey(null);
+    }
+  };
+
+  const persistTheme = async (theme: ReportTheme) => {
+    if (theme === "dark_pulse") {
+      await persist("report_card_theme", theme);
+      return;
+    }
+    if (!premium.has("reports.premium_themes")) {
+      premium.openVip("group_settings_theme", "reports.premium_themes");
+      return;
+    }
+    if (chatId === undefined || pendingKey !== null) return;
+
+    const previous = draft.report_card_theme;
+    setDraft((current) => ({ ...current, report_card_theme: theme }));
+    setPendingKey("report_card_theme");
+    setMessage("");
+    try {
+      await premiumApi.reportTheme(
+        chatId,
+        theme as "telegram_wave" | "clean_light" | "aurora_gold",
+      );
+      setMessageKind("success");
+      setMessage("Premium-тему збережено");
+      notify("success");
+    } catch (error) {
+      setDraft((current) => ({ ...current, report_card_theme: previous }));
+      setMessageKind("error");
+      setMessage(error instanceof Error ? error.message : "Не вдалося зберегти тему");
       notify("error");
     } finally {
       setPendingKey(null);
@@ -131,10 +171,7 @@ export function GroupSettingsPanel({
       <section className="settings-section panel">
         <div className="settings-section__heading">
           <span><Clock3 size={18} /></span>
-          <div>
-            <p className="eyebrow">Розклад</p>
-            <h3>Щотижневі звіти</h3>
-          </div>
+          <div><p className="eyebrow">Розклад</p><h3>Щотижневі звіти</h3></div>
         </div>
 
         <label className="toggle-row">
@@ -168,9 +205,7 @@ export function GroupSettingsPanel({
               disabled={disabled}
               onChange={(event) => void persist("report_weekday", Number(event.target.value))}
             >
-              {days.map((day, index) => (
-                <option key={day} value={index}>{day}</option>
-              ))}
+              {days.map((day, index) => <option key={day} value={index}>{day}</option>)}
             </select>
           </label>
 
@@ -180,9 +215,7 @@ export function GroupSettingsPanel({
               aria-label="Часовий пояс"
               value={draft.timezone}
               disabled={disabled}
-              onChange={(event) =>
-                void persist("timezone", event.target.value as GroupSettings["timezone"])
-              }
+              onChange={(event) => void persist("timezone", event.target.value as GroupSettings["timezone"])}
             >
               <option value="Europe/Kyiv">Україна · Київ</option>
               <option value="Europe/Warsaw">Польща · Варшава</option>
@@ -195,10 +228,7 @@ export function GroupSettingsPanel({
       <section className="settings-section panel">
         <div className="settings-section__heading">
           <span><MessageCircle size={18} /></span>
-          <div>
-            <p className="eyebrow">Аналітика</p>
-            <h3>Збір даних</h3>
-          </div>
+          <div><p className="eyebrow">Аналітика</p><h3>Збір даних</h3></div>
         </div>
         <p className="settings-section__description">
           ChatPulse не зберігає тексти повідомлень або файли — лише агреговані лічильники.
@@ -227,10 +257,7 @@ export function GroupSettingsPanel({
       <section className="settings-section panel">
         <div className="settings-section__heading">
           <span><Palette size={18} /></span>
-          <div>
-            <p className="eyebrow">Вигляд</p>
-            <h3>Оформлення картки</h3>
-          </div>
+          <div><p className="eyebrow">Вигляд</p><h3>Оформлення картки</h3></div>
         </div>
         <label className="setting-control setting-control--wide">
           <span><Palette size={17} /> Тема звіту</span>
@@ -238,24 +265,30 @@ export function GroupSettingsPanel({
             aria-label="Тема звіту"
             value={draft.report_card_theme}
             disabled={disabled}
-            onChange={(event) =>
-              void persist("report_card_theme", event.target.value as ReportTheme)
-            }
+            onChange={(event) => void persistTheme(event.target.value as ReportTheme)}
           >
             {themes.map((theme) => (
-              <option key={theme.value} value={theme.value}>{theme.label}</option>
+              <option key={theme.value} value={theme.value}>
+                {theme.premium ? `👑 ${theme.label} · VIP` : theme.label}
+              </option>
             ))}
           </select>
         </label>
+        {!premium.has("reports.premium_themes") ? (
+          <button
+            type="button"
+            className="premium-setting-hint"
+            onClick={() => premium.openVip("group_settings_theme", "reports.premium_themes")}
+          >
+            <Crown size={16} /> Premium-теми відкриваються у VIP
+          </button>
+        ) : null}
       </section>
 
       <section className="settings-section panel">
         <div className="settings-section__heading">
           <span><PauseCircle size={18} /></span>
-          <div>
-            <p className="eyebrow">Робота бота</p>
-            <h3>Стан статистики</h3>
-          </div>
+          <div><p className="eyebrow">Робота бота</p><h3>Стан статистики</h3></div>
         </div>
         <label className="toggle-row toggle-row--warning">
           <span><PauseCircle size={17} /> Призупинити статистику</span>
@@ -275,27 +308,17 @@ export function GroupSettingsPanel({
       <section className="settings-section settings-section--danger panel">
         <div className="settings-section__heading">
           <span><Trash2 size={18} /></span>
-          <div>
-            <p className="eyebrow">Обережно</p>
-            <h3>Небезпечна зона</h3>
-          </div>
+          <div><p className="eyebrow">Обережно</p><h3>Небезпечна зона</h3></div>
         </div>
         {!confirmReset ? (
-          <button
-            className="danger-button"
-            type="button"
-            onClick={() => setConfirmReset(true)}
-            disabled={disabled}
-          >
+          <button className="danger-button" type="button" onClick={() => setConfirmReset(true)} disabled={disabled}>
             <Trash2 size={17} /> Скинути статистику
           </button>
         ) : (
           <div className="danger-confirm">
             <p>Це видалить статистику, XP, серії та досягнення цієї групи.</p>
             <div>
-              <button type="button" onClick={() => setConfirmReset(false)} disabled={disabled}>
-                Скасувати
-              </button>
+              <button type="button" onClick={() => setConfirmReset(false)} disabled={disabled}>Скасувати</button>
               <button type="button" onClick={() => void reset()} disabled={disabled}>
                 {pendingKey === "reset" ? "Скидаємо…" : "Так, скинути"}
               </button>
