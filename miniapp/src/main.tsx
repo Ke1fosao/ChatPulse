@@ -16,6 +16,7 @@ import "./styles/onboarding.css";
 import "./styles/owner.css";
 import "./styles/owner-revenue.css";
 import "./styles/owner-mobile.css";
+import "./styles/owner-user-control.css";
 import "./styles/profile-experience.css";
 import "./styles/premium.css";
 import "./styles/premium-identity.css";
