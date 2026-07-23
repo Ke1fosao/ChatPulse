@@ -14,13 +14,21 @@ async def featured_repository(tmp_path):
     await database.create_schema()
     async with database.session_factory() as session, session.begin():
         session.add(User(telegram_id=202, username="client", first_name="Client"))
-        session.add(
-            ChatGroup(
-                telegram_chat_id=-1001,
-                title="Test group",
-                is_active=True,
-                bot_status="administrator",
-            )
+        session.add_all(
+            [
+                ChatGroup(
+                    telegram_chat_id=-1001,
+                    title="Test group",
+                    is_active=True,
+                    bot_status="administrator",
+                ),
+                ChatGroup(
+                    telegram_chat_id=-1002,
+                    title="Second group",
+                    is_active=True,
+                    bot_status="administrator",
+                ),
+            ]
         )
         codes = ["messages_10", "messages_100", "messages_500", "replies_10", "replies_50"]
         session.add_all(
@@ -38,6 +46,19 @@ async def featured_repository(tmp_path):
                 )
                 for index, code in enumerate(codes)
             ]
+        )
+        session.add(
+            AchievementUnlockRecord(
+                telegram_user_id=202,
+                telegram_chat_id=-1002,
+                scope="group",
+                scope_key="group:-1002",
+                achievement_code="messages_10",
+                rarity="common",
+                final_progress=25,
+                definition_version=2,
+                earned_at=datetime(2026, 7, 24, 10, 0, tzinfo=UTC),
+            )
         )
         session.add(
             MemberAchievement(
@@ -64,6 +85,43 @@ async def test_user_can_pin_and_reorder_five_earned_achievements(featured_reposi
 
 
 @pytest.mark.asyncio
+async def test_user_can_pin_a_concrete_group_instance(featured_repository) -> None:
+    items = await featured_repository.set_featured_items(
+        202,
+        [
+            {"code": "messages_10", "scope_key": "group:-1001"},
+            {"code": "messages_10", "scope_key": "group:-1002"},
+        ],
+    )
+
+    assert [(item["code"], item["scope_key"]) for item in items] == [
+        ("messages_10", "group:-1001"),
+        ("messages_10", "group:-1002"),
+    ]
+    assert [item["group_title"] for item in items] == ["Test group", "Second group"]
+    assert [item["slot"] for item in items] == [1, 2]
+
+
+@pytest.mark.asyncio
+async def test_concrete_selection_deduplicates_identity_and_preserves_order(
+    featured_repository,
+) -> None:
+    items = await featured_repository.set_featured_items(
+        202,
+        [
+            {"code": "messages_10", "scope_key": "group:-1002"},
+            {"code": "messages_10", "scope_key": "group:-1002"},
+            {"code": "messages_100", "scope_key": "group:-1001"},
+        ],
+    )
+
+    assert [(item["code"], item["scope_key"]) for item in items] == [
+        ("messages_10", "group:-1002"),
+        ("messages_100", "group:-1001"),
+    ]
+
+
+@pytest.mark.asyncio
 async def test_user_can_pin_legacy_earned_achievement(featured_repository) -> None:
     """An earned reward visible in the collection must always be pinnable."""
     items = await featured_repository.set_featured_codes(202, ["messages_1000"])
@@ -78,6 +136,12 @@ async def test_user_cannot_pin_unearned_or_more_than_five_achievements(
 ) -> None:
     with pytest.raises(ValueError, match="отримані"):
         await featured_repository.set_featured_codes(202, ["reactions_500"])
+
+    with pytest.raises(ValueError, match="отримані"):
+        await featured_repository.set_featured_items(
+            202,
+            [{"code": "reactions_500", "scope_key": "group:-1001"}],
+        )
 
     with pytest.raises(ValueError, match="не більше пʼяти"):
         await featured_repository.set_featured_codes(
@@ -97,5 +161,5 @@ async def test_user_cannot_pin_unearned_or_more_than_five_achievements(
 async def test_user_can_clear_featured_achievements(featured_repository) -> None:
     await featured_repository.set_featured_codes(202, ["messages_10"])
 
-    assert await featured_repository.set_featured_codes(202, []) == []
+    assert await featured_repository.set_featured_items(202, []) == []
     assert await featured_repository.list_featured(202) == []
