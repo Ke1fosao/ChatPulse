@@ -238,6 +238,7 @@ class AchievementMiniAppRepository(MiniAppRepository):
                 best_rank = rank if best_rank == 0 else min(best_rank, rank)
             progress_values["rank"] = best_rank
 
+            instances: dict[str, dict[str, dict[str, Any]]] = {}
             canonical_query = (
                 select(AchievementUnlockRecord, ChatGroup.title)
                 .outerjoin(
@@ -245,20 +246,26 @@ class AchievementMiniAppRepository(MiniAppRepository):
                     ChatGroup.telegram_chat_id == AchievementUnlockRecord.telegram_chat_id,
                 )
                 .where(AchievementUnlockRecord.telegram_user_id == user_id)
+                .order_by(AchievementUnlockRecord.earned_at.desc())
             )
             if chat_id is not None:
                 canonical_query = canonical_query.where(
                     AchievementUnlockRecord.telegram_chat_id == chat_id
                 )
-            canonical_rows = (await session.execute(canonical_query)).all()
-            earned: dict[str, dict[str, Any]] = {
-                row.AchievementUnlockRecord.achievement_code: {
-                    "earned_at": row.AchievementUnlockRecord.earned_at.isoformat(),
+            for row in (await session.execute(canonical_query)).all():
+                record = row.AchievementUnlockRecord
+                code_instances = instances.setdefault(record.achievement_code, {})
+                code_instances[record.scope_key] = {
+                    "scope_key": record.scope_key,
+                    "telegram_chat_id": (
+                        int(record.telegram_chat_id)
+                        if record.telegram_chat_id is not None
+                        else None
+                    ),
                     "group_title": str(row.title) if row.title is not None else None,
-                    "progress": int(row.AchievementUnlockRecord.final_progress),
+                    "earned_at": record.earned_at.isoformat(),
+                    "progress": int(record.final_progress),
                 }
-                for row in canonical_rows
-            }
 
             legacy_query = (
                 select(MemberAchievement, ChatGroup.title)
@@ -267,15 +274,21 @@ class AchievementMiniAppRepository(MiniAppRepository):
                     ChatGroup.telegram_chat_id == MemberAchievement.telegram_chat_id,
                 )
                 .where(MemberAchievement.telegram_user_id == user_id)
+                .order_by(MemberAchievement.earned_at.desc())
             )
             if chat_id is not None:
                 legacy_query = legacy_query.where(MemberAchievement.telegram_chat_id == chat_id)
             for row in (await session.execute(legacy_query)).all():
-                earned.setdefault(
-                    row.MemberAchievement.achievement_code,
+                record = row.MemberAchievement
+                scope_key = f"group:{int(record.telegram_chat_id)}"
+                code_instances = instances.setdefault(record.achievement_code, {})
+                code_instances.setdefault(
+                    scope_key,
                     {
-                        "earned_at": row.MemberAchievement.earned_at.isoformat(),
+                        "scope_key": scope_key,
+                        "telegram_chat_id": int(record.telegram_chat_id),
                         "group_title": str(row.title),
+                        "earned_at": record.earned_at.isoformat(),
                         "progress": 0,
                     },
                 )
@@ -283,18 +296,27 @@ class AchievementMiniAppRepository(MiniAppRepository):
             result: list[dict[str, Any]] = []
             for definition in ACHIEVEMENTS:
                 current_progress = int(progress_values.get(definition.metric, 0))
-                earned_data = earned.get(definition.code)
-                final_progress = (
-                    max(current_progress, int(earned_data.get("progress", 0)))
-                    if earned_data
-                    else current_progress
+                earned_instances = sorted(
+                    instances.get(definition.code, {}).values(),
+                    key=lambda item: str(item["earned_at"]),
+                    reverse=True,
                 )
-                is_earned = earned_data is not None
+                is_earned = bool(earned_instances)
+                highest_unlock_progress = max(
+                    (int(item["progress"]) for item in earned_instances),
+                    default=0,
+                )
+                final_progress = max(current_progress, highest_unlock_progress)
+                primary = earned_instances[0] if earned_instances else None
                 payload = definition.to_public_dict(
                     earned=is_earned,
                     progress=final_progress,
-                    earned_at=earned_data["earned_at"] if earned_data else None,
-                    group_title=earned_data["group_title"] if earned_data else None,
+                    earned_at=str(primary["earned_at"]) if primary else None,
+                    group_title=(
+                        str(primary["group_title"])
+                        if primary and primary["group_title"] is not None
+                        else None
+                    ),
                 )
                 payload.update(
                     achievement_progress_payload(
@@ -303,5 +325,7 @@ class AchievementMiniAppRepository(MiniAppRepository):
                         earned=is_earned,
                     )
                 )
+                payload["earned_instances"] = earned_instances
+                payload["primary_scope_key"] = str(primary["scope_key"]) if primary else None
                 result.append(payload)
             return result
