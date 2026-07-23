@@ -33,7 +33,7 @@ it("shows a locked yearly preview for free users", async () => {
     <YearSummaryCard account={free} trialAvailable onOpenVip={onOpenVip} />,
   );
 
-  expect(screen.getByText("Мій рік у ChatPulse")).toBeInTheDocument();
+  expect(screen.getAllByText("Мій рік у ChatPulse")).toHaveLength(2);
   await user.click(screen.getByRole("button", { name: "Відкрити VIP" }));
   expect(onOpenVip).toHaveBeenCalledWith("year_summary", "profile.premium_card");
 });
