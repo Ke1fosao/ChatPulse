@@ -3,6 +3,10 @@ body.owner-keyboard-open {
   overscroll-behavior: none;
 }
 
+.owner-shell {
+  overflow-x: clip;
+}
+
 .owner-nav {
   transition:
     opacity 0.18s ease,
@@ -56,6 +60,392 @@ body.owner-keyboard-open .owner-modal {
   max-height: calc(var(--owner-viewport-height, 100dvh) - 12px);
   padding-bottom: 20px;
   border-radius: 22px 22px 14px 14px;
+}
+
+@media (max-width: 679px) {
+  .owner-shell {
+    width: 100%;
+    padding-bottom: calc(76px + env(safe-area-inset-bottom));
+  }
+
+  .owner-topbar {
+    grid-template-columns: 42px minmax(0, 1fr) auto;
+    gap: 8px;
+    padding: calc(8px + env(safe-area-inset-top)) 12px 8px;
+  }
+
+  .owner-icon-button,
+  .owner-square-button {
+    width: 40px;
+    height: 40px;
+    border-radius: 13px;
+  }
+
+  .owner-brand {
+    gap: 8px;
+  }
+
+  .owner-brand > span {
+    width: 38px;
+    height: 38px;
+    border-radius: 13px;
+  }
+
+  .owner-brand p {
+    font-size: 7px;
+    letter-spacing: 0.1em;
+  }
+
+  .owner-brand h1 {
+    max-width: 150px;
+    overflow: hidden;
+    font-size: 16px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .owner-security-badge {
+    padding: 7px 8px;
+    font-size: 0;
+  }
+
+  .owner-security-badge svg {
+    width: 16px;
+    height: 16px;
+  }
+
+  .owner-security-badge span {
+    display: none;
+  }
+
+  .owner-identity {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    gap: 10px;
+    margin: 10px 12px 2px;
+    padding: 11px 12px;
+    border-radius: 18px;
+  }
+
+  .owner-avatar {
+    width: 44px;
+    height: 44px;
+    border-radius: 14px;
+  }
+
+  .owner-identity p {
+    font-size: 7px;
+  }
+
+  .owner-identity strong {
+    margin: 2px 0;
+    overflow: hidden;
+    font-size: 14px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .owner-identity small {
+    display: block;
+    overflow: hidden;
+    font-size: 9px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .owner-role-pill {
+    padding: 5px 6px;
+    font-size: 7px;
+  }
+
+  .owner-content {
+    padding: 10px 12px calc(88px + env(safe-area-inset-bottom));
+  }
+
+  .owner-page,
+  .owner-payments-page {
+    gap: 11px;
+  }
+
+  .owner-page-heading,
+  .owner-payments-heading {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 10px;
+    align-items: end;
+    padding: 2px 1px;
+  }
+
+  .owner-page-heading h2,
+  .owner-payments-heading h2 {
+    font-size: clamp(22px, 7vw, 28px);
+    line-height: 1.05;
+  }
+
+  .owner-payments-heading > div > span {
+    max-width: 280px;
+    margin-top: 5px;
+    font-size: 10px;
+    line-height: 1.45;
+  }
+
+  .owner-payments-heading > button {
+    min-width: 44px;
+    min-height: 44px;
+    padding: 0 11px;
+    border-radius: 14px;
+    font-size: 0;
+  }
+
+  .owner-payments-heading > button svg {
+    width: 19px;
+    height: 19px;
+  }
+
+  .owner-revenue-periods {
+    display: flex;
+    gap: 7px;
+    margin-right: -12px;
+    margin-left: -12px;
+    padding: 0 12px 3px;
+    overflow-x: auto;
+    scrollbar-width: none;
+    scroll-snap-type: x proximity;
+  }
+
+  .owner-revenue-periods::-webkit-scrollbar,
+  .owner-filter-row::-webkit-scrollbar {
+    display: none;
+  }
+
+  .owner-revenue-periods button {
+    flex: 0 0 auto;
+    min-width: 104px;
+    min-height: 43px;
+    padding: 0 14px;
+    scroll-snap-align: start;
+  }
+
+  .owner-revenue-metrics,
+  .owner-metric-grid {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+
+  .owner-revenue-metrics article,
+  .owner-metric-card {
+    min-height: 0;
+    padding: 12px;
+    border-radius: 17px;
+  }
+
+  .owner-revenue-metrics article {
+    grid-template-columns: 40px minmax(0, 1fr) auto;
+    grid-template-rows: auto auto;
+    gap: 2px 10px;
+    align-items: center;
+  }
+
+  .owner-revenue-metrics article > span {
+    grid-row: 1 / 3;
+    width: 40px;
+    height: 40px;
+    border-radius: 13px;
+  }
+
+  .owner-revenue-metrics small {
+    grid-column: 2;
+    font-size: 9px;
+  }
+
+  .owner-revenue-metrics strong {
+    grid-column: 2;
+    font-size: 22px;
+  }
+
+  .owner-revenue-metrics p {
+    grid-column: 3;
+    grid-row: 1 / 3;
+    max-width: 110px;
+    font-size: 9px;
+    line-height: 1.35;
+    text-align: right;
+  }
+
+  .owner-panel,
+  .owner-revenue-chart,
+  .owner-plan-distribution,
+  .owner-transactions-panel {
+    padding: 13px;
+    border-radius: 18px;
+  }
+
+  .owner-section-title h3 {
+    font-size: 16px;
+  }
+
+  .owner-stars-chart {
+    height: 150px;
+    margin-top: 12px;
+    padding-bottom: 4px;
+  }
+
+  .owner-stars-chart > div {
+    flex-basis: 8px;
+    min-width: 8px;
+    height: 122px;
+  }
+
+  .owner-revenue-chart footer {
+    flex-wrap: wrap;
+    gap: 8px 14px;
+    margin-top: 22px;
+  }
+
+  .owner-payment-filters {
+    grid-template-columns: 1fr;
+    gap: 7px;
+    margin: 11px 0;
+  }
+
+  .owner-payment-search {
+    grid-column: auto;
+  }
+
+  .owner-payment-search input,
+  .owner-payment-filters select {
+    min-height: 43px;
+    font-size: 16px;
+  }
+
+  .owner-payment-filters select {
+    padding-right: 34px;
+  }
+
+  .owner-transaction-list > button {
+    grid-template-columns: 38px minmax(0, 1fr) auto;
+    gap: 9px;
+    min-width: 0;
+    padding: 11px;
+  }
+
+  .owner-payment-user {
+    min-width: 0;
+  }
+
+  .owner-payment-user strong {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .owner-payment-user small {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .owner-payment-drawer-backdrop {
+    align-items: flex-end;
+  }
+
+  .owner-payment-drawer {
+    width: 100%;
+    height: min(92dvh, var(--owner-viewport-height, 92dvh));
+    padding: 16px 14px calc(20px + env(safe-area-inset-bottom));
+    border-radius: 24px 24px 0 0;
+    box-shadow: 0 -24px 70px rgba(0, 0, 0, 0.5);
+  }
+
+  .owner-payment-detail-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .owner-drawer-actions {
+    grid-template-columns: 1fr;
+  }
+
+  .owner-toolbar--inline {
+    grid-template-columns: 1fr;
+  }
+
+  .owner-user-card,
+  .owner-group-card__head {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+  }
+
+  .owner-nav,
+  .owner-nav--five {
+    right: max(8px, env(safe-area-inset-right));
+    bottom: max(8px, env(safe-area-inset-bottom));
+    left: max(8px, env(safe-area-inset-left));
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    width: auto;
+    max-width: 704px;
+    min-height: 62px;
+    padding: 6px;
+    border: 1px solid rgba(255, 255, 255, 0.09);
+    border-radius: 20px;
+    background: rgba(11, 14, 23, 0.94);
+    box-shadow: 0 16px 50px rgba(0, 0, 0, 0.42);
+    backdrop-filter: blur(26px);
+  }
+
+  .owner-nav button {
+    gap: 3px;
+    min-width: 0;
+    min-height: 50px;
+    padding: 5px 2px;
+    border-radius: 15px;
+    font-size: 7px;
+    line-height: 1;
+  }
+
+  .owner-nav button svg {
+    width: 19px;
+    height: 19px;
+  }
+
+  .owner-nav button span {
+    display: block;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .owner-nav button.is-active {
+    background: linear-gradient(145deg, rgba(155, 130, 255, 0.2), rgba(108, 90, 196, 0.14));
+    box-shadow: inset 0 1px rgba(255, 255, 255, 0.05);
+  }
+}
+
+@media (max-width: 380px) {
+  .owner-brand > span {
+    display: none;
+  }
+
+  .owner-brand h1 {
+    max-width: 132px;
+  }
+
+  .owner-role-pill svg {
+    display: none;
+  }
+
+  .owner-revenue-metrics article {
+    grid-template-columns: 38px minmax(0, 1fr);
+  }
+
+  .owner-revenue-metrics p {
+    grid-column: 2;
+    grid-row: auto;
+    max-width: none;
+    text-align: left;
+  }
+
+  .owner-nav button {
+    font-size: 6.5px;
+  }
 }
 
 @media (min-width: 680px) {
