@@ -4,6 +4,7 @@ import type {
   PremiumAnalyticsPeriod,
   PremiumContextPayload,
   VipPlacementEvent,
+  YearSummaryPayload,
 } from "./types";
 
 async function premiumRequest<T>(path: string, init?: RequestInit): Promise<T> {
@@ -28,6 +29,8 @@ async function premiumRequest<T>(path: string, init?: RequestInit): Promise<T> {
 
 export const premiumApi = {
   context: () => premiumRequest<PremiumContextPayload>("/context"),
+  yearSummary: (year: number) =>
+    premiumRequest<YearSummaryPayload>(`/year-summary?year=${year}`),
   analytics: (
     chatId: number,
     period: PremiumAnalyticsPeriod,
