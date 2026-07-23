@@ -19,7 +19,12 @@ async def revenue_repository(tmp_path):
                 User(telegram_id=1, first_name="Owner", username="owner"),
                 User(telegram_id=10, first_name="Trial", username="trial"),
                 User(telegram_id=20, first_name="Monthly", username="monthly"),
-                BotOwner(key="primary", telegram_user_id=1, claimed_at=now),
+                BotOwner(
+                    owner_key="primary",
+                    telegram_user_id=1,
+                    claimed_username="owner",
+                    claimed_at=now,
+                ),
             ]
         )
         trial_intent = VipInvoiceIntent(
