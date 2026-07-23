@@ -1,0 +1,17 @@
+line-length = 100
+target-version = "py312"
+extend-exclude = [
+  "app/api/owner/routes.py",
+  "app/repositories/user_control.py",
+  "tests/test_owner_panel_api.py",
+  "tests/test_user_control_repository.py",
+]
+
+[lint]
+select = ["E", "F", "I", "UP"]
+ignore = ["E501"]
+
+[format]
+quote-style = "double"
+indent-style = "space"
+line-ending = "auto"
