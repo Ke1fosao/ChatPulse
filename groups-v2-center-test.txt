@@ -1,0 +1,320 @@
+
+> chatpulse-miniapp@0.11.0 test
+> vitest --run
+
+
+[1m[30m[46m RUN [49m[39m[22m [36mv4.1.10 [39m[90m/home/runner/work/ChatPulse/ChatPulse/miniapp[39m
+
+ [32m✓[39m src/features/achievements/AchievementCelebration.test.tsx [2m([22m[2m3 tests[22m[2m)[22m[33m 600[2mms[22m[39m
+     [33m[2m✓[22m[39m renders a rarity-specific full-screen celebration and acknowledges it [33m 408[2mms[22m[39m
+ [31m❯[39m src/features/groups/GroupCenterPage.test.tsx [2m([22m[2m2 tests[22m[2m | [22m[31m1 failed[39m[2m)[22m[33m 497[2mms[22m[39m
+[31m     [31m×[31m loads Overview first and switches to an independently loaded Ranking tab[39m[33m 420[2mms[22m[39m
+     [32m✓[39m keeps admin actions hidden when the server denies admin capability[32m 75[2mms[22m[39m
+ [32m✓[39m src/vip/VipApp.test.tsx [2m([22m[2m2 tests[22m[2m)[22m[33m 963[2mms[22m[39m
+     [33m[2m✓[22m[39m confirms the plan before opening Telegram invoice [33m 836[2mms[22m[39m
+ [32m✓[39m src/features/achievements/AchievementsPage.test.tsx [2m([22m[2m4 tests[22m[2m)[22m[33m 603[2mms[22m[39m
+     [33m[2m✓[22m[39m filters the collection to nearly completed achievements [33m 423[2mms[22m[39m
+ [32m✓[39m src/features/profile/ProfileVipEntry.test.tsx [2m([22m[2m2 tests[22m[2m)[22m[33m 562[2mms[22m[39m
+     [33m[2m✓[22m[39m turns the free plan card into a contextual one-Star upgrade action [33m 425[2mms[22m[39m
+ [32m✓[39m src/owner/OwnerApp.test.tsx [2m([22m[2m4 tests[22m[2m)[22m[33m 979[2mms[22m[39m
+     [33m[2m✓[22m[39m grants VIP only after explicit confirmation [33m 369[2mms[22m[39m
+ [32m✓[39m src/features/groups/GroupsPage.test.tsx [2m([22m[2m2 tests[22m[2m)[22m[33m 432[2mms[22m[39m
+     [33m[2m✓[22m[39m shows the compact summary and filters groups by status [33m 332[2mms[22m[39m
+ [32m✓[39m src/premium/PremiumComponents.test.tsx [2m([22m[2m3 tests[22m[2m)[22m[32m 249[2mms[22m[39m
+ [32m✓[39m src/App.test.tsx [2m([22m[2m1 test[22m[2m)[22m[33m 689[2mms[22m[39m
+     [33m[2m✓[22m[39m renders five Ukrainian navigation tabs and opens the level roadmap [33m 687[2mms[22m[39m
+ [32m✓[39m src/owner/OwnerPayments.test.tsx [2m([22m[2m1 test[22m[2m)[22m[33m 430[2mms[22m[39m
+   [33m[2m✓[22m[39m renders Stars KPIs, funnel and transaction list [33m 428[2mms[22m[39m
+ [32m✓[39m src/features/admin/GroupSettingsPanel.test.tsx [2m([22m[2m3 tests[22m[2m)[22m[33m 621[2mms[22m[39m
+     [33m[2m✓[22m[39m saves a changed field immediately without a global save button [33m 420[2mms[22m[39m
+ [32m✓[39m src/features/year/YearSummary.test.tsx [2m([22m[2m2 tests[22m[2m)[22m[32m 291[2mms[22m[39m
+ [32m✓[39m src/components/GroupCard.test.tsx [2m([22m[2m2 tests[22m[2m)[22m[32m 91[2mms[22m[39m
+ [32m✓[39m src/features/onboarding/OnboardingCard.test.tsx [2m([22m[2m2 tests[22m[2m)[22m[32m 265[2mms[22m[39m
+ [32m✓[39m src/features/admin/PremiumSettings.test.tsx [2m([22m[2m1 test[22m[2m)[22m[32m 251[2mms[22m[39m
+ [32m✓[39m src/features/achievements/FeaturedAchievements.test.tsx [2m([22m[2m1 test[22m[2m)[22m[32m 186[2mms[22m[39m
+ [32m✓[39m src/features/groups/PremiumAnalytics.test.tsx [2m([22m[2m1 test[22m[2m)[22m[32m 199[2mms[22m[39m
+
+[31m⎯⎯⎯⎯⎯⎯⎯[39m[1m[41m Failed Tests 1 [49m[22m[31m⎯⎯⎯⎯⎯⎯⎯[39m
+
+[41m[1m FAIL [22m[49m src/features/groups/GroupCenterPage.test.tsx[2m > [22mGroupCenterPage[2m > [22mloads Overview first and switches to an independently loaded Ranking tab
+[31m[1mTestingLibraryElementError[22m[39m: Found multiple elements with the role "button" and name `/Рейтинг/`
+
+Here are the matching elements:
+
+Ignored nodes: comments, script, style
+[36m<button[39m
+  [33mclass[39m=[32m""[39m
+  [33mtype[39m=[32m"button"[39m
+[36m>[39m
+  [36m<svg[39m
+    [33maria-hidden[39m=[32m"true"[39m
+    [33mclass[39m=[32m"lucide lucide-trophy"[39m
+    [33mfill[39m=[32m"none"[39m
+    [33mheight[39m=[32m"16"[39m
+    [33mstroke[39m=[32m"currentColor"[39m
+    [33mstroke-linecap[39m=[32m"round"[39m
+    [33mstroke-linejoin[39m=[32m"round"[39m
+    [33mstroke-width[39m=[32m"2"[39m
+    [33mviewBox[39m=[32m"0 0 24 24"[39m
+    [33mwidth[39m=[32m"16"[39m
+    [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+  [36m>[39m
+    [36m<path[39m
+      [33md[39m=[32m"M10 14.66v1.626a2 2 0 0 1-.976 1.696A5 5 0 0 0 7 21.978"[39m
+    [36m/>[39m
+    [36m<path[39m
+      [33md[39m=[32m"M14 14.66v1.626a2 2 0 0 0 .976 1.696A5 5 0 0 1 17 21.978"[39m
+    [36m/>[39m
+    [36m<path[39m
+      [33md[39m=[32m"M18 9h1.5a1 1 0 0 0 0-5H18"[39m
+    [36m/>[39m
+    [36m<path[39m
+      [33md[39m=[32m"M4 22h16"[39m
+    [36m/>[39m
+    [36m<path[39m
+      [33md[39m=[32m"M6 9a6 6 0 0 0 12 0V3a1 1 0 0 0-1-1H7a1 1 0 0 0-1 1z"[39m
+    [36m/>[39m
+    [36m<path[39m
+      [33md[39m=[32m"M6 9H4.5a1 1 0 0 1 0-5H6"[39m
+    [36m/>[39m
+  [36m</svg>[39m
+  [0m [0m
+  [0mРейтинг[0m
+[36m</button>[39m
+
+Ignored nodes: comments, script, style
+[36m<button[39m
+  [33mtype[39m=[32m"button"[39m
+[36m>[39m
+  [36m<svg[39m
+    [33maria-hidden[39m=[32m"true"[39m
+    [33mclass[39m=[32m"lucide lucide-users"[39m
+    [33mfill[39m=[32m"none"[39m
+    [33mheight[39m=[32m"18"[39m
+    [33mstroke[39m=[32m"currentColor"[39m
+    [33mstroke-linecap[39m=[32m"round"[39m
+    [33mstroke-linejoin[39m=[32m"round"[39m
+    [33mstroke-width[39m=[32m"2"[39m
+    [33mviewBox[39m=[32m"0 0 24 24"[39m
+    [33mwidth[39m=[32m"18"[39m
+    [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+  [36m>[39m
+    [36m<path[39m
+      [33md[39m=[32m"M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"[39m
+    [36m/>[39m
+    [36m<path[39m
+      [33md[39m=[32m"M16 3.128a4 4 0 0 1 0 7.744"[39m
+    [36m/>[39m
+    [36m<path[39m
+      [33md[39m=[32m"M22 21v-2a4 4 0 0 0-3-3.87"[39m
+    [36m/>[39m
+    [36m<circle[39m
+      [33mcx[39m=[32m"9"[39m
+      [33mcy[39m=[32m"7"[39m
+      [33mr[39m=[32m"4"[39m
+    [36m/>[39m
+  [36m</svg>[39m
+  [0m Рейтинг[0m
+[36m</button>[39m
+
+(If this is intentional, then use the `*AllBy*` variant of the query (like `queryAllByText`, `getAllByText`, or `findAllByText`)).
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"page group-center"[39m
+    [36m>[39m
+      [36m<header[39m
+        [33mclass[39m=[32m"group-center-header"[39m
+      [36m>[39m
+        [36m<button[39m
+          [33maria-label[39m=[32m"Назад до груп"[39m
+          [33mclass[39m=[32m"icon-button"[39m
+          [33mtype[39m=[32m"button"[39m
+        [36m>[39m
+          [36m<svg[39m
+            [33maria-hidden[39m=[32m"true"[39m
+            [33mclass[39m=[32m"lucide lucide-arrow-left"[39m
+            [33mfill[39m=[32m"none"[39m
+            [33mheight[39m=[32m"20"[39m
+            [33mstroke[39m=[32m"currentColor"[39m
+            [33mstroke-linecap[39m=[32m"round"[39m
+            [33mstroke-linejoin[39m=[32m"round"[39m
+            [33mstroke-width[39m=[32m"2"[39m
+            [33mviewBox[39m=[32m"0 0 24 24"[39m
+            [33mwidth[39m=[32m"20"[39m
+            [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+          [36m>[39m
+            [36m<path[39m
+              [33md[39m=[32m"m12 19-7-7 7-7"[39m
+            [36m/>[39m
+            [36m<path[39m
+              [33md[39m=[32m"M19 12H5"[39m
+            [36m/>[39m
+          [36m</svg>[39m
+        [36m</button>[39m
+        [36m<span[39m
+          [33mclass[39m=[32m"group-center-avatar"[39m
+        [36m>[39m
+          [0mCT[0m
+        [36m</span>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"group-center-header__copy"[39m
+        [36m>[39m
+          [36m<p[39m
+            [33mclass[39m=[32m"eyebrow"[39m
+          [36m>[39m
+            [0mЦентр групи[0m
+          [36m</p>[39m
+          [36m<h2>[39m
+            [0mChatPulse Team[0m
+          [36m</h2>[39m
+          [36m<span[39m
+            [33mclass[39m=[32m"group-status group-status--success"[39m
+          [36m>[39m
+            [36m<i />[39m
+            [0m [0m
+            [0mАктивна[0m
+          [36m</span>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"group-center-header__actions"[39m
+        [36m>[39m
+          [36m<button[39m
+            [33maria-label[39m=[32m"Відкрити в Telegram"[39m
+            [33mtype[39m=[32m"button"[39m
+          [36m>[39m
+            [36m<svg[39m
+              [33maria-hidden[39m=[32m"true"[39m
+              [33mclass[39m=[32m"lucide lucide-external-link"[39m
+              [33mfill[39m=[32m"none"[39m
+              [33mheight[39m=[32m"18"[39m
+              [33mstroke[39m=[32m"currentColor"[39m
+              [33mstroke-linecap[39m=[32m"round"[39m
+              [33mstroke-linejoin[39m=[32m"round"[39m
+              [33mstroke-width[39m=[32m"2"[39m
+              [33mviewBox[39m=[32m"0 0 24 24"[39m
+              [33mwidth[39m=[32m"18"[39m
+              [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+            [36m>[39m
+              [36m<path[39m
+                [33md[39m=[32m"M15 3h6v6"[39m
+              [36m/>[39m
+              [36m<path[39m
+                [33md[39m=[32m"M10 14 21 3"[39m
+              [36m/>[39m
+              [36m<path[39m
+                [33md[39m=[32m"M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"[39m
+              [36m/>[39m
+            [36m</svg>[39m
+          [36m</button>[39m
+          [36m<button[39m
+            [33maria-label[39m=[32m"Поділитися статистикою"[39m
+            [33mtype[39m=[32m"button"[39m
+          [36m>[39m
+            [36m<svg[39m
+              [33maria-hidden[39m=[32m"true"[39m
+              [33mclass[39m=[32m"lucide lucide-share2 lucide-share-2"[39m
+              [33mfill[39m=[32m"none"[39m
+              [33mheight[39m=[32m"18"[39m
+              [33mstroke[39m=[32m"currentColor"[39m
+              [33mstroke-linecap[39m=[32m"round"[39m
+              [33mstroke-linejoin[39m=[32m"round"[39m
+              [33mstroke-width[39m=[32m"2"[39m
+              [33mviewBox[39m=[32m"0 0 24 24"[39m
+              [33mwidth[39m=[32m"18"[39m
+              [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+            [36m>[39m
+              [36m<circle[39m
+                [33mcx[39m=[32m"18"[39m
+                [33mcy[39m=[32m"5"[39m
+                [33mr[39m=[32m"3"[39m
+              [36m/>[39m
+              [36m<circle[39m
+                [33mcx[39m=[32m"6"[39m
+                [33mcy[39m=[32m"12"[39m
+                [33mr[39m=[32m"3"[39m
+              [36m/>[39m
+              [36m<circle[39m
+                [33mcx[39m=[32m"18"[39m
+                [33mcy[39m=[32m"19"[39m
+                [33mr[39m=[32m"3"[39m
+              [36m/>[39m
+              [36m<line[39m
+                [33mx1[39m=[32m"8.59"[39m
+                [33mx2[39m=[32m"15.42"[39m
+                [33my1[39m=[32m"13.51"[39m
+                [33my2[39m=[32m"17.49"[39m
+              [36m/>[39m
+              [36m<line[39m
+                [33mx1[39m=[32m"15.41"[39m
+                [33mx2[39m=[32m"8.59"[39m
+                [33my1[39m=[32m"6.51"[39m
+                [33my2[39m=[32m"10.49"[39m
+              [36m/>[39m
+            [36m</svg>[39m
+          [36m</button>[39m
+          [36m<button[39m
+            [33maria-label[39m=[32m"Налаштування групи"[39m
+            [33mtype[39m=[32m"button"[39m
+          [36m>[39m
+            [36m<svg[39m
+              [33maria-hidden[39m=[32m"true"[39m
+              [33mclass[39m=[32m"lucide lucide-settings2 lucide-settings-2"[39m
+              [33mfill[39m=[32m"none"[39m
+              [33mheight[39m=[32m"18"[39m
+              [33mstroke[39m=[32m"currentColor"[39m
+              [33mstroke-linecap[39m=[32m"round"[39m
+              [33mstroke-linejoin[39m=[32m"round"[39m
+              [33mstroke-width[39m=[32m"2"[39m
+              [33mviewBox[39m=[32m"0 0 24 24"[39m
+              [33mwidth[39m=[32m"18"[39m
+              [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+            [36m>[39m
+              [36m<path[39m
+                [33md[39m=[32m"M14 17H5"[39m
+              [36m/>[39m
+              [36m<path[39m
+                [33md[39m=[32m"M19 7h-9"[39m
+              [36m/>[39m
+              [36m<circle[39m
+                [33mcx[39m=[32m"17"[39m
+                [33mcy[39m=[32m"17"[39m
+                [33mr[39m=[32m"3"[39m
+              [36m/>[39m
+              [36m<circle[39m
+                [33mcx[39m=[32m"7"[39m
+                [33mcy[39m=[32m"7"[39m
+                [33mr[39m=[32m"3"[39m
+              [36m/>[39m
+            [36m</svg>[39m
+          [36m</button>[39m
+        [36m</div>[39m
+      [36m</header>[39m
+      [36m<nav[39m
+        [33maria-label[39m=[32m"Розділи групи"[39m
+        [33mclass[39m=[32m"group-center-tabs"[...
+[90m [2m❯[22m Object.getElementError node_modules/@testing-library/dom/dist/config.js:[2m37:19[22m[39m
+[90m [2m❯[22m getElementError node_modules/@testing-library/dom/dist/query-helpers.js:[2m20:35[22m[39m
+[90m [2m❯[22m getMultipleElementsFoundError node_modules/@testing-library/dom/dist/query-helpers.js:[2m23:10[22m[39m
+[90m [2m❯[22m node_modules/@testing-library/dom/dist/query-helpers.js:[2m55:13[22m[39m
+[90m [2m❯[22m node_modules/@testing-library/dom/dist/query-helpers.js:[2m95:19[22m[39m
+[36m [2m❯[22m src/features/groups/GroupCenterPage.test.tsx:[2m150:29[22m[39m
+    [90m148|[39m     expect(screen.getByRole("button", { name: "Налаштування групи" }))…
+    [90m149|[39m
+    [90m150|[39m     [35mawait[39m user[33m.[39m[34mclick[39m(screen[33m.[39m[34mgetByRole[39m([32m"button"[39m[33m,[39m { name[33m:[39m [36m/Рейтинг/[39m }))[33m;[39m
+    [90m   |[39m                             [31m^[39m
+    [90m151|[39m     expect(await screen.findByText("Рейтинг учасників")).toBeInTheDocu…
+    [90m152|[39m     await waitFor(() => expect(mockedApi.groupRanking).toHaveBeenCalle…
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯[22m[39m
+
+
+[2m Test Files [22m [1m[31m1 failed[39m[22m[2m | [22m[1m[32m16 passed[39m[22m[90m (17)[39m
+[2m      Tests [22m [1m[31m1 failed[39m[22m[2m | [22m[1m[32m35 passed[39m[22m[90m (36)[39m
+[2m   Start at [22m 21:21:54
+[2m   Duration [22m 12.77s[2m (transform 1.27s, setup 2.94s, import 5.29s, tests 7.91s, environment 17.49s)[22m
+
+
+::error file=/home/runner/work/ChatPulse/ChatPulse/miniapp/src/features/groups/GroupCenterPage.test.tsx,title=src/features/groups/GroupCenterPage.test.tsx > GroupCenterPage > loads Overview first and switches to an independently loaded Ranking tab,line=150,column=29::TestingLibraryElementError: Found multiple elements with the role "button" and name `/Рейтинг/`%0A%0AHere are the matching elements:%0A%0AIgnored nodes: comments, script, style%0A<button%0A  class=""%0A  type="button"%0A>%0A  <svg%0A    aria-hidden="true"%0A    class="lucide lucide-trophy"%0A    fill="none"%0A    height="16"%0A    stroke="currentColor"%0A    stroke-linecap="round"%0A    stroke-linejoin="round"%0A    stroke-width="2"%0A    viewBox="0 0 24 24"%0A    width="16"%0A    xmlns="http://www.w3.org/2000/svg"%0A  >%0A    <path%0A      d="M10 14.66v1.626a2 2 0 0 1-.976 1.696A5 5 0 0 0 7 21.978"%0A    />%0A    <path%0A      d="M14 14.66v1.626a2 2 0 0 0 .976 1.696A5 5 0 0 1 17 21.978"%0A    />%0A    <path%0A      d="M18 9h1.5a1 1 0 0 0 0-5H18"%0A    />%0A    <path%0A      d="M4 22h16"%0A    />%0A    <path%0A      d="M6 9a6 6 0 0 0 12 0V3a1 1 0 0 0-1-1H7a1 1 0 0 0-1 1z"%0A    />%0A    <path%0A      d="M6 9H4.5a1 1 0 0 1 0-5H6"%0A    />%0A  </svg>%0A   %0A  Рейтинг%0A</button>%0A%0AIgnored nodes: comments, script, style%0A<button%0A  type="button"%0A>%0A  <svg%0A    aria-hidden="true"%0A    class="lucide lucide-users"%0A    fill="none"%0A    height="18"%0A    stroke="currentColor"%0A    stroke-linecap="round"%0A    stroke-linejoin="round"%0A    stroke-width="2"%0A    viewBox="0 0 24 24"%0A    width="18"%0A    xmlns="http://www.w3.org/2000/svg"%0A  >%0A    <path%0A      d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"%0A    />%0A    <path%0A      d="M16 3.128a4 4 0 0 1 0 7.744"%0A    />%0A    <path%0A      d="M22 21v-2a4 4 0 0 0-3-3.87"%0A    />%0A    <circle%0A      cx="9"%0A      cy="7"%0A      r="4"%0A    />%0A  </svg>%0A   Рейтинг%0A</button>%0A%0A(If this is intentional, then use the `*AllBy*` variant of the query (like `queryAllByText`, `getAllByText`, or `findAllByText`)).%0A%0AIgnored nodes: comments, script, style%0A<body>%0A  <div>%0A    <div%0A      class="page group-center"%0A    >%0A      <header%0A        class="group-center-header"%0A      >%0A        <button%0A          aria-label="Назад до груп"%0A          class="icon-button"%0A          type="button"%0A        >%0A          <svg%0A            aria-hidden="true"%0A            class="lucide lucide-arrow-left"%0A            fill="none"%0A            height="20"%0A            stroke="currentColor"%0A            stroke-linecap="round"%0A            stroke-linejoin="round"%0A            stroke-width="2"%0A            viewBox="0 0 24 24"%0A            width="20"%0A            xmlns="http://www.w3.org/2000/svg"%0A          >%0A            <path%0A              d="m12 19-7-7 7-7"%0A            />%0A            <path%0A              d="M19 12H5"%0A            />%0A          </svg>%0A        </button>%0A        <span%0A          class="group-center-avatar"%0A        >%0A          CT%0A        </span>%0A        <div%0A          class="group-center-header__copy"%0A        >%0A          <p%0A            class="eyebrow"%0A          >%0A            Центр групи%0A          </p>%0A          <h2>%0A            ChatPulse Team%0A          </h2>%0A          <span%0A            class="group-status group-status--success"%0A          >%0A            <i />%0A             %0A            Активна%0A          </span>%0A        </div>%0A        <div%0A          class="group-center-header__actions"%0A        >%0A          <button%0A            aria-label="Відкрити в Telegram"%0A            type="button"%0A          >%0A            <svg%0A              aria-hidden="true"%0A              class="lucide lucide-external-link"%0A              fill="none"%0A              height="18"%0A              stroke="currentColor"%0A              stroke-linecap="round"%0A              stroke-linejoin="round"%0A              stroke-width="2"%0A              viewBox="0 0 24 24"%0A              width="18"%0A              xmlns="http://www.w3.org/2000/svg"%0A            >%0A              <path%0A                d="M15 3h6v6"%0A              />%0A              <path%0A                d="M10 14 21 3"%0A              />%0A              <path%0A                d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"%0A              />%0A            </svg>%0A          </button>%0A          <button%0A            aria-label="Поділитися статистикою"%0A            type="button"%0A          >%0A            <svg%0A              aria-hidden="true"%0A              class="lucide lucide-share2 lucide-share-2"%0A              fill="none"%0A              height="18"%0A              stroke="currentColor"%0A              stroke-linecap="round"%0A              stroke-linejoin="round"%0A              stroke-width="2"%0A              viewBox="0 0 24 24"%0A              width="18"%0A              xmlns="http://www.w3.org/2000/svg"%0A            >%0A              <circle%0A                cx="18"%0A                cy="5"%0A                r="3"%0A              />%0A              <circle%0A                cx="6"%0A                cy="12"%0A                r="3"%0A              />%0A              <circle%0A                cx="18"%0A                cy="19"%0A                r="3"%0A              />%0A              <line%0A                x1="8.59"%0A                x2="15.42"%0A                y1="13.51"%0A                y2="17.49"%0A              />%0A              <line%0A                x1="15.41"%0A                x2="8.59"%0A                y1="6.51"%0A                y2="10.49"%0A              />%0A            </svg>%0A          </button>%0A          <button%0A            aria-label="Налаштування групи"%0A            type="button"%0A          >%0A            <svg%0A              aria-hidden="true"%0A              class="lucide lucide-settings2 lucide-settings-2"%0A              fill="none"%0A              height="18"%0A              stroke="currentColor"%0A              stroke-linecap="round"%0A              stroke-linejoin="round"%0A              stroke-width="2"%0A              viewBox="0 0 24 24"%0A              width="18"%0A              xmlns="http://www.w3.org/2000/svg"%0A            >%0A              <path%0A                d="M14 17H5"%0A              />%0A              <path%0A                d="M19 7h-9"%0A              />%0A              <circle%0A                cx="17"%0A                cy="17"%0A                r="3"%0A              />%0A              <circle%0A                cx="7"%0A                cy="7"%0A                r="3"%0A              />%0A            </svg>%0A          </button>%0A        </div>%0A      </header>%0A      <nav%0A        aria-label="Розділи групи"%0A        class="group-center-tabs"[...%0A ❯ Object.getElementError node_modules/@testing-library/dom/dist/config.js:37:19%0A ❯ getElementError node_modules/@testing-library/dom/dist/query-helpers.js:20:35%0A ❯ getMultipleElementsFoundError node_modules/@testing-library/dom/dist/query-helpers.js:23:10%0A ❯ node_modules/@testing-library/dom/dist/query-helpers.js:55:13%0A ❯ node_modules/@testing-library/dom/dist/query-helpers.js:95:19%0A ❯ src/features/groups/GroupCenterPage.test.tsx:150:29%0A%0A
