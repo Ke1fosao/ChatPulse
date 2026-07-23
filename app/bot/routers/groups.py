@@ -21,6 +21,7 @@ from app.services.gamification import (
     format_gamification_announcement,
     format_profile,
 )
+from app.services.group_status_sync import upsert_group_from_message
 from app.services.report_cards import render_weekly_report_card
 from app.services.stats import format_group_stats, format_member_stats, format_top_members
 from app.services.weekly_payload import build_weekly_payload
@@ -337,10 +338,9 @@ async def track_group_message(
     if occurred_at.tzinfo is None:
         occurred_at = occurred_at.replace(tzinfo=UTC)
 
-    await repository.upsert_group(
+    await upsert_group_from_message(
+        repository,
         _group_data(message, default_timezone),
-        bot_status="member",
-        is_active=True,
     )
     tracked = await repository.record_message(
         chat_id=message.chat.id,
