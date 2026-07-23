@@ -62,7 +62,13 @@ async function requestBlob(path: string): Promise<Blob> {
 }
 
 export const api = {
-  home: () => request<Omit<HomePayload, "onboarding">>("/home"),
+  home: async (): Promise<HomePayload> => {
+    const [home, onboarding] = await Promise.all([
+      request<Omit<HomePayload, "onboarding">>("/home"),
+      request<OnboardingPayload>("/onboarding"),
+    ]);
+    return { ...home, onboarding };
+  },
   onboarding: () => request<OnboardingPayload>("/onboarding"),
   levels: () => request<LevelsPayload>("/levels"),
   groups: async () => (await request<{ groups: GroupCardData[] }>("/groups")).groups,
