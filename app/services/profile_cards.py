@@ -90,14 +90,34 @@ def _achievement_mark(
     elif icon in {"image", "gallery-horizontal"}:
         draw.rounded_rectangle((x - 17, y - 15, x + 17, y + 15), radius=5, outline=pale, width=4)
         draw.ellipse((x + 5, y - 9, x + 11, y - 3), fill=pale)
-        draw.polygon(((x - 13, y + 10), (x - 4, y), (x + 2, y + 6), (x + 8, y), (x + 14, y + 10)), fill=pale)
+        draw.polygon(
+            ((x - 13, y + 10), (x - 4, y), (x + 2, y + 6), (x + 8, y), (x + 14, y + 10)), fill=pale
+        )
     elif icon in {"flame", "zap", "cloud-lightning"}:
         draw.polygon(
-            ((x + 2, y - 19), (x - 13, y + 2), (x - 2, y + 2), (x - 7, y + 19), (x + 14, y - 5), (x + 3, y - 5)),
+            (
+                (x + 2, y - 19),
+                (x - 13, y + 2),
+                (x - 2, y + 2),
+                (x - 7, y + 19),
+                (x + 14, y - 5),
+                (x + 3, y - 5),
+            ),
             fill=pale,
         )
     elif icon in {"crown", "trophy", "medal"}:
-        draw.polygon(((x - 17, y - 12), (x - 8, y + 4), (x, y - 9), (x + 8, y + 4), (x + 17, y - 12), (x + 13, y + 12), (x - 13, y + 12)), fill=pale)
+        draw.polygon(
+            (
+                (x - 17, y - 12),
+                (x - 8, y + 4),
+                (x, y - 9),
+                (x + 8, y + 4),
+                (x + 17, y - 12),
+                (x + 13, y + 12),
+                (x - 13, y + 12),
+            ),
+            fill=pale,
+        )
         draw.rectangle((x - 10, y + 14, x + 10, y + 18), fill=pale)
     else:
         draw.line((x, y - 18, x, y + 18), fill=pale, width=4)
