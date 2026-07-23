@@ -106,3 +106,111 @@
   color: #1d1405;
   font-weight: 850;
 }
+
+.premium-analytics-block {
+  display: grid;
+  gap: 14px;
+}
+
+.premium-period-preview button:disabled {
+  opacity: 0.48;
+  color: #d8caa7;
+}
+
+.premium-chart-preview {
+  display: flex;
+  align-items: end;
+  gap: 8px;
+  min-height: 90px;
+  padding: 12px 16px;
+  background: linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.01));
+}
+
+.premium-chart-preview i {
+  flex: 1;
+  min-height: 25%;
+  border-radius: 7px 7px 2px 2px;
+  background: linear-gradient(180deg, #ffd66f, rgba(255, 166, 66, 0.28));
+}
+
+.premium-chart-preview i:nth-child(2) { min-height: 56%; }
+.premium-chart-preview i:nth-child(3) { min-height: 39%; }
+.premium-chart-preview i:nth-child(4) { min-height: 78%; }
+.premium-chart-preview i:nth-child(5) { min-height: 62%; }
+.premium-chart-preview i:nth-child(6) { min-height: 92%; }
+
+.premium-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 9px;
+}
+
+.premium-summary-grid article {
+  padding: 13px 10px;
+  border: 1px solid rgba(255, 211, 105, 0.14);
+  border-radius: 15px;
+  background: rgba(255, 255, 255, 0.035);
+}
+
+.premium-summary-grid span {
+  display: block;
+  color: #9299aa;
+  font-size: 10px;
+}
+
+.premium-summary-grid strong {
+  display: block;
+  margin-top: 5px;
+  color: #fff;
+  font-size: 18px;
+}
+
+.premium-export-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 8px;
+  padding: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.premium-export-row span {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  color: #bbc0cf;
+  font-size: 12px;
+}
+
+.premium-export-row button {
+  min-width: 52px;
+  padding: 9px;
+  border: 1px solid rgba(255, 211, 105, 0.22);
+  border-radius: 11px;
+  background: rgba(255, 211, 105, 0.08);
+  color: #ffdc7b;
+  font-weight: 800;
+}
+
+.premium-analytics-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 88px;
+  color: #aab0bf;
+}
+
+.account-plan-card {
+  width: 100%;
+  text-align: left;
+}
+
+.account-plan-card__title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
