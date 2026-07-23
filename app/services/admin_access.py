@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Literal
+from typing import Literal, cast
 
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
@@ -28,7 +28,9 @@ OWNER_PERMISSIONS = frozenset(
 
 ROLE_PERMISSIONS: dict[AdminRole, frozenset[str]] = {
     "owner": OWNER_PERMISSIONS,
-    "admin": frozenset(permission for permission in OWNER_PERMISSIONS if permission != "staff.manage"),
+    "admin": frozenset(
+        permission for permission in OWNER_PERMISSIONS if permission != "staff.manage"
+    ),
     "moderator": frozenset(
         {
             "users.view",
@@ -94,7 +96,7 @@ async def resolve_admin_actor(
         role = staff.role
         if role not in {"admin", "moderator", "support"}:
             return None
-        typed_role: AdminRole = role  # type: ignore[assignment]
+        typed_role = cast(AdminRole, role)
         return AdminActor(
             telegram_user_id=telegram_user_id,
             role=typed_role,
