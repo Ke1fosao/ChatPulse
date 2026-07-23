@@ -20,7 +20,7 @@ describe("OnboardingCard", () => {
     const openLink = vi.fn();
     render(<OnboardingCard onboarding={incomplete} onOpenTelegramLink={openLink} />);
 
-    expect(screen.getByText("1 із 3"))toBeInTheDocument();
+    expect(screen.getByText("1 із 3")).toBeInTheDocument();
     expect(screen.getByText("Додай у групу")).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Додати в групу" }));
     expect(openLink).toHaveBeenCalledWith(incomplete.add_group_url);
