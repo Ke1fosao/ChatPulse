@@ -147,7 +147,7 @@ describe("GroupCenterPage", () => {
     expect(screen.getByText("Що нового")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Налаштування групи" })).toBeInTheDocument();
 
-    await user.click(screen.getByRole("button", { name: /Рейтинг/ }));
+    await user.click(screen.getAllByRole("button", { name: /Рейтинг/ })[0]);
     expect(await screen.findByText("Рейтинг учасників")).toBeInTheDocument();
     await waitFor(() => expect(mockedApi.groupRanking).toHaveBeenCalledWith(-1001, "xp", "week"));
   });

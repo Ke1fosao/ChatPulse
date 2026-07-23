@@ -1,4 +1,0 @@
-
-> chatpulse-miniapp@0.11.0 typecheck
-> tsc -b --pretty false
-
