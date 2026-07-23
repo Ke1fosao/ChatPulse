@@ -15,6 +15,7 @@ from app.api.internal_achievements import router as internal_achievement_router
 from app.api.miniapp.featured import router as featured_achievement_router
 from app.api.miniapp.premium import router as premium_router
 from app.api.miniapp.routes import router as miniapp_router
+from app.api.owner.revenue import router as owner_revenue_router
 from app.api.owner.routes import router as owner_router
 from app.bot.setup import build_dispatcher
 from app.config import Settings, get_settings
@@ -27,7 +28,9 @@ from app.repositories.miniapp_gamification import MiniAppGamificationRepository
 from app.repositories.miniapp_v2 import AchievementMiniAppRepository
 from app.repositories.owner import OwnerRepository
 from app.repositories.owner_panel import OwnerPanelRepository
+from app.repositories.owner_revenue import OwnerRevenueRepository
 from app.repositories.vip_product_events import VipProductEventRepository
+from app.services.owner_payments import OwnerPaymentService
 from app.services.telegram_access import TelegramAccessService
 from app.services.vip_lifecycle import VipLifecycleService
 from app.services.weekly_reports import send_due_weekly_reports
@@ -64,6 +67,8 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         featured_achievement_repository = FeaturedAchievementRepository(database.session_factory)
         owner_repository = OwnerRepository(database.session_factory)
         owner_panel_repository = OwnerPanelRepository(database.session_factory)
+        owner_revenue_repository = OwnerRevenueRepository(database.session_factory)
+        owner_payment_service = OwnerPaymentService(database.session_factory)
         billing_repository = BillingRepository(database.session_factory)
         vip_product_event_repository = VipProductEventRepository(database.session_factory)
         vip_lifecycle_service = VipLifecycleService(database.session_factory)
@@ -89,6 +94,8 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         app.state.featured_achievement_repository = featured_achievement_repository
         app.state.owner_repository = owner_repository
         app.state.owner_panel_repository = owner_panel_repository
+        app.state.owner_revenue_repository = owner_revenue_repository
+        app.state.owner_payment_service = owner_payment_service
         app.state.billing_repository = billing_repository
         app.state.vip_product_event_repository = vip_product_event_repository
         app.state.vip_lifecycle_service = vip_lifecycle_service
@@ -121,18 +128,19 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             await bot.session.close()
             await database.dispose()
 
-    app = FastAPI(title="ChatPulse", version="0.8.0", lifespan=lifespan)
+    app = FastAPI(title="ChatPulse", version="0.9.0", lifespan=lifespan)
     app.state.settings = resolved_settings
     app.include_router(miniapp_router)
     app.include_router(featured_achievement_router)
     app.include_router(premium_router)
     app.include_router(billing_router)
     app.include_router(owner_router)
+    app.include_router(owner_revenue_router)
     app.include_router(internal_achievement_router)
 
     @app.get("/health")
     async def health() -> dict[str, str]:
-        return {"status": "ok", "service": "chatpulse", "version": "0.8.0"}
+        return {"status": "ok", "service": "chatpulse", "version": "0.9.0"}
 
     @app.post(resolved_settings.webhook_path)
     async def telegram_webhook(

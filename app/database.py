@@ -2,6 +2,7 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_asyn
 
 import app.achievement_models  # noqa: F401
 import app.billing_models  # noqa: F401
+import app.owner_revenue_models  # noqa: F401
 import app.vip_product_models  # noqa: F401
 from app.models import Base
 
@@ -17,8 +18,6 @@ class Database:
         normalized_url = normalize_database_url(database_url)
         engine_kwargs: dict = {"pool_pre_ping": True}
         if normalized_url.startswith("sqlite"):
-            # Cloud Run may deliver webhook requests close together. A longer
-            # busy timeout prevents short-lived SQLite write locks from failing.
             engine_kwargs["connect_args"] = {"timeout": 30}
 
         self.engine = create_async_engine(normalized_url, **engine_kwargs)

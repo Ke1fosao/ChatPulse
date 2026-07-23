@@ -1,4 +1,4 @@
-import { Check, Copy, Download, LoaderCircle, Send, Share2, X } from "lucide-react";
+import { Check, Copy, Download, Flame, LoaderCircle, Send, Share2, X } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import { api, downloadBlob } from "../api/client";
@@ -12,9 +12,9 @@ interface ShareCardDialogProps {
 }
 
 function roleLabel(data: HomePayload): string {
-  if (data.account.is_owner) return "OWNER · CREATOR";
-  if (data.account.is_vip) return "VIP CLIENT";
-  return "MEMBER · FREE";
+  if (data.account.is_owner) return "OWNER";
+  if (data.account.is_vip) return "VIP";
+  return "FREE";
 }
 
 export function ShareCardDialog({ data, open, onClose }: ShareCardDialogProps) {
@@ -22,9 +22,10 @@ export function ShareCardDialog({ data, open, onClose }: ShareCardDialogProps) {
   const [previewUrl, setPreviewUrl] = useState("");
   const [loading, setLoading] = useState(false);
   const [status, setStatus] = useState<"idle" | "shared" | "copied" | "downloaded">("idle");
+  const streak = data.quick_stats.current_streak;
   const shareText = useMemo(
-    () => `Мій ChatPulse — ${roleLabel(data)}, рівень ${data.global_progress.level} (${data.global_progress.tier}), ${data.global_progress.xp_total} XP, місце #${data.global_progress.rank} і серія ${data.quick_stats.current_streak} днів.`,
-    [data],
+    () => `Мій ChatPulse: рівень ${data.global_progress.level}, ${data.global_progress.xp_total} XP, місце #${data.global_progress.rank} і вогник ${streak} днів 🔥`,
+    [data, streak],
   );
 
   useEffect(() => {
@@ -55,11 +56,7 @@ export function ShareCardDialog({ data, open, onClose }: ShareCardDialogProps) {
     try {
       const file = card ? new File([card], "chatpulse-profile.png", { type: "image/png" }) : null;
       if (file && navigator.share && (!navigator.canShare || navigator.canShare({ files: [file] }))) {
-        await navigator.share({
-          title: "Мій ChatPulse",
-          text: shareText,
-          files: [file],
-        });
+        await navigator.share({ title: "Мій ChatPulse", text: shareText, files: [file] });
       } else if (navigator.share) {
         await navigator.share({ title: "Мій ChatPulse", text: shareText });
       } else {
@@ -105,9 +102,9 @@ export function ShareCardDialog({ data, open, onClose }: ShareCardDialogProps) {
       >
         <header className="share-dialog__header">
           <div>
-            <p className="eyebrow">Твоя картка</p>
+            <p className="eyebrow">Твоя картка · {roleLabel(data)}</p>
             <h2>Поділись прогресом</h2>
-            <span>Готова PNG-картка з роллю, рівнем і статистикою</span>
+            <span>Чиста PNG-картка без зайвих блоків</span>
           </div>
           <button className="dialog-close" type="button" onClick={onClose} aria-label="Закрити">
             <X size={20} />
@@ -129,10 +126,19 @@ export function ShareCardDialog({ data, open, onClose }: ShareCardDialogProps) {
           )}
         </div>
 
+        <div className="share-streak-focus">
+          <span><Flame size={24} /></span>
+          <div>
+            <small>ТВІЙ ВОГНИК</small>
+            <strong>{streak} {streak === 1 ? "день" : "днів"}</strong>
+            <p>{streak > 0 ? "Не дай серії згаснути — продовж її сьогодні." : "Почни свою першу серію активності сьогодні."}</p>
+          </div>
+        </div>
+
         <div className="share-primary-actions">
           <button className="primary-button" type="button" onClick={() => void shareFile()} disabled={loading}>
             {status === "shared" ? <Check size={19} /> : <Share2 size={19} />}
-            {status === "shared" ? "Надіслано" : "Поділитися карткою"}
+            {status === "shared" ? "Надіслано" : "Поділитися"}
           </button>
           <button className="secondary-button" type="button" onClick={() => void download()} disabled={loading}>
             {status === "downloaded" ? <Check size={19} /> : <Download size={19} />}

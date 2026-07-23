@@ -12,6 +12,7 @@ import "./styles/achievement-card-fixes.css";
 import "./styles/featured-premium.css";
 import "./styles/owner.css";
 import "./styles/owner-mobile.css";
+import "./styles/owner-revenue.css";
 import "./styles/profile-experience.css";
 import "./styles/premium.css";
 import "./styles/premium-identity.css";

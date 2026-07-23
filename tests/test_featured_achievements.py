@@ -4,7 +4,7 @@ import pytest
 
 from app.achievement_models import AchievementUnlockRecord
 from app.database import Database
-from app.models import ChatGroup, User
+from app.models import ChatGroup, MemberAchievement, User
 from app.repositories.featured_achievements import FeaturedAchievementRepository
 
 
@@ -39,6 +39,14 @@ async def featured_repository(tmp_path):
                 for index, code in enumerate(codes)
             ]
         )
+        session.add(
+            MemberAchievement(
+                telegram_chat_id=-1001,
+                telegram_user_id=202,
+                achievement_code="messages_1000",
+                earned_at=datetime(2026, 7, 22, 10, 0, tzinfo=UTC),
+            )
+        )
     yield FeaturedAchievementRepository(database.session_factory)
     await database.dispose()
 
@@ -56,11 +64,20 @@ async def test_user_can_pin_and_reorder_five_earned_achievements(featured_reposi
 
 
 @pytest.mark.asyncio
+async def test_user_can_pin_legacy_earned_achievement(featured_repository) -> None:
+    """An earned reward visible in the collection must always be pinnable."""
+    items = await featured_repository.set_featured_codes(202, ["messages_1000"])
+
+    assert [item["code"] for item in items] == ["messages_1000"]
+    assert items[0]["scope_key"] == "group:-1001"
+
+
+@pytest.mark.asyncio
 async def test_user_cannot_pin_unearned_or_more_than_five_achievements(
     featured_repository,
 ) -> None:
     with pytest.raises(ValueError, match="отримані"):
-        await featured_repository.set_featured_codes(202, ["messages_1000"])
+        await featured_repository.set_featured_codes(202, ["reactions_500"])
 
     with pytest.raises(ValueError, match="не більше пʼяти"):
         await featured_repository.set_featured_codes(
