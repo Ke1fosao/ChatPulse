@@ -5,6 +5,7 @@ import { OwnerApp } from "./owner/OwnerApp";
 import { PremiumProvider } from "./premium/PremiumContext";
 import { VipApp } from "./vip/VipApp";
 import "./styles/global.css";
+import "./styles/bottom-nav-v2.css";
 import "./styles/group-settings.css";
 import "./styles/groups-v2.css";
 import "./styles/group-center.css";
