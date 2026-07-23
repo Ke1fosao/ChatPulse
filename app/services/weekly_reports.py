@@ -1,5 +1,5 @@
 import logging
-from datetime import datetime
+from datetime import UTC, datetime, timedelta
 
 from aiogram import Bot
 from aiogram.types import BufferedInputFile, InlineKeyboardButton, InlineKeyboardMarkup
@@ -8,6 +8,7 @@ from app.repositories.activity import ActivityRepository
 from app.repositories.gamification_v2 import AchievementGamificationRepository
 from app.services.nominations import format_weekly_report
 from app.services.report_cards import render_weekly_report_card
+from app.services.retention_lifecycle import RetentionLifecycleService
 from app.services.weekly_payload import build_weekly_payload
 
 logger = logging.getLogger("chatpulse.weekly_reports")
@@ -62,10 +63,13 @@ async def send_due_weekly_reports(
     repository: ActivityRepository,
     *,
     now: datetime | None = None,
+    retention_service: RetentionLifecycleService | None = None,
 ) -> int:
     if not hasattr(repository, "_session_factory"):
         return await _send_legacy_text_reports(bot, repository, now=now)
 
+    current = (now or datetime.now(UTC)).astimezone(UTC)
+    report_start = current.date() - timedelta(days=current.weekday())
     sent = 0
     gamification_repository = AchievementGamificationRepository(repository._session_factory)
     for group in await repository.list_due_weekly_reports(now=now):
@@ -105,5 +109,16 @@ async def send_due_weekly_reports(
             )
         except Exception:
             logger.exception("weekly_achievement_evaluation_failed chat_id=%s", chat_id)
+        if retention_service is not None:
+            try:
+                await retention_service.notify_weekly_report(
+                    bot,
+                    chat_id=chat_id,
+                    group_title=str(payload["group_title"]),
+                    report_key=report_start.isoformat(),
+                    now=current,
+                )
+            except Exception:
+                logger.exception("weekly_private_notification_failed chat_id=%s", chat_id)
         sent += 1
     return sent
