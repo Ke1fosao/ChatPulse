@@ -2,6 +2,7 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_asyn
 
 import app.achievement_models  # noqa: F401
 import app.billing_models  # noqa: F401
+import app.engagement_models  # noqa: F401
 import app.owner_revenue_models  # noqa: F401
 import app.vip_product_models  # noqa: F401
 from app.models import Base

@@ -14,6 +14,24 @@ vi.mock("./api/client", () => ({
         vip_expires_at: null,
         entitlements: [],
       },
+      onboarding: {
+        completed_steps: 3,
+        total_steps: 3,
+        is_complete: true,
+        primary_action: "done",
+        add_group_url: null,
+        linked_group: null,
+        steps: [
+          { id: "start", title: "Запусти ChatPulse", description: "Готово", completed: true },
+          { id: "group", title: "Додай у групу", description: "Готово", completed: true },
+          {
+            id: "activity",
+            title: "Створи перший пульс",
+            description: "Готово",
+            completed: true,
+          },
+        ],
+      },
       global_progress: {
         xp_total: 850,
         level: 4,
