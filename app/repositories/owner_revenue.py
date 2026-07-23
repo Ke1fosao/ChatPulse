@@ -10,9 +10,9 @@ from sqlalchemy import String, cast, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from app.billing_models import VipInvoiceIntent, VipPayment
-from app.vip_product_models import VipProductEvent
 from app.models import User, VipGrant, utc_now
 from app.owner_revenue_models import OwnerPaymentNote
+from app.vip_product_models import VipProductEvent
 
 
 def _as_utc(value: datetime) -> datetime:
