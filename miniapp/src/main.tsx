@@ -14,6 +14,7 @@ import "./styles/owner.css";
 import "./styles/owner-mobile.css";
 import "./styles/profile-experience.css";
 import "./styles/premium.css";
+import "./styles/premium-identity.css";
 import "./styles/vip.css";
 
 const route = window.location.pathname.replace(/\/+$/, "");
