@@ -13,8 +13,12 @@ jobs:
           python-version: "3.12"
       - run: pip install -q ruff
       - name: Capture Ruff output
-        run: ruff check . > ruff.txt 2>&1 || true
+        run: |
+          ruff check . > ruff.txt 2>&1 || true
+          ruff format --check . > format.txt 2>&1 || true
       - uses: actions/upload-artifact@v4
         with:
           name: ruff-diagnostics
-          path: ruff.txt
+          path: |
+            ruff.txt
+            format.txt
