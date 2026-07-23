@@ -2,6 +2,7 @@ import type { Achievement } from "../api/types";
 import { getInitData } from "../telegram/sdk";
 import type {
   FeaturedAchievement,
+  FeaturedAchievementSelection,
   VipPayment,
   VipPlansPayload,
   VipPlan,
@@ -71,11 +72,11 @@ export const vipApi = {
     ),
   featured: async () =>
     (await request<{ items: FeaturedAchievement[] }>("/featured-achievements")).items,
-  updateFeatured: async (codes: string[]) =>
+  updateFeatured: async (items: FeaturedAchievementSelection[]) =>
     (
       await request<{ items: FeaturedAchievement[] }>("/featured-achievements", {
         method: "PUT",
-        body: JSON.stringify({ codes }),
+        body: JSON.stringify({ items }),
       })
     ).items,
   achievements: async () =>
