@@ -11,7 +11,9 @@ import { useMemo, useState } from "react";
 import type { Achievement, AchievementRarity } from "../../api/types";
 import { AchievementCard } from "../../components/AchievementCard";
 import { EmptyState } from "../../components/EmptyState";
+import { usePremium } from "../../premium/PremiumContext";
 import { AchievementDetailsDialog } from "./AchievementDetailsDialog";
+import { FeaturedAchievements } from "./FeaturedAchievements";
 import { achievementProgressPercent } from "./progress";
 
 interface AchievementsPageProps {
@@ -71,6 +73,7 @@ export function AchievementsPage({
   const [rarityFilter, setRarityFilter] = useState<"all" | AchievementRarity>("all");
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [selected, setSelected] = useState<Achievement | null>(null);
+  const premium = usePremium();
 
   const visible = useMemo(
     () =>
@@ -145,6 +148,13 @@ export function AchievementsPage({
           </article>
         </div>
       </header>
+
+      <FeaturedAchievements
+        account={premium.account}
+        achievements={achievements}
+        trialAvailable={premium.trialAvailable}
+        onOpenVip={premium.openVip}
+      />
 
       <section className="achievement-collection__controls">
         <div className="metric-tabs metric-tabs--scroll achievement-category-tabs">
