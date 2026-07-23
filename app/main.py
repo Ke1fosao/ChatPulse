@@ -13,6 +13,7 @@ from fastapi.responses import FileResponse, HTMLResponse
 from app.api.billing.routes import router as billing_router
 from app.api.internal_achievements import router as internal_achievement_router
 from app.api.miniapp.featured import router as featured_achievement_router
+from app.api.miniapp.groups_v2 import router as groups_v2_router
 from app.api.miniapp.onboarding import router as onboarding_router
 from app.api.miniapp.premium import router as premium_router
 from app.api.miniapp.routes import router as miniapp_router
@@ -26,6 +27,7 @@ from app.repositories.activity import ActivityRepository
 from app.repositories.billing import BillingRepository
 from app.repositories.engagement import EngagementRepository
 from app.repositories.featured_achievements import FeaturedAchievementRepository
+from app.repositories.groups_v2 import GroupsV2Repository
 from app.repositories.miniapp_gamification import MiniAppGamificationRepository
 from app.repositories.miniapp_v2 import AchievementMiniAppRepository
 from app.repositories.owner import OwnerRepository
@@ -66,6 +68,10 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         repository = ActivityRepository(database.session_factory)
         gamification_repository = MiniAppGamificationRepository(database.session_factory)
         miniapp_repository = AchievementMiniAppRepository(database.session_factory)
+        groups_v2_repository = GroupsV2Repository(
+            database.session_factory,
+            miniapp_repository=miniapp_repository,
+        )
         achievement_repository = AchievementRepository(database.session_factory)
         featured_achievement_repository = FeaturedAchievementRepository(database.session_factory)
         owner_repository = OwnerRepository(database.session_factory)
@@ -99,6 +105,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         app.state.repository = repository
         app.state.gamification_repository = gamification_repository
         app.state.miniapp_repository = miniapp_repository
+        app.state.groups_v2_repository = groups_v2_repository
         app.state.achievement_repository = achievement_repository
         app.state.featured_achievement_repository = featured_achievement_repository
         app.state.owner_repository = owner_repository
@@ -142,9 +149,10 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             await bot.session.close()
             await database.dispose()
 
-    app = FastAPI(title="ChatPulse", version="0.10.0", lifespan=lifespan)
+    app = FastAPI(title="ChatPulse", version="0.11.0", lifespan=lifespan)
     app.state.settings = resolved_settings
     app.include_router(miniapp_router)
+    app.include_router(groups_v2_router)
     app.include_router(onboarding_router)
     app.include_router(featured_achievement_router)
     app.include_router(premium_router)
@@ -155,7 +163,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
 
     @app.get("/health")
     async def health() -> dict[str, str]:
-        return {"status": "ok", "service": "chatpulse", "version": "0.10.0"}
+        return {"status": "ok", "service": "chatpulse", "version": "0.11.0"}
 
     @app.post(resolved_settings.webhook_path)
     async def telegram_webhook(
