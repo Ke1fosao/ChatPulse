@@ -10,7 +10,9 @@ from aiogram.types import MenuButtonWebApp, Update, WebAppInfo
 from fastapi import FastAPI, Header, HTTPException, Request, status
 from fastapi.responses import FileResponse, HTMLResponse
 
+from app.api.billing.routes import router as billing_router
 from app.api.internal_achievements import router as internal_achievement_router
+from app.api.miniapp.featured import router as featured_achievement_router
 from app.api.miniapp.routes import router as miniapp_router
 from app.api.owner.routes import router as owner_router
 from app.bot.setup import build_dispatcher
@@ -18,6 +20,8 @@ from app.config import Settings, get_settings
 from app.database import Database
 from app.repositories.achievements import AchievementRepository
 from app.repositories.activity import ActivityRepository
+from app.repositories.billing import BillingRepository
+from app.repositories.featured_achievements import FeaturedAchievementRepository
 from app.repositories.miniapp_gamification import MiniAppGamificationRepository
 from app.repositories.miniapp_v2 import AchievementMiniAppRepository
 from app.repositories.owner import OwnerRepository
@@ -54,8 +58,10 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         gamification_repository = MiniAppGamificationRepository(database.session_factory)
         miniapp_repository = AchievementMiniAppRepository(database.session_factory)
         achievement_repository = AchievementRepository(database.session_factory)
+        featured_achievement_repository = FeaturedAchievementRepository(database.session_factory)
         owner_repository = OwnerRepository(database.session_factory)
         owner_panel_repository = OwnerPanelRepository(database.session_factory)
+        billing_repository = BillingRepository(database.session_factory)
         bot = Bot(resolved_settings.bot_token)
         telegram_access_service = TelegramAccessService(
             bot,
@@ -67,6 +73,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             fingerprint_secret=resolved_settings.webhook_header_secret,
             miniapp_url=miniapp_url,
             owner_repository=owner_repository,
+            billing_repository=billing_repository,
         )
 
         app.state.database = database
@@ -74,8 +81,10 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         app.state.gamification_repository = gamification_repository
         app.state.miniapp_repository = miniapp_repository
         app.state.achievement_repository = achievement_repository
+        app.state.featured_achievement_repository = featured_achievement_repository
         app.state.owner_repository = owner_repository
         app.state.owner_panel_repository = owner_panel_repository
+        app.state.billing_repository = billing_repository
         app.state.telegram_access_service = telegram_access_service
         app.state.bot = bot
         app.state.dispatcher = dispatcher
@@ -105,15 +114,17 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             await bot.session.close()
             await database.dispose()
 
-    app = FastAPI(title="ChatPulse", version="0.6.0", lifespan=lifespan)
+    app = FastAPI(title="ChatPulse", version="0.7.0", lifespan=lifespan)
     app.state.settings = resolved_settings
     app.include_router(miniapp_router)
+    app.include_router(featured_achievement_router)
+    app.include_router(billing_router)
     app.include_router(owner_router)
     app.include_router(internal_achievement_router)
 
     @app.get("/health")
     async def health() -> dict[str, str]:
-        return {"status": "ok", "service": "chatpulse", "version": "0.6.0"}
+        return {"status": "ok", "service": "chatpulse", "version": "0.7.0"}
 
     @app.post(resolved_settings.webhook_path)
     async def telegram_webhook(
