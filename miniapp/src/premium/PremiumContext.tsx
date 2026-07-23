@@ -28,6 +28,21 @@ interface PremiumState {
   openVip(source: string, featureKey?: string | null): void;
 }
 
+function navigateToVip(source: string, featureKey?: string | null): void {
+  const params = new URLSearchParams({ source });
+  if (featureKey) params.set("feature", featureKey);
+  window.location.assign(`/miniapp/vip?${params.toString()}`);
+}
+
+const fallbackState: PremiumState = {
+  account: freeAccount,
+  trialAvailable: false,
+  loading: false,
+  has: () => false,
+  refresh: async () => undefined,
+  openVip: navigateToVip,
+};
+
 const PremiumContext = createContext<PremiumState | null>(null);
 
 export function PremiumProvider({ children }: { children: ReactNode }) {
@@ -62,9 +77,7 @@ export function PremiumProvider({ children }: { children: ReactNode }) {
       source,
       feature_key: featureKey,
     });
-    const params = new URLSearchParams({ source });
-    if (featureKey) params.set("feature", featureKey);
-    window.location.assign(`/miniapp/vip?${params.toString()}`);
+    navigateToVip(source, featureKey);
   }, []);
 
   const value = useMemo<PremiumState>(
@@ -83,7 +96,5 @@ export function PremiumProvider({ children }: { children: ReactNode }) {
 }
 
 export function usePremium(): PremiumState {
-  const value = useContext(PremiumContext);
-  if (!value) throw new Error("usePremium must be used inside PremiumProvider");
-  return value;
+  return useContext(PremiumContext) ?? fallbackState;
 }
