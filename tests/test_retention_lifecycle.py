@@ -50,6 +50,13 @@ async def _started_user(
     )
 
 
+def _service(database: Database) -> RetentionLifecycleService:
+    return RetentionLifecycleService(
+        database.session_factory,
+        miniapp_url="https://example.com/miniapp",
+    )
+
+
 @pytest.mark.asyncio
 async def test_sends_streak_risk_once_after_19_local_time(tmp_path) -> None:
     database = Database(f"sqlite+aiosqlite:///{tmp_path / 'retention-streak.db'}")
@@ -66,7 +73,7 @@ async def test_sends_streak_risk_once_after_19_local_time(tmp_path) -> None:
     )
 
     bot = AsyncMock()
-    service = RetentionLifecycleService(database.session_factory, miniapp_url="https://example.com/miniapp")
+    service = _service(database)
     first = await service.send_due(bot, now=now)
     second = await service.send_due(bot, now=now + timedelta(minutes=5))
 
@@ -95,7 +102,7 @@ async def test_sends_near_achievement_when_no_streak_warning_is_due(tmp_path) ->
     )
 
     bot = AsyncMock()
-    service = RetentionLifecycleService(database.session_factory, miniapp_url="https://example.com/miniapp")
+    service = _service(database)
     result = await service.send_due(bot, now=now)
 
     assert result["achievement_sent"] == 1
@@ -106,7 +113,9 @@ async def test_sends_near_achievement_when_no_streak_warning_is_due(tmp_path) ->
 
 
 @pytest.mark.asyncio
-async def test_weekly_report_notification_includes_rank_improvement_and_is_idempotent(tmp_path) -> None:
+async def test_weekly_report_notification_includes_rank_improvement_and_is_idempotent(
+    tmp_path,
+) -> None:
     database = Database(f"sqlite+aiosqlite:///{tmp_path / 'retention-weekly.db'}")
     await database.create_schema()
     now = datetime(2026, 7, 23, 12, 0, tzinfo=UTC)
@@ -129,7 +138,7 @@ async def test_weekly_report_notification_includes_rank_improvement_and_is_idemp
     )
 
     bot = AsyncMock()
-    service = RetentionLifecycleService(database.session_factory, miniapp_url="https://example.com/miniapp")
+    service = _service(database)
     first = await service.notify_weekly_report(
         bot,
         chat_id=-403,
