@@ -1,7 +1,7 @@
 export type Period = "week" | "month" | "all";
 export type Metric = "xp" | "messages" | "reactions" | "replies" | "streak";
 export type TabId = "home" | "groups" | "rankings" | "achievements" | "profile";
-export type ReportTheme = "dark_pulse" | "telegram_wave" | "clean_light";
+export type ReportTheme = "dark_pulse" | "telegram_wave" | "clean_light" | "aurora_gold";
 export type AchievementRarity =
   | "common"
   | "uncommon"
@@ -105,75 +105,10 @@ export interface Achievement {
   group_title?: string | null;
   progress: number;
   threshold: number;
-  comparator?: "gte" | "lte";
   chain?: AchievementChain | null;
   reward_xp: number;
   version: number;
   season_key?: string | null;
-}
-
-interface AchievementEventBase {
-  event_id: number;
-  created_at: string;
-}
-
-export interface AchievementUnlockEventPayload extends AchievementEventBase {
-  event_type: "unlock";
-  achievement: Achievement;
-}
-
-export interface AchievementCollectionUpdateEventPayload extends AchievementEventBase {
-  event_type: "collection_update";
-  summary: {
-    count: number;
-    achievements: Achievement[];
-  };
-}
-
-export type AchievementEventPayload =
-  | AchievementUnlockEventPayload
-  | AchievementCollectionUpdateEventPayload;
-
-export interface RecentAchievement {
-  code: string;
-  title: string;
-  description: string;
-  rarity: AchievementRarity;
-  earned_at: string;
-  group_title: string;
-}
-
-export interface HomePayload {
-  user: UserSummary;
-  account: AccountAccess;
-  global_progress: GlobalProgress;
-  quick_stats: QuickStats;
-  activity_series: ActivityPoint[];
-  recent_achievements: RecentAchievement[];
-  groups: GroupCardData[];
-}
-
-export interface RankingRow {
-  rank: number;
-  telegram_user_id: number;
-  display_name: string;
-  username?: string | null;
-  value: number;
-  metric: Metric;
-  is_current_user: boolean;
-}
-
-export interface RankingPayload {
-  metric: Metric;
-  period: Period;
-  rows: RankingRow[];
-  current_user?: RankingRow | null;
-}
-
-export interface HeatmapPoint {
-  weekday: number;
-  bucket: "night" | "morning" | "day";
-  value: number;
 }
 
 export interface GroupSettings {
@@ -203,22 +138,19 @@ export interface GroupDashboard {
     previous: Summary;
     trends: Record<string, number | null>;
   };
-  activity_series: ActivityPoint[];
-  heatmap: HeatmapPoint[];
   personal_progress: {
     xp_total: number;
     level: number;
     tier: string;
     progress: number;
     needed: number;
+    rank?: number | null;
     current_streak: number;
     longest_streak: number;
     protection_left: number;
-    period: Summary;
-    rank?: number | null;
   };
-  leaderboard: RankingRow[];
-  current_user_rank?: RankingRow | null;
+  activity_series: ActivityPoint[];
+  heatmap: Array<{ weekday: number; bucket: string; value: number }>;
   top_message?: {
     message_id: number;
     reactions_count: number;
@@ -226,17 +158,43 @@ export interface GroupDashboard {
     display_name: string;
     url?: string | null;
   } | null;
-  popular_reaction?: { emoji: string; count: number } | null;
-  nominations: Array<{
-    metric: string;
-    title: string;
-    display_name: string;
-    value: number;
-  }>;
+  leaderboard: RankingRow[];
+  nominations: Array<{ metric: string; title: string; display_name: string; value: number }>;
   settings: GroupSettings;
   capabilities?: { is_admin: boolean };
 }
 
-export interface ApiErrorBody {
-  detail?: string;
+export interface RankingRow {
+  rank: number;
+  telegram_user_id: number;
+  display_name: string;
+  username?: string | null;
+  value: number;
+  metric: Metric;
+  is_current_user: boolean;
+  account_plan?: "free" | "vip" | "owner";
+}
+
+export interface RankingPayload {
+  metric: Metric;
+  period: Period;
+  rows: RankingRow[];
+  current_user?: RankingRow | null;
+}
+
+export interface HomePayload {
+  user: UserSummary;
+  account: AccountAccess;
+  global_progress: GlobalProgress;
+  quick_stats: QuickStats;
+  activity_series: ActivityPoint[];
+  recent_achievements: Array<{
+    code: string;
+    title: string;
+    description: string;
+    rarity: AchievementRarity;
+    earned_at: string;
+    group_title: string;
+  }>;
+  groups: GroupCardData[];
 }
