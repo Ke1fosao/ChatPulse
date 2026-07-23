@@ -116,9 +116,7 @@ def calculate_group_pulse(
     engagement_ratio = ((reactions + replies) / max(messages, 1)) * 100
     engagement_score = round(_clamp(engagement_ratio))
     continuity_target = max(1, min(period_days, 7))
-    continuity_score = round(
-        _clamp((max(0, consecutive_active_days) / continuity_target) * 100)
-    )
+    continuity_score = round(_clamp((max(0, consecutive_active_days) / continuity_target) * 100))
 
     score = round(
         message_score * 0.40
@@ -146,13 +144,9 @@ def calculate_group_pulse(
             (active_ratio, f"У розмові беруть участь {active_members} учасників.")
         )
     elif total_members > 0 and active_ratio < 25:
-        negative_candidates.append(
-            (25 - active_ratio, "До розмови долучається мало учасників.")
-        )
+        negative_candidates.append((25 - active_ratio, "До розмови долучається мало учасників."))
     if engagement_ratio >= 40:
-        positive_candidates.append(
-            (engagement_ratio, "У групі багато відповідей і реакцій.")
-        )
+        positive_candidates.append((engagement_ratio, "У групі багато відповідей і реакцій."))
     elif messages > 0 and engagement_ratio < 10:
         negative_candidates.append(
             (10 - engagement_ratio, "У повідомлень мало реакцій і відповідей.")
@@ -165,9 +159,7 @@ def calculate_group_pulse(
             )
         )
     elif consecutive_active_days <= 1:
-        negative_candidates.append(
-            (7.0, "Стабільна серія активності ще не сформувалася.")
-        )
+        negative_candidates.append((7.0, "Стабільна серія активності ще не сформувалася."))
 
     positive = max(
         positive_candidates,

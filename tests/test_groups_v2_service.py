@@ -10,36 +10,51 @@ from app.services.groups_v2 import (
 def test_group_status_boundaries_and_setup_priority() -> None:
     now = datetime(2026, 7, 23, 12, 0, tzinfo=UTC)
 
-    assert derive_group_status(
-        bot_operational=False,
-        is_paused=False,
-        last_activity_at=now,
-        now=now,
-    )["id"] == "needs_setup"
-    assert derive_group_status(
-        bot_operational=True,
-        is_paused=True,
-        last_activity_at=now,
-        now=now,
-    )["id"] == "needs_setup"
-    assert derive_group_status(
-        bot_operational=True,
-        is_paused=False,
-        last_activity_at=now - timedelta(hours=24),
-        now=now,
-    )["id"] == "active"
-    assert derive_group_status(
-        bot_operational=True,
-        is_paused=False,
-        last_activity_at=now - timedelta(days=7),
-        now=now,
-    )["id"] == "quiet"
-    assert derive_group_status(
-        bot_operational=True,
-        is_paused=False,
-        last_activity_at=now - timedelta(days=7, seconds=1),
-        now=now,
-    )["id"] == "inactive"
+    assert (
+        derive_group_status(
+            bot_operational=False,
+            is_paused=False,
+            last_activity_at=now,
+            now=now,
+        )["id"]
+        == "needs_setup"
+    )
+    assert (
+        derive_group_status(
+            bot_operational=True,
+            is_paused=True,
+            last_activity_at=now,
+            now=now,
+        )["id"]
+        == "needs_setup"
+    )
+    assert (
+        derive_group_status(
+            bot_operational=True,
+            is_paused=False,
+            last_activity_at=now - timedelta(hours=24),
+            now=now,
+        )["id"]
+        == "active"
+    )
+    assert (
+        derive_group_status(
+            bot_operational=True,
+            is_paused=False,
+            last_activity_at=now - timedelta(days=7),
+            now=now,
+        )["id"]
+        == "quiet"
+    )
+    assert (
+        derive_group_status(
+            bot_operational=True,
+            is_paused=False,
+            last_activity_at=now - timedelta(days=7, seconds=1),
+            now=now,
+        )["id"]
+        == "inactive"
+    )
 
 
 def test_group_pulse_is_clamped_and_explained() -> None:

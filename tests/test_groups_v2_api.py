@@ -42,9 +42,7 @@ def test_groups_v2_list_and_favorite_contracts() -> None:
                 }
             ]
         ),
-        set_favorite=AsyncMock(
-            return_value={"telegram_chat_id": -1001, "is_favorite": True}
-        ),
+        set_favorite=AsyncMock(return_value={"telegram_chat_id": -1001, "is_favorite": True}),
     )
     access = SimpleNamespace(
         check_admin=AsyncMock(return_value=True),
@@ -84,9 +82,7 @@ def test_split_group_endpoints_return_independent_payloads() -> None:
         app.state.groups_v2_repository = repository
         app.state.telegram_access_service = access
         overview = client.get("/api/miniapp/v1/groups/-1001/overview?period=week")
-        ranking = client.get(
-            "/api/miniapp/v1/groups/-1001/ranking?period=week&metric=xp"
-        )
+        ranking = client.get("/api/miniapp/v1/groups/-1001/ranking?period=week&metric=xp")
         analytics = client.get("/api/miniapp/v1/groups/-1001/analytics?period=week")
         awards = client.get("/api/miniapp/v1/groups/-1001/awards?period=week")
 

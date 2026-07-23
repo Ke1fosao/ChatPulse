@@ -266,9 +266,9 @@ class GroupsV2Repository:
                 return None
             total_members = int(
                 await session.scalar(
-                    select(func.count()).select_from(GroupMember).where(
-                        GroupMember.telegram_chat_id == chat_id
-                    )
+                    select(func.count())
+                    .select_from(GroupMember)
+                    .where(GroupMember.telegram_chat_id == chat_id)
                 )
                 or 0
             )
@@ -313,9 +313,7 @@ class GroupsV2Repository:
             now=current,
         )
         leader_name = (
-            str(dashboard["leaderboard"][0]["display_name"])
-            if dashboard["leaderboard"]
-            else None
+            str(dashboard["leaderboard"][0]["display_name"]) if dashboard["leaderboard"] else None
         )
         insights = build_group_insights(
             rank_change=rank_change,
@@ -435,11 +433,7 @@ class GroupsV2Repository:
             key=lambda item: int(item["threshold"]) - int(item["progress"]),
         )[:3]
         highlighted = next(
-            (
-                item
-                for item in achievements
-                if item["earned"] and bool(item.get("important"))
-            ),
+            (item for item in achievements if item["earned"] and bool(item.get("important"))),
             None,
         )
         return {
