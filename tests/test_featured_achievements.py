@@ -65,7 +65,7 @@ async def test_user_can_pin_and_reorder_five_earned_achievements(featured_reposi
 
 @pytest.mark.asyncio
 async def test_user_can_pin_legacy_earned_achievement(featured_repository) -> None:
-    """Legacy-earned rewards shown in the UI must remain pinnable."""
+    """An earned reward visible in the collection must always be pinnable."""
     items = await featured_repository.set_featured_codes(202, ["messages_1000"])
 
     assert [item["code"] for item in items] == ["messages_1000"]
