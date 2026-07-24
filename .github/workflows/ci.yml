@@ -60,7 +60,20 @@ jobs:
           name: backend-lint-log
           path: backend-lint.log
       - run: ruff format --check .
-      - run: pytest -q
+      - name: Run backend tests
+        shell: bash
+        run: |
+          set +e
+          pytest -q > backend-test.log 2>&1
+          status=$?
+          tail -n 240 backend-test.log
+          exit $status
+      - name: Upload backend test log
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-test-log
+          path: backend-test.log
       - run: python -m compileall app
 
   docker:
