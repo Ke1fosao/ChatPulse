@@ -105,7 +105,7 @@ class UserControlBase:
                 )
             ).all()
         )
-        return [UserControlRepository._serialize_audit(row) for row in rows]
+        return [UserControlBase._serialize_audit(row) for row in rows]
 
     @staticmethod
     async def _require_user(session: AsyncSession, user_id: int) -> User:
@@ -116,7 +116,7 @@ class UserControlBase:
 
     @staticmethod
     async def _require_mutable_target(session: AsyncSession, user_id: int) -> User:
-        user = await UserControlRepository._require_user(session, user_id)
+        user = await UserControlBase._require_user(session, user_id)
         owner = await session.get(BotOwner, OWNER_KEY)
         if owner is not None and int(owner.telegram_user_id) == user_id:
             raise ValueError("Власника ChatPulse не можна змінювати цією дією.")
