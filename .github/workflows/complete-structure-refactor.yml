@@ -26,8 +26,20 @@ jobs:
         with:
           python-version: "3.12"
           cache: pip
-      - name: Generate refactor
-        run: python scripts/complete_structure_refactor.py
+      - name: Install backend tools
+        run: pip install -q -e ".[dev]"
+      - name: Generate and format refactor
+        run: |
+          python scripts/complete_structure_refactor.py
+          ruff format scripts/complete_structure_refactor.py app/api/owner app/repositories/user_control
+      - name: Commit generated refactor
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git diff --cached --quiet && exit 0
+          git commit -m "refactor: complete structure plan [generated refactor]"
+          git push origin HEAD:refactor/complete-structure-plan
       - name: Verify frontend
         working-directory: miniapp
         run: |
@@ -37,16 +49,7 @@ jobs:
           npm run build
       - name: Verify backend
         run: |
-          pip install -q -e ".[dev]"
           ruff check .
           ruff format --check .
           pytest -q
           python -m compileall app
-      - name: Commit generated refactor
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -A
-          git diff --cached --quiet && exit 0
-          git commit -m "refactor: complete structure plan [generated refactor]"
-          git push origin HEAD:refactor/complete-structure-plan
