@@ -1,37 +1,71 @@
 import { AlertTriangle, RefreshCw, Sparkles } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { Navigate, Route, Routes, useLocation, useNavigate, useParams } from "react-router-dom";
 import { api, ApiError } from "./api/client";
 import type { GroupsV2CardData } from "./api/groups-v2";
-import type { Achievement, GroupCardData, HomePayload, TabId } from "./api/types";
+import type { Achievement, HomePayload, TabId } from "./api/types";
 import { AppShell } from "./components/AppShell";
 import { LevelsDialog } from "./components/LevelsDialog";
 import { ShareCardDialog } from "./components/ShareCardDialog";
+import { BlockedAccountPage } from "./features/access/BlockedAccountPage";
 import { AchievementCelebrationLayer } from "./features/achievements/AchievementCelebration";
 import { AchievementsPage } from "./features/achievements/AchievementsPage";
-import { BlockedAccountPage } from "./features/access/BlockedAccountPage";
 import { GroupCenterPage } from "./features/groups/GroupCenterPage";
 import { GroupsPage } from "./features/groups/GroupsPage";
 import { HomePage } from "./features/home/HomePage";
 import { ProfilePage } from "./features/profile/ProfilePage";
-import {
-  bindBackButton,
-  initTelegram,
-  isTelegramContext,
-  notify,
-} from "./telegram/sdk";
+import { appPaths } from "./routing/paths";
+import { bindBackButton, initTelegram, isTelegramContext, notify } from "./telegram/sdk";
+
+interface GroupRouteProps {
+  groups: GroupsV2CardData[];
+}
+
+function GroupRoute({ groups }: GroupRouteProps) {
+  const navigate = useNavigate();
+  const { telegramChatId } = useParams<{ telegramChatId: string }>();
+  const selectedGroup = groups.find(
+    (group) => String(group.telegram_chat_id) === telegramChatId,
+  );
+
+  useEffect(
+    () => bindBackButton(() => navigate(appPaths.groups)),
+    [navigate],
+  );
+
+  if (!selectedGroup) {
+    return <Navigate to={appPaths.groups} replace />;
+  }
+
+  return (
+    <GroupCenterPage
+      group={selectedGroup}
+      onBack={() => navigate(appPaths.groups)}
+    />
+  );
+}
+
+function tabFromPath(pathname: string): TabId {
+  if (pathname.startsWith(appPaths.groups)) return "groups";
+  if (pathname.startsWith(appPaths.achievements)) return "achievements";
+  if (pathname.startsWith(appPaths.profile)) return "profile";
+  return "home";
+}
 
 export function App() {
-  const [activeTab, setActiveTab] = useState<TabId>("home");
+  const navigate = useNavigate();
+  const location = useLocation();
   const [home, setHome] = useState<HomePayload | null>(null);
   const [groups, setGroups] = useState<GroupsV2CardData[]>([]);
   const [achievements, setAchievements] = useState<Achievement[]>([]);
-  const [selectedGroup, setSelectedGroup] = useState<GroupCardData | null>(null);
   const [loading, setLoading] = useState(true);
   const [secondaryLoading, setSecondaryLoading] = useState(false);
   const [error, setError] = useState("");
   const [blockedAccount, setBlockedAccount] = useState<{ reason: string | null } | null>(null);
   const [shareOpen, setShareOpen] = useState(false);
   const [levelsOpen, setLevelsOpen] = useState(false);
+
+  const activeTab = useMemo(() => tabFromPath(location.pathname), [location.pathname]);
 
   const loadCore = useCallback(async () => {
     setLoading(true);
@@ -66,15 +100,6 @@ export function App() {
     initTelegram();
     void loadCore();
   }, [loadCore]);
-
-  useEffect(
-    () => bindBackButton(selectedGroup ? () => setSelectedGroup(null) : null),
-    [selectedGroup],
-  );
-
-  const openGroup = (group: GroupCardData) => {
-    setSelectedGroup(group);
-  };
 
   const toggleFavorite = useCallback(
     async (group: GroupsV2CardData, nextValue: boolean) => {
@@ -112,61 +137,6 @@ export function App() {
       setSecondaryLoading(false);
     }
   };
-
-  const renderedPage = useMemo(() => {
-    if (!home) return null;
-    if (selectedGroup) {
-      return <GroupCenterPage group={selectedGroup} onBack={() => setSelectedGroup(null)} />;
-    }
-    if (activeTab === "groups") {
-      return (
-        <GroupsPage
-          groups={groups}
-          onOpenGroup={openGroup}
-          onToggleFavorite={toggleFavorite}
-          onRefresh={loadCore}
-        />
-      );
-    }
-    if (activeTab === "achievements") {
-      return (
-        <AchievementsPage
-          achievements={achievements}
-          loading={secondaryLoading}
-          onRefresh={() => void refreshAchievements()}
-        />
-      );
-    }
-    if (activeTab === "profile") {
-      return (
-        <ProfilePage
-          data={home}
-          onShare={() => setShareOpen(true)}
-          onOpenLevels={() => setLevelsOpen(true)}
-          onOpenAchievements={() => setActiveTab("achievements")}
-          onOpenGroups={() => setActiveTab("groups")}
-        />
-      );
-    }
-    return (
-      <HomePage
-        data={home}
-        onOpenGroup={openGroup}
-        onOpenAchievements={() => setActiveTab("achievements")}
-        onOpenLevels={() => setLevelsOpen(true)}
-        onShareProfile={() => setShareOpen(true)}
-      />
-    );
-  }, [
-    activeTab,
-    achievements,
-    groups,
-    home,
-    loadCore,
-    secondaryLoading,
-    selectedGroup,
-    toggleFavorite,
-  ]);
 
   if (!isTelegramContext()) {
     return (
@@ -206,13 +176,20 @@ export function App() {
     );
   }
 
+  const openGroup = (telegramChatId: number) => navigate(appPaths.group(telegramChatId));
+
   return (
     <>
       <AppShell
         activeTab={activeTab}
         onTabChange={(tab) => {
-          setSelectedGroup(null);
-          setActiveTab(tab);
+          const destination = {
+            home: appPaths.home,
+            groups: appPaths.groups,
+            achievements: appPaths.achievements,
+            profile: appPaths.profile,
+          }[tab];
+          navigate(destination);
         }}
         badge={secondaryLoading ? "SYNC" : "LIVE"}
       >
@@ -221,14 +198,63 @@ export function App() {
             <AlertTriangle size={17} /> {error}
           </button>
         ) : null}
-        {renderedPage}
+
+        <Routes>
+          <Route
+            index
+            element={
+              <HomePage
+                data={home}
+                onOpenGroup={(group) => openGroup(group.telegram_chat_id)}
+                onOpenAchievements={() => navigate(appPaths.achievements)}
+                onOpenLevels={() => setLevelsOpen(true)}
+                onShareProfile={() => setShareOpen(true)}
+              />
+            }
+          />
+          <Route
+            path="groups"
+            element={
+              <GroupsPage
+                groups={groups}
+                onOpenGroup={(group) => openGroup(group.telegram_chat_id)}
+                onToggleFavorite={toggleFavorite}
+                onRefresh={loadCore}
+              />
+            }
+          />
+          <Route path="groups/:telegramChatId" element={<GroupRoute groups={groups} />} />
+          <Route
+            path="achievements"
+            element={
+              <AchievementsPage
+                achievements={achievements}
+                loading={secondaryLoading}
+                onRefresh={() => void refreshAchievements()}
+              />
+            }
+          />
+          <Route
+            path="profile"
+            element={
+              <ProfilePage
+                data={home}
+                onShare={() => setShareOpen(true)}
+                onOpenLevels={() => setLevelsOpen(true)}
+                onOpenAchievements={() => navigate(appPaths.achievements)}
+                onOpenGroups={() => navigate(appPaths.groups)}
+              />
+            }
+          />
+          <Route path="*" element={<Navigate to={appPaths.home} replace />} />
+        </Routes>
       </AppShell>
+
       <ShareCardDialog data={home} open={shareOpen} onClose={() => setShareOpen(false)} />
       <LevelsDialog open={levelsOpen} onClose={() => setLevelsOpen(false)} />
       <AchievementCelebrationLayer
         onOpenCollection={() => {
-          setSelectedGroup(null);
-          setActiveTab("achievements");
+          navigate(appPaths.achievements);
           void refreshAchievements();
         }}
       />
