@@ -9,6 +9,8 @@ import {
   WalletCards,
 } from "lucide-react";
 import { useMemo, type ReactNode } from "react";
+import { useNavigate } from "react-router-dom";
+import { appPaths } from "../routing/paths";
 import type { OwnerSession, OwnerTab } from "./types";
 import { useOwnerViewport } from "./useOwnerViewport";
 
@@ -42,6 +44,7 @@ export function OwnerShell({
   children,
   busy = false,
 }: OwnerShellProps) {
+  const navigate = useNavigate();
   useOwnerViewport();
   const availableTabs = useMemo(
     () => session.actor.is_owner ? tabs : tabs.filter((tab) => tab.id === "users"),
@@ -58,7 +61,7 @@ export function OwnerShell({
           type="button"
           className="owner-icon-button"
           aria-label="Повернутися в ChatPulse"
-          onClick={() => window.location.assign("/miniapp")}
+          onClick={() => navigate(appPaths.home)}
         >
           <ArrowLeft size={19} />
         </button>
