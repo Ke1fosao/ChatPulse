@@ -18,7 +18,7 @@ from app.models import (
 )
 from app.repositories.achievements import AchievementRepository
 from app.repositories.gamification import GamificationRepository
-from app.services.gamification import MONTHLY_PROTECTION_DAYS
+from app.services.gamification import MONTHLY_PROTECTION_DAYS, level_for_xp
 
 VIP_MONTHLY_PROTECTION_DAYS = 5
 
@@ -80,6 +80,21 @@ class AchievementGamificationRepository(GamificationRepository):
             return value.replace(tzinfo=UTC)
         return value.astimezone(UTC)
 
+    @staticmethod
+    def _apply_achievement_rewards(
+        member: GroupMember,
+        user: User,
+        earned: list[AchievementEarned],
+    ) -> None:
+        group_reward = sum(max(0, int(item.reward_xp)) for item in earned if item.scope == "group")
+        global_reward = sum(max(0, int(item.reward_xp)) for item in earned)
+        if group_reward:
+            member.xp_total += group_reward
+            member.level = level_for_xp(member.xp_total)
+        if global_reward:
+            user.global_xp_total += global_reward
+            user.global_level = level_for_xp(user.global_xp_total)
+
     async def _award_new_achievements(
         self,
         session: AsyncSession,
@@ -107,11 +122,13 @@ class AchievementGamificationRepository(GamificationRepository):
                 "level_changed",
             )
         )
-        return await self._achievement_v2.record_events(
+        earned = await self._achievement_v2.record_events(
             session,
             events=events,
             snapshot=snapshot,
         )
+        self._apply_achievement_rewards(member, user, earned)
+        return earned
 
     async def evaluate_weekly_achievements(
         self,
@@ -211,6 +228,7 @@ class AchievementGamificationRepository(GamificationRepository):
                     events=events,
                     snapshot=AchievementSnapshot(values=values),
                 )
+                self._apply_achievement_rewards(member, user, earned)
                 unlocked += len(earned)
         return unlocked
 

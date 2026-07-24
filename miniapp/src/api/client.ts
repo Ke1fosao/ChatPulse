@@ -161,7 +161,7 @@ export const api = {
       method: "POST",
       body: JSON.stringify({ confirmation: "СКИНУТИ" }),
     }),
-  profileCard: () => requestBlob("/profile-card"),
+  profileCard: () => requestBlob("/profile-card-showcase"),
   weeklyCard: (chatId: number) => requestBlob(`/groups/${chatId}/weekly-card`),
 };
 

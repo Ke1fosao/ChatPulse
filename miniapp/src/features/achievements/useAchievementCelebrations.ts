@@ -6,6 +6,8 @@ import type {
   AchievementRarity,
   AchievementUnlockEventPayload,
 } from "../../api/types";
+import { notify } from "../../telegram/sdk";
+import { vipApi } from "../../vip/vipApi";
 
 const rarityWeight: Record<AchievementRarity, number> = {
   common: 1,
@@ -35,6 +37,7 @@ export function useAchievementCelebrations() {
   const [queue, setQueue] = useState<AchievementEventPayload[]>([]);
   const [individualShown, setIndividualShown] = useState(0);
   const [busy, setBusy] = useState(false);
+  const [pinned, setPinned] = useState(false);
 
   const refresh = useCallback(async () => {
     try {
@@ -75,10 +78,21 @@ export function useAchievementCelebrations() {
   const summaryCount = collectionUpdate?.summary.count ?? queue.length;
 
   useEffect(() => {
-    const active = queue.length > 0;
-    document.body.classList.toggle("achievement-celebration-open", active);
+    setPinned(false);
+  }, [current?.event_id]);
+
+  useEffect(() => {
+    const blocking =
+      summaryMode ||
+      Boolean(
+        current &&
+          ["rare", "epic", "legendary", "secret"].includes(
+            current.achievement.rarity,
+          ),
+      );
+    document.body.classList.toggle("achievement-celebration-open", blocking);
     return () => document.body.classList.remove("achievement-celebration-open");
-  }, [queue.length]);
+  }, [current, summaryMode]);
 
   const dismissCurrent = useCallback(async () => {
     if (!current || busy) return;
@@ -149,9 +163,46 @@ export function useAchievementCelebrations() {
     }
   }, [busy, current]);
 
+  const pinCurrent = useCallback(async () => {
+    const achievement = current?.achievement;
+    const scopeKey = achievement?.primary_scope_key;
+    if (!achievement || !scopeKey || busy || pinned) return;
+    setBusy(true);
+    try {
+      const featured = await vipApi.featured();
+      const existing = featured.map((item) => ({
+        code: item.code,
+        scope_key: item.scope_key,
+      }));
+      if (
+        existing.some(
+          (item) => item.code === achievement.code && item.scope_key === scopeKey,
+        )
+      ) {
+        setPinned(true);
+        return;
+      }
+      if (existing.length >= 5) {
+        notify("warning");
+        return;
+      }
+      await vipApi.updateFeatured([
+        ...existing,
+        { code: achievement.code, scope_key: scopeKey },
+      ]);
+      setPinned(true);
+      notify("success");
+    } catch {
+      notify("warning");
+    } finally {
+      setBusy(false);
+    }
+  }, [busy, current, pinned]);
+
   return {
     active: queue.length > 0,
     busy,
+    pinned,
     current,
     summaryMode,
     historicalSummary: collectionUpdate !== null,
@@ -160,6 +211,7 @@ export function useAchievementCelebrations() {
     dismissCurrent,
     dismissSummary,
     shareCurrent,
+    pinCurrent,
     refresh,
   };
 }

@@ -14,6 +14,7 @@ import "./styles/achievement-celebration.css";
 import "./styles/achievement-collection.css";
 import "./styles/achievement-card-fixes.css";
 import "./styles/featured-premium.css";
+import "./styles/achievement-showcase-v3.css";
 import "./styles/onboarding.css";
 import "./styles/owner.css";
 import "./styles/owner-revenue.css";
@@ -26,7 +27,8 @@ import "./styles/premium-purchase.css";
 import "./styles/vip.css";
 import "./styles/year-summary.css";
 
-const route = window.location.pathname.replace(/\/+$/, "");
+const rawRoute = window.location.pathname;
+const route = rawRoute.endsWith("/") ? rawRoute.slice(0, -1) : rawRoute;
 const root = createRoot(document.getElementById("root")!);
 
 root.render(

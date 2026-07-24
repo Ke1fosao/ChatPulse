@@ -125,6 +125,8 @@ class AchievementRepository:
                         title=definition.title,
                         description=definition.description,
                         important=definition.important,
+                        reward_xp=definition.reward_xp,
+                        scope=definition.scope,
                     )
                 )
         return earned
@@ -300,15 +302,27 @@ class AchievementRepository:
         definition = ACHIEVEMENT_BY_CODE.get(unlock.achievement_code)
         if definition is None:
             return None
-        return {
-            **base,
-            "achievement": definition.to_public_dict(
-                earned=True,
-                progress=int(unlock.final_progress),
-                earned_at=unlock.earned_at.isoformat(),
-                group_title=str(group_title) if group_title is not None else None,
-            ),
-        }
+        earned_at = unlock.earned_at.isoformat()
+        resolved_group_title = str(group_title) if group_title is not None else None
+        achievement = definition.to_public_dict(
+            earned=True,
+            progress=int(unlock.final_progress),
+            earned_at=earned_at,
+            group_title=resolved_group_title,
+        )
+        achievement["primary_scope_key"] = unlock.scope_key
+        achievement["earned_instances"] = [
+            {
+                "scope_key": unlock.scope_key,
+                "telegram_chat_id": (
+                    int(unlock.telegram_chat_id) if unlock.telegram_chat_id is not None else None
+                ),
+                "group_title": resolved_group_title,
+                "earned_at": earned_at,
+                "progress": int(unlock.final_progress),
+            }
+        ]
+        return {**base, "achievement": achievement}
 
     @staticmethod
     def _safe_payload(value: str) -> dict[str, Any]:

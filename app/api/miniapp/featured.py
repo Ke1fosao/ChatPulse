@@ -1,17 +1,26 @@
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException, Request, status
+from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
 from pydantic import BaseModel, ConfigDict, Field
 
 from app.api.miniapp.auth import TelegramMiniAppUser
 from app.api.miniapp.dependencies import get_miniapp_user
+from app.services.profile_cards import render_profile_card
 
 router = APIRouter(prefix="/api/miniapp/v1", tags=["featured-achievements"])
+
+
+class FeaturedAchievementSelection(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    code: str = Field(min_length=1, max_length=64)
+    scope_key: str = Field(min_length=1, max_length=64)
 
 
 class FeaturedAchievementUpdate(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
+    items: list[FeaturedAchievementSelection] = Field(default_factory=list, max_length=5)
     codes: list[str] = Field(default_factory=list, max_length=5)
 
 
@@ -41,13 +50,48 @@ async def update_featured_achievements(
             detail="Закріплення досягнень доступне у ChatPulse VIP.",
         )
     try:
-        items = await request.app.state.featured_achievement_repository.set_featured_codes(
-            user.telegram_id,
-            payload.codes,
-        )
+        if payload.items:
+            items = await request.app.state.featured_achievement_repository.set_featured_items(
+                user.telegram_id,
+                [item.model_dump() for item in payload.items],
+            )
+        else:
+            items = await request.app.state.featured_achievement_repository.set_featured_codes(
+                user.telegram_id,
+                payload.codes,
+            )
     except ValueError as error:
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
             detail=str(error),
         ) from error
     return {"items": items}
+
+
+@router.get("/profile-card-showcase")
+async def profile_card_showcase(
+    request: Request,
+    user: Annotated[TelegramMiniAppUser, Depends(get_miniapp_user)],
+) -> Response:
+    payload = await request.app.state.miniapp_repository.get_home(user.telegram_id)
+    if payload is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Профіль ChatPulse ще не створено.",
+        )
+    is_owner = await request.app.state.owner_repository.is_owner(user.telegram_id)
+    account = await request.app.state.owner_panel_repository.get_account_access(
+        user.telegram_id,
+        is_owner=is_owner,
+    )
+    payload["user"]["photo_url"] = user.photo_url
+    payload["account"] = account.to_dict()
+    payload[
+        "featured_achievements"
+    ] = await request.app.state.featured_achievement_repository.list_featured(user.telegram_id)
+    image = render_profile_card(payload)
+    return Response(
+        content=image,
+        media_type="image/png",
+        headers={"Content-Disposition": "inline; filename=chatpulse-profile.png"},
+    )

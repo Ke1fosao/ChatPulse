@@ -153,7 +153,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             await bot.session.close()
             await database.dispose()
 
-    app = FastAPI(title="ChatPulse", version="0.11.0", lifespan=lifespan)
+    app = FastAPI(title="ChatPulse", version="0.12.0", lifespan=lifespan)
     app.state.settings = resolved_settings
     app.include_router(miniapp_router)
     app.include_router(groups_v2_router)
@@ -167,7 +167,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
 
     @app.get("/health")
     async def health() -> dict[str, str]:
-        return {"status": "ok", "service": "chatpulse", "version": "0.11.0"}
+        return {"status": "ok", "service": "chatpulse", "version": "0.12.0"}
 
     @app.post(resolved_settings.webhook_path)
     async def telegram_webhook(

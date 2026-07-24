@@ -15,6 +15,7 @@ import type { HomePayload } from "../../api/types";
 import { ProfileHero } from "../../components/ProfileHero";
 import { usePremium } from "../../premium/PremiumContext";
 import { VipBadge } from "../../premium/VipBadge";
+import { ProfileFeaturedAchievements } from "./ProfileFeaturedAchievements";
 
 interface ProfilePageProps {
   data: HomePayload;
@@ -58,6 +59,8 @@ export function ProfilePage({
         onShare={onShare}
         onOpenLevels={onOpenLevels}
       />
+
+      <ProfileFeaturedAchievements onConfigure={onOpenAchievements} />
 
       <button
         type="button"
