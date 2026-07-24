@@ -1,6 +1,11 @@
 import { AlertTriangle, RefreshCw, Sparkles } from "lucide-react";
 import { useState } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import {
+  MemoryRouter,
+  useInRouterContext,
+  useLocation,
+  useNavigate,
+} from "react-router-dom";
 import { AppRoutes } from "./app/AppRoutes";
 import { useAchievements } from "./app/hooks/useAchievements";
 import { useAppBootstrap } from "./app/hooks/useAppBootstrap";
@@ -9,8 +14,8 @@ import type { TabId } from "./api/types";
 import { AppShell } from "./components/AppShell";
 import { LevelsDialog } from "./components/LevelsDialog";
 import { ShareCardDialog } from "./components/ShareCardDialog";
-import { AchievementCelebrationLayer } from "./features/achievements/AchievementCelebration";
 import { BlockedAccountPage } from "./features/access/BlockedAccountPage";
+import { AchievementCelebrationLayer } from "./features/achievements/AchievementCelebration";
 import { appPaths } from "./routing/paths";
 import { isTelegramContext } from "./telegram/sdk";
 
@@ -22,6 +27,20 @@ function tabFromPath(pathname: string): TabId {
 }
 
 export function App() {
+  const isInsideRouter = useInRouterContext();
+
+  if (!isInsideRouter) {
+    return (
+      <MemoryRouter initialEntries={[appPaths.home]}>
+        <AppContent />
+      </MemoryRouter>
+    );
+  }
+
+  return <AppContent />;
+}
+
+function AppContent() {
   const navigate = useNavigate();
   const location = useLocation();
   const [shareOpen, setShareOpen] = useState(false);
@@ -30,15 +49,56 @@ export function App() {
   const groups = useGroups(bootstrap.setGroups, bootstrap.setError);
   const achievements = useAchievements(bootstrap.setAchievements);
 
-  if (!isTelegramContext()) return <main className="standalone-screen"><span><Sparkles size={32} /></span><h1>Відкрий ChatPulse через Telegram</h1><p>Mini App авторизується без паролів — напряму через твій Telegram-профіль.</p></main>;
-  if (bootstrap.loading) return <main className="boot-screen"><span className="boot-logo"><Sparkles /></span><h1>ChatPulse</h1><p>Збираємо твій пульс…</p><div className="boot-progress"><span /></div></main>;
-  if (bootstrap.blockedAccount) return <BlockedAccountPage reason={bootstrap.blockedAccount.reason} />;
-  if (!bootstrap.home) return <main className="standalone-screen"><span className="standalone-screen__error"><AlertTriangle size={30} /></span><h1>Не вдалося відкрити профіль</h1><p>{bootstrap.error || "Спробуй оновити Mini App."}</p><button className="primary-button" type="button" onClick={() => void bootstrap.reload()}><RefreshCw size={18} /> Повторити</button></main>;
+  if (!isTelegramContext()) {
+    return (
+      <main className="standalone-screen">
+        <span><Sparkles size={32} /></span>
+        <h1>Відкрий ChatPulse через Telegram</h1>
+        <p>Mini App авторизується без паролів — напряму через твій Telegram-профіль.</p>
+      </main>
+    );
+  }
+
+  if (bootstrap.loading) {
+    return (
+      <main className="boot-screen">
+        <span className="boot-logo"><Sparkles /></span>
+        <h1>ChatPulse</h1>
+        <p>Збираємо твій пульс…</p>
+        <div className="boot-progress"><span /></div>
+      </main>
+    );
+  }
+
+  if (bootstrap.blockedAccount) {
+    return <BlockedAccountPage reason={bootstrap.blockedAccount.reason} />;
+  }
+
+  if (!bootstrap.home) {
+    return (
+      <main className="standalone-screen">
+        <span className="standalone-screen__error"><AlertTriangle size={30} /></span>
+        <h1>Не вдалося відкрити профіль</h1>
+        <p>{bootstrap.error || "Спробуй оновити Mini App."}</p>
+        <button className="primary-button" type="button" onClick={() => void bootstrap.reload()}>
+          <RefreshCw size={18} /> Повторити
+        </button>
+      </main>
+    );
+  }
 
   return (
     <>
-      <AppShell activeTab={tabFromPath(location.pathname)} onTabChange={(tab) => navigate(tab === "home" ? appPaths.home : appPaths[tab])} badge={achievements.loading ? "SYNC" : "LIVE"}>
-        {bootstrap.error ? <button className="error-banner" type="button" onClick={() => bootstrap.setError("")}><AlertTriangle size={17} /> {bootstrap.error}</button> : null}
+      <AppShell
+        activeTab={tabFromPath(location.pathname)}
+        onTabChange={(tab) => navigate(tab === "home" ? appPaths.home : appPaths[tab])}
+        badge={achievements.loading ? "SYNC" : "LIVE"}
+      >
+        {bootstrap.error ? (
+          <button className="error-banner" type="button" onClick={() => bootstrap.setError("")}>
+            <AlertTriangle size={17} /> {bootstrap.error}
+          </button>
+        ) : null}
         <AppRoutes
           home={bootstrap.home}
           groups={bootstrap.groups}
@@ -53,7 +113,12 @@ export function App() {
       </AppShell>
       <ShareCardDialog data={bootstrap.home} open={shareOpen} onClose={() => setShareOpen(false)} />
       <LevelsDialog open={levelsOpen} onClose={() => setLevelsOpen(false)} />
-      <AchievementCelebrationLayer onOpenCollection={() => { navigate(appPaths.achievements); void achievements.refresh(); }} />
+      <AchievementCelebrationLayer
+        onOpenCollection={() => {
+          navigate(appPaths.achievements);
+          void achievements.refresh();
+        }}
+      />
     </>
   );
 }
