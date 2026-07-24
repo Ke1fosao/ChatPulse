@@ -40,7 +40,6 @@ __all__ = [
     "grant_vip",
     "message_user",
     "owner_audit",
-    "owner_group",
     "owner_groups",
     "owner_overview",
     "owner_session",
