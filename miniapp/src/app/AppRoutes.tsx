@@ -26,7 +26,7 @@ export function AppRoutes(props: AppRoutesProps) {
 
   return (
     <Routes>
-      <Route path="/" element={<HomePage data={props.home} onOpenGroup={openGroup} onOpenAchievements={() => navigate(appPaths.achievements)} onOpenLevels={props.onOpenLevels} onShareProfile={props.onShare} />} />
+      <Route index element={<HomePage data={props.home} onOpenGroup={openGroup} onOpenAchievements={() => navigate(appPaths.achievements)} onOpenLevels={props.onOpenLevels} onShareProfile={props.onShare} />} />
       <Route path="groups" element={<GroupsPage groups={props.groups} onOpenGroup={openGroup} onToggleFavorite={props.onToggleFavorite} onRefresh={props.onReload} />} />
       <Route path="groups/:telegramChatId" element={<GroupCenterPageRoute groups={props.groups} />} />
       <Route path="achievements" element={<AchievementsPage achievements={props.achievements} loading={props.achievementLoading} onRefresh={props.onRefreshAchievements} />} />
