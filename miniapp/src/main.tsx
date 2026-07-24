@@ -1,9 +1,7 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
-import { App } from "./App";
-import { OwnerApp } from "./owner/OwnerApp";
-import { PremiumProvider } from "./premium/PremiumContext";
-import { VipApp } from "./vip/VipApp";
+import { BrowserRouter } from "react-router-dom";
+import { RootRouter } from "./routing/RootRouter";
 import "./styles/global.css";
 import "./styles/bottom-nav-v2.css";
 import "./styles/blocked-account.css";
@@ -27,20 +25,12 @@ import "./styles/premium-purchase.css";
 import "./styles/vip.css";
 import "./styles/year-summary.css";
 
-const rawRoute = window.location.pathname;
-const route = rawRoute.endsWith("/") ? rawRoute.slice(0, -1) : rawRoute;
 const root = createRoot(document.getElementById("root")!);
 
 root.render(
   <StrictMode>
-    {route === "/miniapp/owner" ? (
-      <OwnerApp />
-    ) : route === "/miniapp/vip" ? (
-      <VipApp />
-    ) : (
-      <PremiumProvider>
-        <App />
-      </PremiumProvider>
-    )}
+    <BrowserRouter>
+      <RootRouter />
+    </BrowserRouter>
   </StrictMode>,
 );
