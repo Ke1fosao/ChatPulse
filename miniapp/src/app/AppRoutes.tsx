@@ -1,4 +1,4 @@
-import { Navigate, Route, Routes, useNavigate } from "react-router-dom";
+import { Navigate, Route, Routes, useNavigate, useParams } from "react-router-dom";
 import type { GroupsV2CardData } from "../api/groups-v2";
 import type { Achievement, GroupCardData, HomePayload } from "../api/types";
 import { AchievementsPage } from "../features/achievements/AchievementsPage";
@@ -38,7 +38,8 @@ export function AppRoutes(props: AppRoutesProps) {
 
 function GroupCenterPageRoute({ groups }: { groups: GroupsV2CardData[] }) {
   const navigate = useNavigate();
-  const telegramChatId = Number(window.location.pathname.split("/").at(-1));
-  const group = groups.find((item) => item.telegram_chat_id === telegramChatId);
+  const { telegramChatId } = useParams<{ telegramChatId: string }>();
+  const chatId = Number(telegramChatId);
+  const group = groups.find((item) => item.telegram_chat_id === chatId);
   return group ? <GroupCenterPage group={group} onBack={() => navigate(appPaths.groups)} /> : <Navigate to={appPaths.groups} replace />;
 }
