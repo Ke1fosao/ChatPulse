@@ -1,6 +1,7 @@
 # ruff: noqa: F401, F403, F405, F821, I001
 from datetime import datetime
 from typing import Annotated, Literal
+import sys
 
 from aiogram.exceptions import TelegramAPIError
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
@@ -37,8 +38,16 @@ def _user_repository(request: Request) -> UserControlRepository:
     return request.app.state.user_control_repository
 
 
-def _vip_service(request: Request) -> AdminVipService:
+def _default_vip_service(request: Request) -> AdminVipService:
     return AdminVipService(request.app.state.database.session_factory)
+
+
+def _vip_service(request: Request) -> AdminVipService:
+    routes_module = sys.modules.get("app.api.owner.routes")
+    override = getattr(routes_module, "_vip_service", None) if routes_module else None
+    if override is not None and override is not _vip_service:
+        return override(request)
+    return _default_vip_service(request)
 
 
 def _raise_repository_error(error: Exception) -> None:
