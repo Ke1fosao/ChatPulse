@@ -1,6 +1,6 @@
 import { cleanup, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { MemoryRouter } from "react-router-dom";
+import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { OwnerApp } from "./OwnerApp";
 import { ownerApi } from "./ownerApi";
@@ -39,7 +39,9 @@ const mockedApi = vi.mocked(ownerApi);
 function renderOwnerApp() {
   return render(
     <MemoryRouter initialEntries={["/miniapp/owner"]}>
-      <OwnerApp />
+      <Routes>
+        <Route path="/miniapp/owner/*" element={<OwnerApp />} />
+      </Routes>
     </MemoryRouter>,
   );
 }
