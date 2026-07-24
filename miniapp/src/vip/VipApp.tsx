@@ -1,3 +1,4 @@
+import "./styles";
 import {
   Check,
   ChevronLeft,

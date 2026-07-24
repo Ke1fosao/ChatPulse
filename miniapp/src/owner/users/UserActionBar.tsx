@@ -1,0 +1,7 @@
+import { Ban, Crown, MessageSquareText, Tag, UserCog, Zap } from "lucide-react";
+import type { OwnerUserDetail } from "../types";
+import type { UserAction } from "./types";
+export function UserActionBar({ detail, can, onAction }: { detail: OwnerUserDetail; can(permission: string): boolean; onAction(action: UserAction): void }) {
+  if (detail.is_owner) return <div className="owner-user-owner-lock"><Crown size={17} /> Власника не можна змінювати.</div>;
+  return <div className="owner-user-actions">{can("vip.manage") ? <button type="button" onClick={() => onAction("vip")}><Crown size={16} /> VIP</button> : null}{can("users.block") ? <button type="button" onClick={() => onAction("block")}><Ban size={16} /> {detail.is_blocked ? "Розблокувати" : "Блок"}</button> : null}{can("xp.manage") ? <button type="button" onClick={() => onAction("xp")}><Zap size={16} /> XP</button> : null}{can("staff.manage") ? <button type="button" onClick={() => onAction("role")}><UserCog size={16} /> Роль</button> : null}{can("users.notes") ? <button type="button" onClick={() => onAction("note")}><MessageSquareText size={16} /> Нотатка</button> : null}{can("users.notes") ? <button type="button" onClick={() => onAction("tag")}><Tag size={16} /> Тег</button> : null}{can("users.message") ? <button type="button" onClick={() => onAction("message")}><MessageSquareText size={16} /> Написати</button> : null}</div>;
+}
