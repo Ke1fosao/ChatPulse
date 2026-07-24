@@ -1,6 +1,6 @@
-import { render, screen } from "@testing-library/react";
+import { cleanup, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { App } from "./App";
 import { api, ApiError } from "./api/client";
 
@@ -25,12 +25,7 @@ vi.mock("./api/client", () => ({
         steps: [
           { id: "start", title: "Запусти ChatPulse", description: "Готово", completed: true },
           { id: "group", title: "Додай у групу", description: "Готово", completed: true },
-          {
-            id: "activity",
-            title: "Створи перший пульс",
-            description: "Готово",
-            completed: true,
-          },
+          { id: "activity", title: "Створи перший пульс", description: "Готово", completed: true },
         ],
       },
       global_progress: {
@@ -59,17 +54,15 @@ vi.mock("./api/client", () => ({
       current_level: 4,
       xp_total: 850,
       max_level: 50,
-      levels: [
-        {
-          level: 4,
-          tier: "Бронза",
-          xp_required: 600,
-          xp_to_next: 400,
-          is_unlocked: true,
-          is_current: true,
-          rewards: [],
-        },
-      ],
+      levels: [{
+        level: 4,
+        tier: "Бронза",
+        xp_required: 600,
+        xp_to_next: 400,
+        is_unlocked: true,
+        is_current: true,
+        rewards: [],
+      }],
     }),
     profileCard: vi.fn().mockResolvedValue(new Blob(["png"], { type: "image/png" })),
     groups: vi.fn().mockResolvedValue([]),
@@ -95,6 +88,7 @@ const mockedApi = vi.mocked(api);
 
 describe("App", () => {
   beforeEach(() => vi.clearAllMocks());
+  afterEach(() => cleanup());
 
   it("renders four Ukrainian navigation tabs without a global ranking page", async () => {
     const user = userEvent.setup();
@@ -109,9 +103,7 @@ describe("App", () => {
     await user.click(screen.getByRole("button", { name: "Профіль" }));
     expect(await screen.findByText("Твій прогрес")).toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: /Усі рівні ChatPulse/ }));
-    expect(
-      await screen.findByRole("dialog", { name: "Усі рівні ChatPulse" }),
-    ).toBeInTheDocument();
+    expect(await screen.findByRole("dialog", { name: "Усі рівні ChatPulse" })).toBeInTheDocument();
     expect(screen.getByText("50")).toBeInTheDocument();
   });
 

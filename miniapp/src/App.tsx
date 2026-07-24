@@ -1,172 +1,53 @@
 import { AlertTriangle, RefreshCw, Sparkles } from "lucide-react";
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { api, ApiError } from "./api/client";
-import type { GroupsV2CardData } from "./api/groups-v2";
-import type { Achievement, GroupCardData, HomePayload, TabId } from "./api/types";
+import { useState } from "react";
+import {
+  MemoryRouter,
+  useInRouterContext,
+  useLocation,
+  useNavigate,
+} from "react-router-dom";
+import { AppRoutes } from "./app/AppRoutes";
+import { useAchievements } from "./app/hooks/useAchievements";
+import { useAppBootstrap } from "./app/hooks/useAppBootstrap";
+import { useGroups } from "./app/hooks/useGroups";
+import type { TabId } from "./api/types";
 import { AppShell } from "./components/AppShell";
 import { LevelsDialog } from "./components/LevelsDialog";
 import { ShareCardDialog } from "./components/ShareCardDialog";
-import { AchievementCelebrationLayer } from "./features/achievements/AchievementCelebration";
-import { AchievementsPage } from "./features/achievements/AchievementsPage";
 import { BlockedAccountPage } from "./features/access/BlockedAccountPage";
-import { GroupCenterPage } from "./features/groups/GroupCenterPage";
-import { GroupsPage } from "./features/groups/GroupsPage";
-import { HomePage } from "./features/home/HomePage";
-import { ProfilePage } from "./features/profile/ProfilePage";
-import {
-  bindBackButton,
-  initTelegram,
-  isTelegramContext,
-  notify,
-} from "./telegram/sdk";
+import { AchievementCelebrationLayer } from "./features/achievements/AchievementCelebration";
+import { appPaths } from "./routing/paths";
+import { isTelegramContext } from "./telegram/sdk";
+
+function tabFromPath(pathname: string): TabId {
+  if (pathname.startsWith(appPaths.groups)) return "groups";
+  if (pathname.startsWith(appPaths.achievements)) return "achievements";
+  if (pathname.startsWith(appPaths.profile)) return "profile";
+  return "home";
+}
 
 export function App() {
-  const [activeTab, setActiveTab] = useState<TabId>("home");
-  const [home, setHome] = useState<HomePayload | null>(null);
-  const [groups, setGroups] = useState<GroupsV2CardData[]>([]);
-  const [achievements, setAchievements] = useState<Achievement[]>([]);
-  const [selectedGroup, setSelectedGroup] = useState<GroupCardData | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [secondaryLoading, setSecondaryLoading] = useState(false);
-  const [error, setError] = useState("");
-  const [blockedAccount, setBlockedAccount] = useState<{ reason: string | null } | null>(null);
+  const isInsideRouter = useInRouterContext();
+
+  if (!isInsideRouter) {
+    return (
+      <MemoryRouter initialEntries={[appPaths.home]}>
+        <AppContent />
+      </MemoryRouter>
+    );
+  }
+
+  return <AppContent />;
+}
+
+function AppContent() {
+  const navigate = useNavigate();
+  const location = useLocation();
   const [shareOpen, setShareOpen] = useState(false);
   const [levelsOpen, setLevelsOpen] = useState(false);
-
-  const loadCore = useCallback(async () => {
-    setLoading(true);
-    setError("");
-    setBlockedAccount(null);
-    try {
-      const [homePayload, groupPayload, achievementPayload] = await Promise.all([
-        api.home(),
-        api.groups(),
-        api.achievements(),
-      ]);
-      setHome(homePayload);
-      setGroups(groupPayload);
-      setAchievements(achievementPayload);
-      notify("success");
-    } catch (reason) {
-      if (reason instanceof ApiError && reason.code === "ACCOUNT_BLOCKED") {
-        setHome(null);
-        setBlockedAccount({ reason: reason.reason ?? null });
-      } else {
-        const message =
-          reason instanceof ApiError ? reason.message : "Не вдалося відкрити ChatPulse.";
-        setError(message);
-        notify("error");
-      }
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    initTelegram();
-    void loadCore();
-  }, [loadCore]);
-
-  useEffect(
-    () => bindBackButton(selectedGroup ? () => setSelectedGroup(null) : null),
-    [selectedGroup],
-  );
-
-  const openGroup = (group: GroupCardData) => {
-    setSelectedGroup(group);
-  };
-
-  const toggleFavorite = useCallback(
-    async (group: GroupsV2CardData, nextValue: boolean) => {
-      setGroups((current) =>
-        current.map((item) =>
-          item.telegram_chat_id === group.telegram_chat_id
-            ? { ...item, is_favorite: nextValue }
-            : item,
-        ),
-      );
-      try {
-        await api.setGroupFavorite(group.telegram_chat_id, nextValue);
-        notify("success");
-      } catch (reason) {
-        setGroups((current) =>
-          current.map((item) =>
-            item.telegram_chat_id === group.telegram_chat_id
-              ? { ...item, is_favorite: !nextValue }
-              : item,
-          ),
-        );
-        setError(reason instanceof Error ? reason.message : "Не вдалося оновити обране.");
-        notify("error");
-        throw reason;
-      }
-    },
-    [],
-  );
-
-  const refreshAchievements = async () => {
-    setSecondaryLoading(true);
-    try {
-      setAchievements(await api.achievements());
-    } finally {
-      setSecondaryLoading(false);
-    }
-  };
-
-  const renderedPage = useMemo(() => {
-    if (!home) return null;
-    if (selectedGroup) {
-      return <GroupCenterPage group={selectedGroup} onBack={() => setSelectedGroup(null)} />;
-    }
-    if (activeTab === "groups") {
-      return (
-        <GroupsPage
-          groups={groups}
-          onOpenGroup={openGroup}
-          onToggleFavorite={toggleFavorite}
-          onRefresh={loadCore}
-        />
-      );
-    }
-    if (activeTab === "achievements") {
-      return (
-        <AchievementsPage
-          achievements={achievements}
-          loading={secondaryLoading}
-          onRefresh={() => void refreshAchievements()}
-        />
-      );
-    }
-    if (activeTab === "profile") {
-      return (
-        <ProfilePage
-          data={home}
-          onShare={() => setShareOpen(true)}
-          onOpenLevels={() => setLevelsOpen(true)}
-          onOpenAchievements={() => setActiveTab("achievements")}
-          onOpenGroups={() => setActiveTab("groups")}
-        />
-      );
-    }
-    return (
-      <HomePage
-        data={home}
-        onOpenGroup={openGroup}
-        onOpenAchievements={() => setActiveTab("achievements")}
-        onOpenLevels={() => setLevelsOpen(true)}
-        onShareProfile={() => setShareOpen(true)}
-      />
-    );
-  }, [
-    activeTab,
-    achievements,
-    groups,
-    home,
-    loadCore,
-    secondaryLoading,
-    selectedGroup,
-    toggleFavorite,
-  ]);
+  const bootstrap = useAppBootstrap();
+  const groups = useGroups(bootstrap.setGroups, bootstrap.setError);
+  const achievements = useAchievements(bootstrap.setAchievements);
 
   if (!isTelegramContext()) {
     return (
@@ -178,7 +59,7 @@ export function App() {
     );
   }
 
-  if (loading) {
+  if (bootstrap.loading) {
     return (
       <main className="boot-screen">
         <span className="boot-logo"><Sparkles /></span>
@@ -189,17 +70,17 @@ export function App() {
     );
   }
 
-  if (blockedAccount) {
-    return <BlockedAccountPage reason={blockedAccount.reason} />;
+  if (bootstrap.blockedAccount) {
+    return <BlockedAccountPage reason={bootstrap.blockedAccount.reason} />;
   }
 
-  if (!home) {
+  if (!bootstrap.home) {
     return (
       <main className="standalone-screen">
         <span className="standalone-screen__error"><AlertTriangle size={30} /></span>
         <h1>Не вдалося відкрити профіль</h1>
-        <p>{error || "Спробуй оновити Mini App."}</p>
-        <button className="primary-button" type="button" onClick={() => void loadCore()}>
+        <p>{bootstrap.error || "Спробуй оновити Mini App."}</p>
+        <button className="primary-button" type="button" onClick={() => void bootstrap.reload()}>
           <RefreshCw size={18} /> Повторити
         </button>
       </main>
@@ -209,27 +90,33 @@ export function App() {
   return (
     <>
       <AppShell
-        activeTab={activeTab}
-        onTabChange={(tab) => {
-          setSelectedGroup(null);
-          setActiveTab(tab);
-        }}
-        badge={secondaryLoading ? "SYNC" : "LIVE"}
+        activeTab={tabFromPath(location.pathname)}
+        onTabChange={(tab) => navigate(tab === "home" ? appPaths.home : appPaths[tab])}
+        badge={achievements.loading ? "SYNC" : "LIVE"}
       >
-        {error ? (
-          <button className="error-banner" type="button" onClick={() => setError("")}>
-            <AlertTriangle size={17} /> {error}
+        {bootstrap.error ? (
+          <button className="error-banner" type="button" onClick={() => bootstrap.setError("")}>
+            <AlertTriangle size={17} /> {bootstrap.error}
           </button>
         ) : null}
-        {renderedPage}
+        <AppRoutes
+          home={bootstrap.home}
+          groups={bootstrap.groups}
+          achievements={bootstrap.achievements}
+          achievementLoading={achievements.loading}
+          onToggleFavorite={groups.toggleFavorite}
+          onReload={() => void bootstrap.reload()}
+          onRefreshAchievements={() => void achievements.refresh()}
+          onShare={() => setShareOpen(true)}
+          onOpenLevels={() => setLevelsOpen(true)}
+        />
       </AppShell>
-      <ShareCardDialog data={home} open={shareOpen} onClose={() => setShareOpen(false)} />
+      <ShareCardDialog data={bootstrap.home} open={shareOpen} onClose={() => setShareOpen(false)} />
       <LevelsDialog open={levelsOpen} onClose={() => setLevelsOpen(false)} />
       <AchievementCelebrationLayer
         onOpenCollection={() => {
-          setSelectedGroup(null);
-          setActiveTab("achievements");
-          void refreshAchievements();
+          navigate(appPaths.achievements);
+          void achievements.refresh();
         }}
       />
     </>
