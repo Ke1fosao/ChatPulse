@@ -41,5 +41,9 @@ line-length = 100
 [tool.ruff.lint]
 select = ["E", "F", "I", "B", "UP"]
 
+[tool.ruff.lint.per-file-ignores]
+"app/api/owner/{audit,groups,overview,session,users}.py" = ["F403", "F405"]
+"app/repositories/user_control/{audit,messaging,notes_tags,queries,restrictions,staff,xp}.py" = ["F403", "F405"]
+
 [tool.ruff.format]
 quote-style = "double"
