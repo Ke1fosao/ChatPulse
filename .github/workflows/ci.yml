@@ -19,10 +19,20 @@ jobs:
           cache-dependency-path: miniapp/package.json
       - run: npm install --no-audit --no-fund
       - name: Run frontend tests
+        id: frontend_tests
         shell: bash
         run: |
-          set -o pipefail
-          npm test -- --run 2>&1 | tail -n 160
+          set +e
+          npm test -- --run > ../frontend-test.log 2>&1
+          status=$?
+          tail -n 160 ../frontend-test.log
+          exit $status
+      - name: Upload frontend test log
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-test-log
+          path: frontend-test.log
       - run: npm run typecheck
       - run: npm run build
 
