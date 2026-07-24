@@ -1,5 +1,7 @@
 import { AlertTriangle, Crown, LockKeyhole, RefreshCw } from "lucide-react";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
+import { Navigate, Route, Routes, useLocation, useNavigate } from "react-router-dom";
+import { appPaths } from "../routing/paths";
 import { initTelegram, isTelegramContext, notify } from "../telegram/sdk";
 import { OwnerAudit } from "./OwnerAudit";
 import { OwnerGroups } from "./OwnerGroups";
@@ -30,7 +32,26 @@ const initialUserFilters: OwnerUserFilters = {
   offset: 0,
 };
 
+function ownerTabFromPath(pathname: string): OwnerTab {
+  if (pathname.startsWith(appPaths.owner.users)) return "users";
+  if (pathname.startsWith(appPaths.owner.groups)) return "groups";
+  if (pathname.startsWith(appPaths.owner.payments)) return "payments";
+  if (pathname.startsWith(appPaths.owner.audit)) return "audit";
+  return "overview";
+}
+
+const ownerTabPaths: Record<OwnerTab, string> = {
+  overview: appPaths.owner.root,
+  users: appPaths.owner.users,
+  groups: appPaths.owner.groups,
+  payments: appPaths.owner.payments,
+  audit: appPaths.owner.audit,
+};
+
 export function OwnerApp() {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const activeTab = ownerTabFromPath(location.pathname);
   const [session, setSession] = useState<OwnerSession | null>(null);
   const [overview, setOverview] = useState<OwnerOverviewData | null>(null);
   const [users, setUsers] = useState<OwnerUser[]>([]);
@@ -39,7 +60,6 @@ export function OwnerApp() {
   const [groups, setGroups] = useState<OwnerGroup[]>([]);
   const [groupsTotal, setGroupsTotal] = useState(0);
   const [audit, setAudit] = useState<OwnerAuditEntry[]>([]);
-  const [activeTab, setActiveTab] = useState<OwnerTab>("overview");
   const [groupQuery, setGroupQuery] = useState("");
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
@@ -88,12 +108,11 @@ export function OwnerApp() {
         setGroups(groupPayload.items);
         setGroupsTotal(groupPayload.total);
         setAudit(auditPayload.items);
-        setActiveTab("overview");
       } else {
         setOverview(null);
         setGroups([]);
         setAudit([]);
-        setActiveTab("users");
+        navigate(appPaths.owner.users, { replace: true });
       }
       notify("success");
     } catch (reason) {
@@ -108,7 +127,7 @@ export function OwnerApp() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [navigate]);
 
   useEffect(() => {
     initTelegram();
@@ -142,9 +161,7 @@ export function OwnerApp() {
     setBusy(true);
     try {
       const requests: Array<Promise<unknown>> = [loadUsers()];
-      if (session.actor.is_owner) {
-        requests.push(refreshOverview(), loadAudit());
-      }
+      if (session.actor.is_owner) requests.push(refreshOverview(), loadAudit());
       await Promise.all(requests);
       notify("success");
     } catch (reason) {
@@ -171,57 +188,6 @@ export function OwnerApp() {
       setBusy(false);
     }
   };
-
-  const page = useMemo(() => {
-    if (!session) return null;
-    if (activeTab === "users") {
-      return (
-        <OwnerUsers
-          users={users}
-          total={usersTotal}
-          loading={busy}
-          filters={userFilters}
-          permissions={session.actor.permissions}
-          onFiltersChange={setUserFilters}
-          onRefresh={refreshUsersAfterMutation}
-        />
-      );
-    }
-    if (!session.actor.is_owner) return null;
-    if (activeTab === "groups") {
-      return (
-        <OwnerGroups
-          groups={groups}
-          total={groupsTotal}
-          loading={busy}
-          query={groupQuery}
-          onQueryChange={setGroupQuery}
-          onRefresh={() => void loadGroups()}
-          onUpdate={updateGroup}
-        />
-      );
-    }
-    if (activeTab === "payments") return <OwnerPayments />;
-    if (activeTab === "audit") {
-      return <OwnerAudit items={audit} loading={busy} onRefresh={() => void loadAudit()} />;
-    }
-    return overview ? <OwnerOverview data={overview} /> : null;
-  }, [
-    activeTab,
-    audit,
-    busy,
-    groupQuery,
-    groups,
-    groupsTotal,
-    loadAudit,
-    loadGroups,
-    overview,
-    refreshUsersAfterMutation,
-    session,
-    userFilters,
-    users,
-    usersTotal,
-  ]);
 
   if (!isTelegramContext()) {
     return (
@@ -250,24 +216,69 @@ export function OwnerApp() {
         <LockKeyhole size={34} />
         <h1>Owner Panel закрито</h1>
         <p>{error || "Цей маршрут доступний лише команді ChatPulse."}</p>
-        <button type="button" onClick={() => window.location.assign("/miniapp")}>Повернутися в ChatPulse</button>
+        <button type="button" onClick={() => navigate(appPaths.home)}>Повернутися в ChatPulse</button>
       </main>
     );
   }
 
   return (
-    <OwnerShell session={session} activeTab={activeTab} onTabChange={setActiveTab} busy={busy}>
+    <OwnerShell
+      session={session}
+      activeTab={activeTab}
+      onTabChange={(tab) => navigate(ownerTabPaths[tab])}
+      busy={busy}
+    >
       {error ? (
-        <button type="button" className="owner-error-banner" onClick={() => setError("") }>
+        <button type="button" className="owner-error-banner" onClick={() => setError("")}>
           <AlertTriangle size={16} /> {error}
         </button>
       ) : null}
-      {page ?? (
-        <div className="owner-empty">
-          <RefreshCw size={20} /> Цей розділ недоступний для вашої ролі.
-          <button type="button" onClick={() => setActiveTab("users")}>До користувачів</button>
-        </div>
-      )}
+
+      <Routes>
+        <Route index element={session.actor.is_owner && overview ? <OwnerOverview data={overview} /> : <Navigate to="users" replace />} />
+        <Route
+          path="users/*"
+          element={
+            <OwnerUsers
+              users={users}
+              total={usersTotal}
+              loading={busy}
+              filters={userFilters}
+              permissions={session.actor.permissions}
+              onFiltersChange={setUserFilters}
+              onRefresh={refreshUsersAfterMutation}
+            />
+          }
+        />
+        <Route
+          path="groups"
+          element={session.actor.is_owner ? (
+            <OwnerGroups
+              groups={groups}
+              total={groupsTotal}
+              loading={busy}
+              query={groupQuery}
+              onQueryChange={setGroupQuery}
+              onRefresh={() => void loadGroups()}
+              onUpdate={updateGroup}
+            />
+          ) : <Navigate to={appPaths.owner.users} replace />}
+        />
+        <Route path="payments" element={session.actor.is_owner ? <OwnerPayments /> : <Navigate to={appPaths.owner.users} replace />} />
+        <Route
+          path="audit"
+          element={session.actor.is_owner ? <OwnerAudit items={audit} loading={busy} onRefresh={() => void loadAudit()} /> : <Navigate to={appPaths.owner.users} replace />}
+        />
+        <Route
+          path="*"
+          element={
+            <div className="owner-empty">
+              <RefreshCw size={20} /> Цей розділ недоступний для вашої ролі.
+              <button type="button" onClick={() => navigate(appPaths.owner.users)}>До користувачів</button>
+            </div>
+          }
+        />
+      </Routes>
     </OwnerShell>
   );
 }
