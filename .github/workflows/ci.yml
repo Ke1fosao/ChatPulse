@@ -18,7 +18,11 @@ jobs:
           cache: npm
           cache-dependency-path: miniapp/package.json
       - run: npm install --no-audit --no-fund
-      - run: npm test -- --run
+      - name: Run frontend tests
+        shell: bash
+        run: |
+          set -o pipefail
+          npm test -- --run 2>&1 | tail -n 160
       - run: npm run typecheck
       - run: npm run build
 
