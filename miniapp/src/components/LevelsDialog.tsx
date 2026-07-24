@@ -41,8 +41,9 @@ export function LevelsDialog({ open, onClose }: LevelsDialogProps) {
   }, [data, open]);
 
   useEffect(() => {
-    if (!open || !current) return;
-    window.setTimeout(() => {
+    if (!open || !current) return undefined;
+    const timer = window.setTimeout(() => {
+      if (typeof document === "undefined") return;
       const element = document.querySelector<HTMLElement>(
         `[data-level="${current.level}"]`,
       );
@@ -50,6 +51,7 @@ export function LevelsDialog({ open, onClose }: LevelsDialogProps) {
         element.scrollIntoView({ block: "center" });
       }
     }, 80);
+    return () => window.clearTimeout(timer);
   }, [current, open]);
 
   if (!open) return null;

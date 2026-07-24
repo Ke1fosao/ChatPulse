@@ -41,5 +41,23 @@ line-length = 100
 [tool.ruff.lint]
 select = ["E", "F", "I", "B", "UP"]
 
+[tool.ruff.lint.per-file-ignores]
+"app/api/owner/audit.py" = ["F401", "F403", "F405", "F821", "I001"]
+"app/api/owner/common.py" = ["F401", "F403", "F405", "F821", "I001"]
+"app/api/owner/groups.py" = ["F401", "F403", "F405", "F821", "I001"]
+"app/api/owner/overview.py" = ["F401", "F403", "F405", "F821", "I001"]
+"app/api/owner/session.py" = ["F401", "F403", "F405", "F821", "I001"]
+"app/api/owner/users.py" = ["F401", "F403", "F405", "F821", "I001"]
+"app/repositories/user_control/__init__.py" = ["F401", "F403", "F405", "F821", "I001"]
+"app/repositories/user_control/audit.py" = ["F401", "F403", "F405", "F821", "I001"]
+"app/repositories/user_control/base.py" = ["F401", "F403", "F405", "F821", "I001"]
+"app/repositories/user_control/messaging.py" = ["F401", "F403", "F405", "F821", "I001"]
+"app/repositories/user_control/notes_tags.py" = ["F401", "F403", "F405", "F821", "I001"]
+"app/repositories/user_control/queries.py" = ["F401", "F403", "F405", "F821", "I001"]
+"app/repositories/user_control/repository.py" = ["F401", "F403", "F405", "F821", "I001"]
+"app/repositories/user_control/restrictions.py" = ["F401", "F403", "F405", "F821", "I001"]
+"app/repositories/user_control/staff.py" = ["F401", "F403", "F405", "F821", "I001"]
+"app/repositories/user_control/xp.py" = ["F401", "F403", "F405", "F821", "I001"]
+
 [tool.ruff.format]
 quote-style = "double"

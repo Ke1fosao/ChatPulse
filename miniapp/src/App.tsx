@@ -18,6 +18,7 @@ import { BlockedAccountPage } from "./features/access/BlockedAccountPage";
 import { AchievementCelebrationLayer } from "./features/achievements/AchievementCelebration";
 import { appPaths } from "./routing/paths";
 import { isTelegramContext } from "./telegram/sdk";
+import "./styles/app";
 
 function tabFromPath(pathname: string): TabId {
   if (pathname.startsWith(appPaths.groups)) return "groups";
