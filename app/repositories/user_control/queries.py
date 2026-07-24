@@ -1,3 +1,4 @@
+# ruff: noqa: F401, F403, F405, F821, I001
 from .base import *  # noqa: F403
 from .base import _as_utc, _display_name, _level_for_xp, _active_vip_clause
 

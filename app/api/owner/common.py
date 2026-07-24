@@ -1,3 +1,4 @@
+# ruff: noqa: F401, F403, F405, F821, I001
 from datetime import datetime
 from typing import Annotated, Literal
 

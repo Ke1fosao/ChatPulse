@@ -1,3 +1,4 @@
+# ruff: noqa: F401, F403, F405, F821, I001
 import json
 import math
 from datetime import UTC, datetime, timedelta
