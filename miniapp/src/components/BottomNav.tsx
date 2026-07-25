@@ -33,26 +33,24 @@ export function BottomNav({ active, onChange }: BottomNavProps) {
         style={{ "--active-index": activeIndex } as CSSProperties}
       >
         <span className="bottom-nav__indicator" aria-hidden="true" />
-        <div className="bottom-nav__items">
-          {items.map(({ id, label, icon: Icon }) => (
-            <button
-              className={`bottom-nav__item ${active === id ? "is-active" : ""}`}
-              key={id}
-              onClick={() => {
-                if (active === id) return;
-                haptic("light");
-                onChange(id);
-              }}
-              type="button"
-              aria-current={active === id ? "page" : undefined}
-            >
-              <span className="bottom-nav__icon">
-                <Icon aria-hidden="true" size={22} strokeWidth={2.15} />
-              </span>
-              <span className="bottom-nav__label">{label}</span>
-            </button>
-          ))}
-        </div>
+        {items.map(({ id, label, icon: Icon }) => (
+          <button
+            className={`bottom-nav__item ${active === id ? "is-active" : ""}`}
+            key={id}
+            onClick={() => {
+              if (active === id) return;
+              haptic("light");
+              onChange(id);
+            }}
+            type="button"
+            aria-current={active === id ? "page" : undefined}
+          >
+            <span className="bottom-nav__icon">
+              <Icon aria-hidden="true" size={22} strokeWidth={2.15} />
+            </span>
+            <span className="bottom-nav__label">{label}</span>
+          </button>
+        ))}
       </nav>
     </div>
   );
