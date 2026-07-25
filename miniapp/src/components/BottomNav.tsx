@@ -25,14 +25,14 @@ export function BottomNav({ active, onChange }: BottomNavProps) {
   );
 
   return (
-    <div className="bottom-nav-wrap">
+    <div className="cp-bottom-nav-wrap">
       <nav
-        className={`bottom-nav bottom-nav--${activeIndex}`}
+        className={`cp-bottom-nav cp-bottom-nav--${activeIndex}`}
         aria-label="Основна навігація"
       >
         {items.map(({ id, label, icon: Icon }) => (
           <button
-            className={`bottom-nav__item ${active === id ? "is-active" : ""}`}
+            className={`cp-bottom-nav__item ${active === id ? "is-active" : ""}`}
             key={id}
             onClick={() => {
               if (active === id) return;
@@ -42,10 +42,10 @@ export function BottomNav({ active, onChange }: BottomNavProps) {
             type="button"
             aria-current={active === id ? "page" : undefined}
           >
-            <span className="bottom-nav__icon">
+            <span className="cp-bottom-nav__icon">
               <Icon aria-hidden="true" size={22} strokeWidth={2.15} />
             </span>
-            <span className="bottom-nav__label">{label}</span>
+            <span className="cp-bottom-nav__label">{label}</span>
           </button>
         ))}
       </nav>
