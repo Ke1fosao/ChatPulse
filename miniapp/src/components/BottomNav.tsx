@@ -1,3 +1,4 @@
+import type { CSSProperties } from "react";
 import { Award, Home, Layers3, UserRound } from "lucide-react";
 import type { TabId } from "../api/types";
 import { haptic } from "../telegram/sdk";
@@ -19,9 +20,22 @@ interface BottomNavProps {
 }
 
 export function BottomNav({ active, onChange }: BottomNavProps) {
+  const activeIndex = Math.max(
+    0,
+    items.findIndex((item) => item.id === active),
+  );
+
   return (
     <div className="bottom-nav-wrap">
-      <nav className="bottom-nav" aria-label="Основна навігація">
+      <nav
+        className="bottom-nav"
+        aria-label="Основна навігація"
+        style={{ "--active-index": activeIndex } as CSSProperties}
+      >
+        <span
+          className={`bottom-nav__indicator bottom-nav__indicator--${activeIndex}`}
+          aria-hidden="true"
+        />
         {items.map(({ id, label, icon: Icon }) => (
           <button
             className={`bottom-nav__item ${active === id ? "is-active" : ""}`}

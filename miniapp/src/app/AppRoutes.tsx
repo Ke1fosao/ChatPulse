@@ -27,7 +27,7 @@ export function AppRoutes(props: AppRoutesProps) {
   return (
     <Routes>
       <Route
-        index
+        path={appPaths.home}
         element={
           <HomePage
             data={props.home}
@@ -39,7 +39,7 @@ export function AppRoutes(props: AppRoutesProps) {
         }
       />
       <Route
-        path="groups"
+        path={appPaths.groups}
         element={
           <GroupsPage
             groups={props.groups}
@@ -49,9 +49,9 @@ export function AppRoutes(props: AppRoutesProps) {
           />
         }
       />
-      <Route path="groups/:telegramChatId" element={<GroupCenterPageRoute groups={props.groups} />} />
+      <Route path={`${appPaths.groups}/:telegramChatId`} element={<GroupCenterPageRoute groups={props.groups} />} />
       <Route
-        path="achievements"
+        path={appPaths.achievements}
         element={
           <AchievementsPage
             achievements={props.achievements}
@@ -61,7 +61,7 @@ export function AppRoutes(props: AppRoutesProps) {
         }
       />
       <Route
-        path="profile"
+        path={appPaths.profile}
         element={
           <ProfilePage
             data={props.home}
