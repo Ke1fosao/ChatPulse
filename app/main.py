@@ -42,12 +42,20 @@ from app.services.vip_lifecycle import VipLifecycleService
 from app.services.weekly_reports import send_due_weekly_reports
 
 logger = logging.getLogger("chatpulse.webhook")
+APP_VERSION = "0.12.1"
+
+_INDEX_CACHE_HEADERS = {
+    "Cache-Control": "no-store, no-cache, must-revalidate, max-age=0",
+    "Pragma": "no-cache",
+    "Expires": "0",
+    "X-ChatPulse-Version": APP_VERSION,
+}
 
 
 def _miniapp_url(settings: Settings) -> str | None:
     if not settings.webhook_base_url:
         return None
-    return f"{settings.webhook_base_url.rstrip('/')}/miniapp"
+    return f"{settings.webhook_base_url.rstrip('/')}/miniapp?v={APP_VERSION}"
 
 
 def _miniapp_dist() -> Path | None:
@@ -153,7 +161,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             await bot.session.close()
             await database.dispose()
 
-    app = FastAPI(title="ChatPulse", version="0.12.0", lifespan=lifespan)
+    app = FastAPI(title="ChatPulse", version=APP_VERSION, lifespan=lifespan)
     app.state.settings = resolved_settings
     app.include_router(miniapp_router)
     app.include_router(groups_v2_router)
@@ -167,7 +175,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
 
     @app.get("/health")
     async def health() -> dict[str, str]:
-        return {"status": "ok", "service": "chatpulse", "version": "0.12.0"}
+        return {"status": "ok", "service": "chatpulse", "version": APP_VERSION}
 
     @app.post(resolved_settings.webhook_path)
     async def telegram_webhook(
@@ -270,6 +278,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
                 "Frontend build відсутній у локальному backend-only "
                 "режимі.</p></main></body></html>",
                 status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                headers=_INDEX_CACHE_HEADERS,
             )
 
         safe_path = Path(asset_path)
@@ -281,12 +290,24 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         )
         if is_asset_request:
             if requested.is_file():
-                return FileResponse(requested)
+                cache_headers = (
+                    {
+                        "Cache-Control": "public, max-age=31536000, immutable",
+                        "X-ChatPulse-Version": APP_VERSION,
+                    }
+                    if asset_path.startswith("assets/")
+                    else _INDEX_CACHE_HEADERS
+                )
+                return FileResponse(requested, headers=cache_headers)
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
 
         index = dist / "index.html"
         if not index.is_file():
             raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE)
-        return FileResponse(index, media_type="text/html")
+        return FileResponse(
+            index,
+            media_type="text/html",
+            headers=_INDEX_CACHE_HEADERS,
+        )
 
     return app
