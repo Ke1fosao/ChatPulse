@@ -1,7 +1,7 @@
 from fastapi.testclient import TestClient
 
 from app.config import Settings
-from app.main import create_app
+from app.main import APP_VERSION, create_app
 
 
 def test_health_endpoint_returns_service_status() -> None:
@@ -19,5 +19,5 @@ def test_health_endpoint_returns_service_status() -> None:
     assert response.json() == {
         "status": "ok",
         "service": "chatpulse",
-        "version": "0.12.0",
+        "version": APP_VERSION,
     }
