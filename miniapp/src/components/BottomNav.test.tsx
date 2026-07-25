@@ -45,11 +45,15 @@ describe("BottomNav", () => {
   });
 
   it("keeps the final navigation layout at four equal slots after legacy global CSS loads", () => {
-    render(<BottomNav active="home" onChange={vi.fn()} />);
+    const { container } = render(<BottomNav active="home" onChange={vi.fn()} />);
 
-    const nav = screen.getByRole("navigation", { name: "Основна навігація" });
-    const items = screen.getAllByRole("button");
-    const navStyle = getComputedStyle(nav);
+    const nav = container.querySelector<HTMLElement>(".cp-bottom-nav");
+    const items = container.querySelectorAll<HTMLElement>(".cp-bottom-nav__item");
+
+    expect(nav).not.toBeNull();
+    expect(items).toHaveLength(4);
+
+    const navStyle = getComputedStyle(nav!);
     const firstItemStyle = getComputedStyle(items[0]);
 
     expect(navStyle.display).toBe("flex");
