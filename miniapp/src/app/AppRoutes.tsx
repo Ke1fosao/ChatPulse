@@ -27,7 +27,7 @@ export function AppRoutes(props: AppRoutesProps) {
   return (
     <Routes>
       <Route
-        path={appPaths.home}
+        index
         element={
           <HomePage
             data={props.home}
@@ -39,7 +39,7 @@ export function AppRoutes(props: AppRoutesProps) {
         }
       />
       <Route
-        path={appPaths.groups}
+        path="groups"
         element={
           <GroupsPage
             groups={props.groups}
@@ -49,9 +49,9 @@ export function AppRoutes(props: AppRoutesProps) {
           />
         }
       />
-      <Route path={`${appPaths.groups}/:telegramChatId`} element={<GroupCenterPageRoute groups={props.groups} />} />
+      <Route path="groups/:telegramChatId" element={<GroupCenterPageRoute groups={props.groups} />} />
       <Route
-        path={appPaths.achievements}
+        path="achievements"
         element={
           <AchievementsPage
             achievements={props.achievements}
@@ -61,7 +61,7 @@ export function AppRoutes(props: AppRoutesProps) {
         }
       />
       <Route
-        path={appPaths.profile}
+        path="profile"
         element={
           <ProfilePage
             data={props.home}
@@ -72,7 +72,7 @@ export function AppRoutes(props: AppRoutesProps) {
           />
         }
       />
-      <Route path="*" element={<Navigate to={appPaths.home} replace />} />
+      <Route path="*" element={<Navigate to="." replace />} />
     </Routes>
   );
 }
@@ -85,6 +85,6 @@ function GroupCenterPageRoute({ groups }: { groups: GroupsV2CardData[] }) {
   return group ? (
     <GroupCenterPage group={group} onBack={() => navigate(appPaths.groups)} />
   ) : (
-    <Navigate to={appPaths.groups} replace />
+    <Navigate to="../groups" replace />
   );
 }
