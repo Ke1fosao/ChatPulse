@@ -26,11 +26,52 @@ export function AppRoutes(props: AppRoutesProps) {
 
   return (
     <Routes>
-      <Route path={appPaths.home} element={<HomePage data={props.home} onOpenGroup={openGroup} onOpenAchievements={() => navigate(appPaths.achievements)} onOpenLevels={props.onOpenLevels} onShareProfile={props.onShare} />} />
-      <Route path={appPaths.groups} element={<GroupsPage groups={props.groups} onOpenGroup={openGroup} onToggleFavorite={props.onToggleFavorite} onRefresh={props.onReload} />} />
-      <Route path={`${appPaths.groups}/:telegramChatId`} element={<GroupCenterPageRoute groups={props.groups} />} />
-      <Route path={appPaths.achievements} element={<AchievementsPage achievements={props.achievements} loading={props.achievementLoading} onRefresh={props.onRefreshAchievements} />} />
-      <Route path={appPaths.profile} element={<ProfilePage data={props.home} onShare={props.onShare} onOpenLevels={props.onOpenLevels} onOpenAchievements={() => navigate(appPaths.achievements)} onOpenGroups={() => navigate(appPaths.groups)} />} />
+      <Route
+        index
+        element={
+          <HomePage
+            data={props.home}
+            onOpenGroup={openGroup}
+            onOpenAchievements={() => navigate(appPaths.achievements)}
+            onOpenLevels={props.onOpenLevels}
+            onShareProfile={props.onShare}
+          />
+        }
+      />
+      <Route
+        path="groups"
+        element={
+          <GroupsPage
+            groups={props.groups}
+            onOpenGroup={openGroup}
+            onToggleFavorite={props.onToggleFavorite}
+            onRefresh={props.onReload}
+          />
+        }
+      />
+      <Route path="groups/:telegramChatId" element={<GroupCenterPageRoute groups={props.groups} />} />
+      <Route
+        path="achievements"
+        element={
+          <AchievementsPage
+            achievements={props.achievements}
+            loading={props.achievementLoading}
+            onRefresh={props.onRefreshAchievements}
+          />
+        }
+      />
+      <Route
+        path="profile"
+        element={
+          <ProfilePage
+            data={props.home}
+            onShare={props.onShare}
+            onOpenLevels={props.onOpenLevels}
+            onOpenAchievements={() => navigate(appPaths.achievements)}
+            onOpenGroups={() => navigate(appPaths.groups)}
+          />
+        }
+      />
       <Route path="*" element={<Navigate to={appPaths.home} replace />} />
     </Routes>
   );
@@ -41,5 +82,9 @@ function GroupCenterPageRoute({ groups }: { groups: GroupsV2CardData[] }) {
   const { telegramChatId } = useParams<{ telegramChatId: string }>();
   const chatId = Number(telegramChatId);
   const group = groups.find((item) => item.telegram_chat_id === chatId);
-  return group ? <GroupCenterPage group={group} onBack={() => navigate(appPaths.groups)} /> : <Navigate to={appPaths.groups} replace />;
+  return group ? (
+    <GroupCenterPage group={group} onBack={() => navigate(appPaths.groups)} />
+  ) : (
+    <Navigate to={appPaths.groups} replace />
+  );
 }
