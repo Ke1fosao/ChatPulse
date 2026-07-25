@@ -1,6 +1,6 @@
 from types import SimpleNamespace
 
-from app.main import APP_VERSION, _INDEX_CACHE_HEADERS, _miniapp_url
+from app.main import _INDEX_CACHE_HEADERS, APP_VERSION, _miniapp_url
 
 
 def test_miniapp_url_changes_with_release_version() -> None:
