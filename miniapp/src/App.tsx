@@ -2,6 +2,8 @@ import { AlertTriangle, RefreshCw, Sparkles } from "lucide-react";
 import { useState } from "react";
 import {
   MemoryRouter,
+  Route,
+  Routes,
   useInRouterContext,
   useLocation,
   useNavigate,
@@ -33,7 +35,9 @@ export function App() {
   if (!isInsideRouter) {
     return (
       <MemoryRouter initialEntries={[appPaths.home]}>
-        <AppContent />
+        <Routes>
+          <Route path={`${appPaths.root}/*`} element={<AppContent />} />
+        </Routes>
       </MemoryRouter>
     );
   }

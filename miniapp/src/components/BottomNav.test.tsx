@@ -8,7 +8,7 @@ vi.mock("../telegram/sdk", () => ({
 }));
 
 describe("BottomNav", () => {
-  it("renders four items and moves the shared indicator with the active tab", async () => {
+  it("renders four navigation items and marks only the active tab", async () => {
     const user = userEvent.setup();
     const onChange = vi.fn();
     const { rerender, container } = render(
@@ -16,18 +16,23 @@ describe("BottomNav", () => {
     );
 
     expect(screen.getAllByRole("button")).toHaveLength(4);
-    expect(screen.queryByRole("button", { name: "Рейтинг" })).not.toBeInTheDocument();
-    expect(container.querySelector(".bottom-nav__indicator")).toBeInTheDocument();
-    expect(container.querySelector(".bottom-nav")).toHaveStyle("--active-index: 0");
+    expect(container.querySelectorAll(".bottom-nav__item")).toHaveLength(4);
+    expect(container.querySelector(".bottom-nav__indicator")).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Головна" })).toHaveAttribute(
+      "aria-current",
+      "page",
+    );
 
     await user.click(screen.getByRole("button", { name: "Досягнення" }));
     expect(onChange).toHaveBeenCalledWith("achievements");
 
     rerender(<BottomNav active="achievements" onChange={onChange} />);
-    expect(container.querySelector(".bottom-nav")).toHaveStyle("--active-index: 2");
     expect(screen.getByRole("button", { name: "Досягнення" })).toHaveAttribute(
       "aria-current",
       "page",
+    );
+    expect(screen.getByRole("button", { name: "Головна" })).not.toHaveAttribute(
+      "aria-current",
     );
   });
 });
