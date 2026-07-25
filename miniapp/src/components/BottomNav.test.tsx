@@ -1,6 +1,8 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
+import "../styles/bottom-nav-v2.css";
+import "../styles/global.css";
 import { BottomNav } from "./BottomNav";
 
 vi.mock("../telegram/sdk", () => ({
@@ -39,5 +41,19 @@ describe("BottomNav", () => {
     expect(screen.getByRole("button", { name: "Головна" })).not.toHaveAttribute(
       "aria-current",
     );
+  });
+
+  it("keeps the final navigation layout at four equal columns after the full CSS cascade", () => {
+    render(<BottomNav active="home" onChange={vi.fn()} />);
+
+    const nav = screen.getByRole("navigation", { name: "Основна навігація" });
+    const items = screen.getAllByRole("button");
+    const navStyle = getComputedStyle(nav);
+    const firstItemStyle = getComputedStyle(items[0]);
+
+    expect(navStyle.display).toBe("flex");
+    expect(navStyle.gridTemplateColumns).not.toContain("repeat(5");
+    expect(firstItemStyle.flexBasis).toBe("25%");
+    expect(firstItemStyle.width).toBe("25%");
   });
 });
