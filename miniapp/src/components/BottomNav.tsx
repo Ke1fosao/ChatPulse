@@ -19,18 +19,9 @@ interface BottomNavProps {
 }
 
 export function BottomNav({ active, onChange }: BottomNavProps) {
-  const activeIndex = Math.max(
-    0,
-    items.findIndex((item) => item.id === active),
-  );
-
   return (
     <div className="bottom-nav-wrap">
       <nav className="bottom-nav" aria-label="Основна навігація">
-        <span
-          className={`bottom-nav__indicator bottom-nav__indicator--${activeIndex}`}
-          aria-hidden="true"
-        />
         {items.map(({ id, label, icon: Icon }) => (
           <button
             className={`bottom-nav__item ${active === id ? "is-active" : ""}`}
