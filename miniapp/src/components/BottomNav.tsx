@@ -30,7 +30,7 @@ export function BottomNav({ active, onChange }: BottomNavProps) {
       <nav
         className="bottom-nav"
         aria-label="Основна навігація"
-        style={{ "--active-index": activeIndex } as CSSProperties}
+        style={{ "--indicator-offset": `${activeIndex * 100}%` } as CSSProperties}
       >
         <span className="bottom-nav__indicator" aria-hidden="true" />
         {items.map(({ id, label, icon: Icon }) => (
