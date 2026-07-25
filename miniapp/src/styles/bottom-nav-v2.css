@@ -12,14 +12,12 @@
 
 .bottom-nav {
   --nav-padding: 6px;
-  --indicator-offset: 0%;
   position: relative;
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
   align-items: stretch;
   width: 100%;
   min-width: 0;
-  max-width: none;
   min-height: 76px;
   margin: 0;
   padding: var(--nav-padding);
@@ -67,10 +65,22 @@
   box-shadow:
     0 10px 30px rgba(75, 52, 180, 0.2),
     inset 0 1px rgba(255, 255, 255, 0.08);
-  transform: translate3d(var(--indicator-offset), 0, 0);
+  transform: translate3d(0, 0, 0);
   transition: transform 0.44s cubic-bezier(0.22, 1, 0.36, 1);
   will-change: transform;
   pointer-events: none;
+}
+
+.bottom-nav__indicator--1 {
+  transform: translate3d(100%, 0, 0);
+}
+
+.bottom-nav__indicator--2 {
+  transform: translate3d(200%, 0, 0);
+}
+
+.bottom-nav__indicator--3 {
+  transform: translate3d(300%, 0, 0);
 }
 
 .bottom-nav__item {
