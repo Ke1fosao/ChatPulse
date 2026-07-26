@@ -151,6 +151,7 @@ class GroupMember(Base):
 
 class DailyActivity(Base):
     __tablename__ = "daily_activity"
+    __table_args__ = (Index("ix_daily_activity_chat_date", "telegram_chat_id", "activity_date"),)
 
     telegram_chat_id: Mapped[int] = mapped_column(
         BigInteger,
@@ -284,7 +285,14 @@ class MemberAchievement(Base):
 
 class ProcessedUpdate(Base):
     __tablename__ = "processed_updates"
+    __table_args__ = (Index("ix_processed_updates_status_lease", "status", "lease_expires_at"),)
 
     update_id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
-    update_type: Mapped[str] = mapped_column(String(64), default="unknown")
+    update_type: Mapped[str] = mapped_column(String(64), default="unknown", nullable=False)
+    status: Mapped[str] = mapped_column(String(16), default="processing", nullable=False)
+    attempts: Mapped[int] = mapped_column(Integer, default=1, nullable=False)
+    started_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now)
+    lease_expires_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    last_error: Mapped[str | None] = mapped_column(String(128), nullable=True)
     processed_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now)
