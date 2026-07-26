@@ -18,7 +18,18 @@ jobs:
           ref: architecture/chatpulse-2-0
           fetch-depth: 0
       - name: Verify and apply Architecture 2.0 package
-        run: python tools/apply_architecture.py
+        run: |
+          set +e
+          python tools/apply_architecture.py > architecture-apply.log 2>&1
+          status=$?
+          cat architecture-apply.log
+          exit $status
+      - name: Upload architecture apply diagnostics
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: architecture-apply-log
+          path: architecture-apply.log
       - name: Commit atomic Architecture 2.0 implementation
         run: |
           set -euo pipefail
