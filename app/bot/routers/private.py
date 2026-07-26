@@ -87,12 +87,13 @@ async def claim_admin_command(
     result = await owner_repository.claim_owner(user.id, user.username)
     responses = {
         OwnerClaimResult.CLAIMED: (
-            "✅ Акаунт @veheblya закріплено як власника ChatPulse.\n\n"
-            "Надалі права перевіряються за незмінним Telegram ID, тому зміна username "
-            "не забере доступ."
+            "✅ Цей Telegram-акаунт закріплено як власника ChatPulse.\n\n"
+            "Надалі доступ перевіряється лише за незмінним Telegram ID."
         ),
         OwnerClaimResult.ALREADY_OWNER: "👑 Цей акаунт вже є власником ChatPulse.",
-        OwnerClaimResult.USERNAME_MISMATCH: ("⛔ Команда доступна лише акаунту @veheblya."),
+        OwnerClaimResult.ID_MISMATCH: (
+            "⛔ Цей Telegram ID не збігається з OWNER_TELEGRAM_ID у конфігурації."
+        ),
         OwnerClaimResult.CLAIMED_BY_OTHER: (
             "⛔ Власник ChatPulse вже закріплений. Повторне призначення заблоковано."
         ),
