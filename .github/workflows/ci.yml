@@ -32,12 +32,29 @@ jobs:
         with:
           name: production-apply-log
           path: production-apply.log
-      - name: Commit clean implementation
+      - name: Commit clean implementation without workflow mutations
         run: |
-          set -euo pipefail
-          rm -f production-apply.log
-          git config user.name "ChatPulse Production Bot"
-          git config user.email "actions@users.noreply.github.com"
-          git add -A
-          git commit -m "production: implement ChatPulse 3.0 hardening"
-          git push origin HEAD:production/chatpulse-3-0
+          set +e
+          {
+            set -euo pipefail
+            rm -f production-apply.log
+            git checkout HEAD -- .github/workflows/ci.yml .github/workflows/apply-production.yml
+            rm -f \
+              .github/workflows/release-cloud-run.yml \
+              .github/workflows/restore-verification.yml \
+              .github/workflows/staging-load.yml
+            git config user.name "ChatPulse Production Bot"
+            git config user.email "actions@users.noreply.github.com"
+            git add -A
+            git commit -m "production: implement ChatPulse 3.0 hardening"
+            git push origin HEAD:production/chatpulse-3-0
+          } > production-commit.log 2>&1
+          status=$?
+          cat production-commit.log
+          exit $status
+      - name: Upload commit diagnostics
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: production-commit-log
+          path: production-commit.log
