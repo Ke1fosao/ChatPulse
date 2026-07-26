@@ -5,56 +5,9 @@ on:
   pull_request:
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
-  apply-architecture:
-    if: github.actor != 'github-actions[bot]' && ((github.event_name == 'push' && github.ref == 'refs/heads/architecture/chatpulse-2-0') || (github.event_name == 'pull_request' && github.head_ref == 'architecture/chatpulse-2-0'))
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          ref: architecture/chatpulse-2-0
-          fetch-depth: 0
-      - name: Verify and apply Architecture 2.0 package
-        run: |
-          set +e
-          python tools/apply_architecture.py > architecture-apply.log 2>&1
-          status=$?
-          cat architecture-apply.log
-          exit $status
-      - name: Upload architecture apply diagnostics
-        if: failure()
-        uses: actions/upload-artifact@v4
-        with:
-          name: architecture-apply-log
-          path: architecture-apply.log
-      - name: Commit atomic Architecture 2.0 implementation
-        run: |
-          set -euo pipefail
-          git checkout HEAD -- .github/workflows/ci.yml
-          git config user.name "ChatPulse Architecture Bot"
-          git config user.email "actions@users.noreply.github.com"
-          git add -A
-          git commit -m "architecture: implement ChatPulse 2.0"
-          git push origin HEAD:architecture/chatpulse-2-0
-
-  source-snapshot:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/upload-artifact@v4
-        with:
-          name: architecture-source-snapshot
-          path: |
-            .
-            !.git
-            !miniapp/node_modules
-            !miniapp/dist
-            !miniapp/playwright-report
-            !miniapp/test-results
-
   frontend:
     runs-on: ubuntu-latest
     defaults:
