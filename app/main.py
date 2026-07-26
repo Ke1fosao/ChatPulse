@@ -33,6 +33,7 @@ from app.repositories.miniapp_v2 import AchievementMiniAppRepository
 from app.repositories.owner import OwnerRepository
 from app.repositories.owner_panel import OwnerPanelRepository
 from app.repositories.owner_revenue import OwnerRevenueRepository
+from app.repositories.update_delivery import UpdateClaim, UpdateDeliveryRepository
 from app.repositories.user_control import UserControlRepository
 from app.repositories.vip_product_events import VipProductEventRepository
 from app.services.owner_payments import OwnerPaymentService
@@ -40,9 +41,9 @@ from app.services.retention_lifecycle import RetentionLifecycleService
 from app.services.telegram_access import TelegramAccessService
 from app.services.vip_lifecycle import VipLifecycleService
 from app.services.weekly_reports import send_due_weekly_reports
+from app.version import APP_VERSION
 
 logger = logging.getLogger("chatpulse.webhook")
-APP_VERSION = "0.12.1"
 
 _INDEX_CACHE_HEADERS = {
     "Cache-Control": "no-store, no-cache, must-revalidate, max-age=0",
@@ -73,8 +74,10 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     @asynccontextmanager
     async def lifespan(app: FastAPI):
         database = Database(resolved_settings.database_url)
-        await database.create_schema()
+        if resolved_settings.database_url.startswith("sqlite"):
+            await database.create_schema()
         repository = ActivityRepository(database.session_factory)
+        update_delivery_repository = UpdateDeliveryRepository(database.session_factory)
         gamification_repository = MiniAppGamificationRepository(database.session_factory)
         miniapp_repository = AchievementMiniAppRepository(database.session_factory)
         groups_v2_repository = GroupsV2Repository(
@@ -83,7 +86,10 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         )
         achievement_repository = AchievementRepository(database.session_factory)
         featured_achievement_repository = FeaturedAchievementRepository(database.session_factory)
-        owner_repository = OwnerRepository(database.session_factory)
+        owner_repository = OwnerRepository(
+            database.session_factory,
+            allowed_owner_id=resolved_settings.owner_telegram_id,
+        )
         owner_panel_repository = OwnerPanelRepository(database.session_factory)
         owner_revenue_repository = OwnerRevenueRepository(database.session_factory)
         user_control_repository = UserControlRepository(database.session_factory)
@@ -114,6 +120,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
 
         app.state.database = database
         app.state.repository = repository
+        app.state.update_delivery_repository = update_delivery_repository
         app.state.gamification_repository = gamification_repository
         app.state.miniapp_repository = miniapp_repository
         app.state.groups_v2_repository = groups_v2_repository
@@ -134,6 +141,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         app.state.dispatcher = dispatcher
         app.state.miniapp_url = miniapp_url
         app.state.bot_username = None
+        app.state.initialized = True
 
         if resolved_settings.webhook_url:
             await bot.set_webhook(
@@ -158,11 +166,13 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         try:
             yield
         finally:
+            app.state.initialized = False
             await bot.session.close()
             await database.dispose()
 
     app = FastAPI(title="ChatPulse", version=APP_VERSION, lifespan=lifespan)
     app.state.settings = resolved_settings
+    app.state.initialized = False
     app.include_router(miniapp_router)
     app.include_router(groups_v2_router)
     app.include_router(onboarding_router)
@@ -176,6 +186,32 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     @app.get("/health")
     async def health() -> dict[str, str]:
         return {"status": "ok", "service": "chatpulse", "version": APP_VERSION}
+
+    @app.get("/ready")
+    async def ready(request: Request) -> dict[str, str | dict[str, str]]:
+        if not getattr(request.app.state, "initialized", False):
+            raise HTTPException(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                detail={
+                    "status": "not_ready",
+                    "components": {"application": "starting", "database": "unknown"},
+                },
+            )
+        try:
+            await request.app.state.database.ping()
+        except Exception as error:
+            logger.warning("readiness_database_failed error=%s", error.__class__.__name__)
+            raise HTTPException(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                detail={
+                    "status": "not_ready",
+                    "components": {"application": "ready", "database": "unavailable"},
+                },
+            ) from error
+        return {
+            "status": "ready",
+            "components": {"application": "ready", "database": "ready"},
+        }
 
     @app.post(resolved_settings.webhook_path)
     async def telegram_webhook(
@@ -198,25 +234,38 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         payload: dict[str, Any] = await request.json()
         bot: Bot = request.app.state.bot
         dispatcher: Dispatcher = request.app.state.dispatcher
-        repository: ActivityRepository = request.app.state.repository
+        delivery: UpdateDeliveryRepository = request.app.state.update_delivery_repository
         update_type = next((key for key in payload if key != "update_id"), "unknown")
         update_id = payload.get("update_id")
-        if isinstance(update_id, int) and not await repository.claim_update(
-            update_id,
-            update_type,
-        ):
-            return {"ok": True, "duplicate": True}
+        if isinstance(update_id, int):
+            claim = await delivery.begin_update(update_id, update_type)
+            if claim is UpdateClaim.COMPLETED_DUPLICATE:
+                return {"ok": True, "duplicate": True}
+            if claim is UpdateClaim.IN_PROGRESS:
+                raise HTTPException(
+                    status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                    detail="Telegram update is already being processed",
+                    headers={"Retry-After": "5"},
+                )
 
-        update = Update.model_validate(payload, context={"bot": bot})
         try:
+            update = Update.model_validate(payload, context={"bot": bot})
             await dispatcher.feed_update(bot, update)
-        except Exception:
+        except Exception as error:
+            if isinstance(update_id, int):
+                await delivery.fail_update(update_id, error.__class__.__name__)
             logger.exception(
                 "telegram_update_failed update_id=%s update_type=%s",
                 update_id,
                 update_type,
             )
-            return {"ok": False}
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Telegram update processing failed",
+            ) from error
+
+        if isinstance(update_id, int):
+            await delivery.complete_update(update_id)
         return {"ok": True}
 
     def require_scheduler_secret(value: str | None) -> None:

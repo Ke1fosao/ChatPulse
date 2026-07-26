@@ -13,7 +13,7 @@ from app.repositories.owner import OwnerClaimResult
     [
         (OwnerClaimResult.CLAIMED, "закріплено як власника"),
         (OwnerClaimResult.ALREADY_OWNER, "вже є власником"),
-        (OwnerClaimResult.USERNAME_MISMATCH, "лише акаунту @veheblya"),
+        (OwnerClaimResult.ID_MISMATCH, "OWNER_TELEGRAM_ID"),
         (OwnerClaimResult.CLAIMED_BY_OTHER, "вже закріплений"),
     ],
 )

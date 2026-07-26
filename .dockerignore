@@ -10,5 +10,9 @@ docs
 miniapp/node_modules
 miniapp/dist
 miniapp/coverage
+miniapp/playwright-report
+miniapp/test-results
 *.db
 *.pyc
+
+build/

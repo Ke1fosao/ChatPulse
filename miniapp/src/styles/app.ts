@@ -1,4 +1,4 @@
-import "./bottom-nav-v2.css";
+import "./bottom-nav-stable.css";
 import "./blocked-account.css";
 import "./group-settings.css";
 import "./groups-v2.css";

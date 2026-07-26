@@ -19,7 +19,7 @@ async def repositories(tmp_path):
                 User(telegram_id=202, username="client", first_name="Client"),
             ]
         )
-    owner_repository = OwnerRepository(database.session_factory)
+    owner_repository = OwnerRepository(database.session_factory, allowed_owner_id=101)
     await owner_repository.claim_owner(101, "veheblya")
     yield OwnerPanelRepository(database.session_factory)
     await database.dispose()

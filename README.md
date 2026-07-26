@@ -107,6 +107,7 @@ python -m venv .venv
 source .venv/bin/activate
 pip install -e ".[dev]"
 cp .env.example .env
+alembic upgrade head
 uvicorn app.main:create_app --factory --reload --port 8080
 ```
 
@@ -117,6 +118,7 @@ python -m venv .venv
 .venv\Scripts\Activate.ps1
 pip install -e ".[dev]"
 copy .env.example .env
+alembic upgrade head
 uvicorn app.main:create_app --factory --reload --port 8080
 ```
 
@@ -124,7 +126,7 @@ uvicorn app.main:create_app --factory --reload --port 8080
 
 ```bash
 cd miniapp
-npm install
+npm ci
 npm run dev
 ```
 
@@ -142,6 +144,7 @@ WEBHOOK_HEADER_SECRET=long-random-header-secret
 SCHEDULER_SECRET=long-random-scheduler-secret
 DATABASE_URL=postgresql://user:password@pooler-host:5432/postgres
 DEFAULT_TIMEZONE=Europe/Kyiv
+OWNER_TELEGRAM_ID=123456789
 ```
 
 `WEBHOOK_BASE_URL` одночасно визначає:
@@ -150,7 +153,7 @@ DEFAULT_TIMEZONE=Europe/Kyiv
 - адресу Mini App: `${WEBHOOK_BASE_URL}/miniapp`;
 - Telegram Menu Button.
 
-Секрети, токени й production-паролі не комітьте в GitHub.
+Секрети, токени й production-паролі не комітьте в GitHub. `OWNER_TELEGRAM_ID` має містити незмінний числовий Telegram ID власника; username не надає прав адміністратора.
 
 ## BotFather після deployment
 
@@ -167,14 +170,23 @@ ChatPulse також автоматично викликає `setChatMenuButton`
 Dockerfile має два етапи:
 
 1. Node 22 збирає `miniapp/dist`;
-2. Python 3.12 встановлює backend, шрифти DejaVu й копіює frontend у `/app/miniapp_dist`.
+2. Python 3.12 встановлює backend, шрифти DejaVu й копіює frontend у `/app/miniapp_dist`;
+3. контейнер запускається від непривілейованого користувача, виконує `alembic upgrade head` і лише після успішної міграції стартує Uvicorn.
 
 ```bash
 docker build -t chatpulse .
 docker run --env-file .env -p 8080:8080 chatpulse
 ```
 
-Після push у `main` production pipeline збирає один образ і розгортає бота, API та Mini App разом.
+Після push у `main` production pipeline збирає один образ і розгортає бота, API та Mini App разом. Для Cloud Run використовуйте `/health` як liveness endpoint, а `/ready` як readiness endpoint із реальною перевіркою підключення до бази.
+
+## Надійність production
+
+- Telegram update позначається завершеним лише після успішної обробки dispatcher-ом. Помилка повертає HTTP 500 і дозволяє Telegram повторити доставку.
+- Повторно доставлений завершений update не виконується вдруге. Паралельна доставка захищена п’ятихвилинною lease.
+- Схема production-бази змінюється лише через Alembic.
+- Версія релізу зберігається у `VERSION`.
+- Нижня навігація перевіряється у справжньому WebKit на ключових мобільних ширинах.
 
 ## Автоматичні щотижневі звіти
 
@@ -205,16 +217,19 @@ gcloud scheduler jobs update http chatpulse-weekly-reports \
 
 ```bash
 cd miniapp
-npm install
+npm ci
 npm test -- --run
 npm run typecheck
 npm run build
+npx playwright install webkit
+npm run test:e2e
 
 cd ..
 ruff check .
 ruff format --check .
 pytest -q
-python -m compileall app
+python -m compileall app migrations
+alembic upgrade head
 ```
 
-GitHub Actions виконує frontend і backend перевірки паралельно.
+GitHub Actions паралельно виконує unit-тести, TypeScript, production build, WebKit-перевірки, backend lint/tests, міграційні smoke-тести та Docker-збірку.

@@ -8,5 +8,11 @@ __pycache__/
 .coverage
 htmlcov/
 .DS_Store
-
 *.egg-info/
+miniapp/node_modules/
+miniapp/dist/
+miniapp/coverage/
+miniapp/playwright-report/
+miniapp/test-results/
+
+build/

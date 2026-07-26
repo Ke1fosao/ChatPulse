@@ -25,7 +25,7 @@ async def seed_users(database: Database) -> tuple[AdminActor, UserControlReposit
                 ),
             ]
         )
-    await OwnerRepository(database.session_factory).claim_owner(101, "veheblya")
+    await OwnerRepository(database.session_factory, allowed_owner_id=101).claim_owner(101, "veheblya")
     actor = AdminActor(
         telegram_user_id=101,
         role="owner",

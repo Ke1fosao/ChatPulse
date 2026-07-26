@@ -7,13 +7,13 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 from app.models import BotOwner, utc_now
 
 OWNER_KEY = "primary"
-ALLOWED_OWNER_USERNAME = "veheblya"
 
 
 class OwnerClaimResult(StrEnum):
     CLAIMED = "claimed"
     ALREADY_OWNER = "already_owner"
-    USERNAME_MISMATCH = "username_mismatch"
+    ID_MISMATCH = "id_mismatch"
+    USERNAME_MISMATCH = "id_mismatch"  # Backward-compatible alias for older callers/tests.
     CLAIMED_BY_OTHER = "claimed_by_other"
 
 
@@ -22,8 +22,14 @@ def normalize_username(username: str | None) -> str:
 
 
 class OwnerRepository:
-    def __init__(self, session_factory: async_sessionmaker[AsyncSession]) -> None:
+    def __init__(
+        self,
+        session_factory: async_sessionmaker[AsyncSession],
+        *,
+        allowed_owner_id: int | None = None,
+    ) -> None:
         self._session_factory = session_factory
+        self._allowed_owner_id = allowed_owner_id
 
     async def claim_owner(
         self,
@@ -36,10 +42,10 @@ class OwnerRepository:
             if existing is not None:
                 return self._existing_result(existing, telegram_user_id)
 
-            normalized_username = normalize_username(username)
-            if normalized_username != ALLOWED_OWNER_USERNAME:
-                return OwnerClaimResult.USERNAME_MISMATCH
+            if self._allowed_owner_id is None or telegram_user_id != self._allowed_owner_id:
+                return OwnerClaimResult.ID_MISMATCH
 
+            normalized_username = normalize_username(username) or f"id{telegram_user_id}"
             session.add(
                 BotOwner(
                     owner_key=OWNER_KEY,
