@@ -35,6 +35,7 @@ def test_health_does_not_depend_on_database_startup() -> None:
     assert response.status_code == 200
     assert response.json()["status"] == "ok"
 
+
 def test_ready_returns_safe_503_when_database_probe_fails(tmp_path) -> None:
     from unittest.mock import AsyncMock
 

@@ -29,6 +29,7 @@ def test_alembic_upgrades_empty_database_to_head(tmp_path: Path) -> None:
         "last_error",
     } <= columns
 
+
 def test_alembic_upgrades_legacy_processed_updates_table(tmp_path: Path) -> None:
     database_path = tmp_path / "legacy.db"
     inspection_url = f"sqlite:///{database_path}"

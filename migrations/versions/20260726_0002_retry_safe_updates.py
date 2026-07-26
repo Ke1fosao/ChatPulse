@@ -53,12 +53,13 @@ def upgrade() -> None:
     if added_started_at:
         op.execute(
             sa.text(
-                "UPDATE processed_updates SET started_at = processed_at "
-                "WHERE started_at IS NULL"
+                "UPDATE processed_updates SET started_at = processed_at WHERE started_at IS NULL"
             )
         )
         with op.batch_alter_table("processed_updates") as batch:
-            batch.alter_column("started_at", existing_type=sa.DateTime(timezone=True), nullable=False)
+            batch.alter_column(
+                "started_at", existing_type=sa.DateTime(timezone=True), nullable=False
+            )
 
     update_indexes = _index_names("processed_updates")
     if "ix_processed_updates_status_lease" not in update_indexes:

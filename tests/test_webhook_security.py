@@ -38,6 +38,7 @@ def test_scheduler_endpoint_rejects_invalid_secret() -> None:
     assert response.status_code == 403
     assert response.json() == {"detail": "Invalid scheduler secret"}
 
+
 def test_failed_update_returns_retryable_error_and_second_delivery_succeeds() -> None:
     from unittest.mock import AsyncMock
 
