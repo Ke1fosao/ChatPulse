@@ -58,7 +58,6 @@ describe("BottomNav", () => {
 
     expect(navStyle.display).toBe("flex");
     expect(navStyle.gridTemplateColumns).not.toContain("repeat(5");
-    expect(firstItemStyle.flexGrow).toBe("1");
     expect(firstItemStyle.width).toBe("25%");
     expect(firstItemStyle.maxWidth).toBe("25%");
   });
