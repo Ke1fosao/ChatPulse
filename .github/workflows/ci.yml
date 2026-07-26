@@ -9,7 +9,7 @@ permissions:
 
 jobs:
   apply-stability:
-    if: github.event_name == 'push' && github.ref == 'refs/heads/stability/chatpulse-1-0' && github.actor != 'github-actions[bot]'
+    if: github.actor != 'github-actions[bot]'
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
