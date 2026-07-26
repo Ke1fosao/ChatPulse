@@ -123,4 +123,17 @@ jobs:
     needs: [frontend, browser, backend]
     steps:
       - uses: actions/checkout@v4
-      - run: docker build -t chatpulse-miniapp:test .
+      - name: Build production image
+        shell: bash
+        run: |
+          set +e
+          docker build -t chatpulse-miniapp:test . > docker-build.log 2>&1
+          status=$?
+          tail -n 240 docker-build.log
+          exit $status
+      - name: Upload Docker build log
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: docker-build-log
+          path: docker-build.log
