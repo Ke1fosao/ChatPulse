@@ -11,7 +11,7 @@ permissions:
 
 jobs:
   apply-production:
-    if: github.actor != 'github-actions[bot]' && github.event_name == 'push'
+    if: github.actor != 'github-actions[bot]'
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
