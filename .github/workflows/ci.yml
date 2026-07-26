@@ -22,7 +22,7 @@ jobs:
         run: |
           set -euo pipefail
           cat tools/architecture-batch.part0* | base64 --decode > /tmp/architecture-batch.tar.gz
-          echo "55ccd1b89106c8d7a19aac3625d8076e1775e563de01ba868a0188e6153f2919  /tmp/architecture-batch.tar.gz" | sha256sum --check
+          echo "4af8ec7883c8e2dda60b549f4415464ae70c69f2705cdf9d4e2f25b6ee48e0b5  /tmp/architecture-batch.tar.gz" | sha256sum --check
           tar -xzf /tmp/architecture-batch.tar.gz
           python - <<'PY'
           import json
