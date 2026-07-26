@@ -7,6 +7,7 @@ import json
 import tarfile
 from pathlib import Path
 
+# One-shot verified transport. The script deletes itself before committing the implementation.
 CHUNKS = [Path(f"tools/production-package.part{index:03d}") for index in range(31)]
 ARCHIVE_SHA256 = "a3ecfc37ac9e1b152584a442e85f4dd5edd3ab1771a03f224bfd9ad6e3707b7f"
 FINAL_CHUNK_SIZE = 1296
