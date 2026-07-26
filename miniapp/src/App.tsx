@@ -9,8 +9,7 @@ import {
   useNavigate,
 } from "react-router-dom";
 import { AppRoutes } from "./app/AppRoutes";
-import { useAchievements } from "./app/hooks/useAchievements";
-import { useAppBootstrap } from "./app/hooks/useAppBootstrap";
+import { useBootstrapResources } from "./app/bootstrap/useBootstrapResources";
 import { useGroups } from "./app/hooks/useGroups";
 import type { TabId } from "./api/types";
 import { AppShell } from "./components/AppShell";
@@ -50,9 +49,9 @@ function AppContent() {
   const location = useLocation();
   const [shareOpen, setShareOpen] = useState(false);
   const [levelsOpen, setLevelsOpen] = useState(false);
-  const bootstrap = useAppBootstrap();
-  const groups = useGroups(bootstrap.setGroups, bootstrap.setError);
-  const achievements = useAchievements(bootstrap.setAchievements);
+  const bootstrap = useBootstrapResources();
+  const [actionError, setActionError] = useState("");
+  const groups = useGroups(bootstrap.setGroups, setActionError);
 
   if (!isTelegramContext()) {
     return (
@@ -64,7 +63,7 @@ function AppContent() {
     );
   }
 
-  if (bootstrap.loading) {
+  if (bootstrap.home.status === "loading" && !bootstrap.home.data) {
     return (
       <main className="boot-screen">
         <span className="boot-logo"><Sparkles /></span>
@@ -79,13 +78,13 @@ function AppContent() {
     return <BlockedAccountPage reason={bootstrap.blockedAccount.reason} />;
   }
 
-  if (!bootstrap.home) {
+  if (!bootstrap.home.data) {
     return (
       <main className="standalone-screen">
         <span className="standalone-screen__error"><AlertTriangle size={30} /></span>
         <h1>Не вдалося відкрити профіль</h1>
-        <p>{bootstrap.error || "Спробуй оновити Mini App."}</p>
-        <button className="primary-button" type="button" onClick={() => void bootstrap.reload()}>
+        <p>{bootstrap.home.error || "Спробуй оновити Mini App."}</p>
+        <button className="primary-button" type="button" onClick={() => void bootstrap.reloadCritical()}>
           <RefreshCw size={18} /> Повторити
         </button>
       </main>
@@ -97,31 +96,34 @@ function AppContent() {
       <AppShell
         activeTab={tabFromPath(location.pathname)}
         onTabChange={(tab) => navigate(tab === "home" ? appPaths.home : appPaths[tab])}
-        badge={achievements.loading ? "SYNC" : "LIVE"}
+        badge={bootstrap.achievements.status === "loading" ? "SYNC" : "LIVE"}
       >
-        {bootstrap.error ? (
-          <button className="error-banner" type="button" onClick={() => bootstrap.setError("")}>
-            <AlertTriangle size={17} /> {bootstrap.error}
+        {actionError ? (
+          <button className="error-banner" type="button" onClick={() => setActionError("")}>
+            <AlertTriangle size={17} /> {actionError}
           </button>
         ) : null}
         <AppRoutes
-          home={bootstrap.home}
-          groups={bootstrap.groups}
-          achievements={bootstrap.achievements}
-          achievementLoading={achievements.loading}
+          home={bootstrap.home.data}
+          groups={bootstrap.groups.data ?? []}
+          groupsLoading={bootstrap.groups.status === "loading"}
+          groupsError={bootstrap.groups.error}
+          achievements={bootstrap.achievements.data ?? []}
+          achievementLoading={bootstrap.achievements.status === "loading"}
+          achievementsError={bootstrap.achievements.error}
           onToggleFavorite={groups.toggleFavorite}
-          onReload={() => void bootstrap.reload()}
-          onRefreshAchievements={() => void achievements.refresh()}
+          onReload={() => void bootstrap.retryGroups()}
+          onRefreshAchievements={() => void bootstrap.retryAchievements()}
           onShare={() => setShareOpen(true)}
           onOpenLevels={() => setLevelsOpen(true)}
         />
       </AppShell>
-      <ShareCardDialog data={bootstrap.home} open={shareOpen} onClose={() => setShareOpen(false)} />
+      <ShareCardDialog data={bootstrap.home.data} open={shareOpen} onClose={() => setShareOpen(false)} />
       <LevelsDialog open={levelsOpen} onClose={() => setLevelsOpen(false)} />
       <AchievementCelebrationLayer
         onOpenCollection={() => {
           navigate(appPaths.achievements);
-          void achievements.refresh();
+          void bootstrap.retryAchievements();
         }}
       />
     </>

@@ -10,7 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from app.models import utc_now
 from app.repositories.engagement import EngagementRepository
-from app.repositories.miniapp_v2 import AchievementMiniAppRepository
+from app.repositories.miniapp import MiniAppRepository
 
 
 def _as_utc(value: datetime) -> datetime:
@@ -27,7 +27,7 @@ class RetentionLifecycleService:
         miniapp_url: str | None = None,
     ) -> None:
         self._engagement = EngagementRepository(session_factory)
-        self._achievements = AchievementMiniAppRepository(session_factory)
+        self._achievements = MiniAppRepository(session_factory)
         self._miniapp_url = miniapp_url
 
     def _open_markup(self, label: str = "Відкрити ChatPulse") -> InlineKeyboardMarkup | None:

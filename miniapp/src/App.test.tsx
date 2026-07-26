@@ -6,7 +6,7 @@ import { api, ApiError } from "./api/client";
 
 vi.mock("./api/client", () => ({
   api: {
-    home: vi.fn().mockResolvedValue({
+    homeCore: vi.fn().mockResolvedValue({
       user: { telegram_id: 101, first_name: "Dmytro", display_name: "Dmytro" },
       account: {
         plan: "free",
@@ -14,19 +14,6 @@ vi.mock("./api/client", () => ({
         is_vip: false,
         vip_expires_at: null,
         entitlements: [],
-      },
-      onboarding: {
-        completed_steps: 3,
-        total_steps: 3,
-        is_complete: true,
-        primary_action: "done",
-        add_group_url: null,
-        linked_group: null,
-        steps: [
-          { id: "start", title: "Запусти ChatPulse", description: "Готово", completed: true },
-          { id: "group", title: "Додай у групу", description: "Готово", completed: true },
-          { id: "activity", title: "Створи перший пульс", description: "Готово", completed: true },
-        ],
       },
       global_progress: {
         xp_total: 850,
@@ -50,6 +37,15 @@ vi.mock("./api/client", () => ({
       recent_achievements: [],
       groups: [],
     }),
+    onboarding: vi.fn().mockResolvedValue({
+      completed_steps: 3,
+      total_steps: 3,
+      is_complete: true,
+      primary_action: "done",
+      add_group_url: null,
+      linked_group: null,
+      steps: [],
+    }),
     levels: vi.fn().mockResolvedValue({
       current_level: 4,
       xp_total: 850,
@@ -67,7 +63,6 @@ vi.mock("./api/client", () => ({
     profileCard: vi.fn().mockResolvedValue(new Blob(["png"], { type: "image/png" })),
     groups: vi.fn().mockResolvedValue([]),
     achievements: vi.fn().mockResolvedValue([]),
-    group: vi.fn(),
     updateSettings: vi.fn(),
     resetGroup: vi.fn(),
   },
@@ -108,7 +103,7 @@ describe("App", () => {
   });
 
   it("renders a final blocked screen without a retry loop", async () => {
-    mockedApi.home.mockRejectedValueOnce(
+    mockedApi.homeCore.mockRejectedValueOnce(
       new ApiError(
         "Доступ до ChatPulse обмежено адміністратором.",
         403,

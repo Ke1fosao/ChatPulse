@@ -18,6 +18,7 @@ import { achievementProgressPercent } from "./progress";
 interface AchievementsPageProps {
   achievements: Achievement[];
   loading: boolean;
+  error?: string;
   onRefresh(): void;
 }
 
@@ -54,6 +55,7 @@ const rarityFilters: Array<["all" | AchievementRarity, string]> = [
 export function AchievementsPage({
   achievements,
   loading,
+  error = "",
   onRefresh,
 }: AchievementsPageProps) {
   const [primaryTab, setPrimaryTab] =
@@ -129,6 +131,12 @@ export function AchievementsPage({
           </article>
         </div>
       </header>
+
+      {error ? (
+        <button className="error-banner" type="button" onClick={onRefresh}>
+          Колекція могла оновитися не повністю. Повторити.
+        </button>
+      ) : null}
 
       <FeaturedAchievements
         account={premium.account}

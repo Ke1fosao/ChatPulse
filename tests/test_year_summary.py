@@ -4,7 +4,7 @@ import pytest
 
 from app.database import Database
 from app.models import ChatGroup, DailyActivity, GroupMember, User
-from app.repositories.miniapp_v2 import AchievementMiniAppRepository
+from app.repositories.miniapp import MiniAppRepository
 
 
 @pytest.fixture
@@ -42,7 +42,7 @@ async def year_summary_repository(tmp_path):
                 ),
             ]
         )
-    yield AchievementMiniAppRepository(database.session_factory)
+    yield MiniAppRepository(database.session_factory)
     await database.dispose()
 
 

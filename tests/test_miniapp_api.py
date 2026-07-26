@@ -6,7 +6,7 @@ from fastapi.testclient import TestClient
 
 from app.api.miniapp.auth import TelegramMiniAppUser
 from app.api.miniapp.dependencies import get_miniapp_user
-from app.api.miniapp.routes import _is_current_admin
+from app.api.miniapp.access import is_current_admin as _is_current_admin
 from app.config import Settings
 from app.main import create_app
 
@@ -62,38 +62,18 @@ def test_home_endpoint_uses_verified_user_identity() -> None:
     repository.get_home.assert_awaited_once_with(101)
 
 
-def test_group_endpoint_hides_unknown_or_unauthorized_group() -> None:
+@pytest.mark.parametrize(
+    "path",
+    [
+        "/api/miniapp/v1/groups",
+        "/api/miniapp/v1/groups/-999",
+        "/api/miniapp/v1/groups/-1001/rankings?metric=xp&period=month",
+        "/api/miniapp/v1/profile-card",
+    ],
+)
+def test_legacy_miniapp_endpoints_are_removed(path: str) -> None:
     app = create_app(build_settings())
     app.dependency_overrides[get_miniapp_user] = current_user
-    repository = SimpleNamespace(get_group_dashboard=AsyncMock(return_value=None))
-
     with TestClient(app) as client:
-        app.state.miniapp_repository = repository
-        response = client.get("/api/miniapp/v1/groups/-999?period=week")
-
+        response = client.get(path)
     assert response.status_code == 404
-    assert response.json()["detail"] == "Групу не знайдено або доступ відсутній."
-
-
-def test_rankings_endpoint_validates_metric_and_period() -> None:
-    app = create_app(build_settings())
-    app.dependency_overrides[get_miniapp_user] = current_user
-    repository = SimpleNamespace(
-        get_rankings=AsyncMock(
-            return_value={
-                "metric": "xp",
-                "period": "month",
-                "rows": [],
-                "current_user": None,
-            }
-        )
-    )
-
-    with TestClient(app) as client:
-        app.state.miniapp_repository = repository
-        invalid = client.get("/api/miniapp/v1/groups/-1001/rankings?metric=spam&period=week")
-        valid = client.get("/api/miniapp/v1/groups/-1001/rankings?metric=xp&period=month")
-
-    assert invalid.status_code == 422
-    assert valid.status_code == 200
-    repository.get_rankings.assert_awaited_once_with(101, -1001, "xp", "month")

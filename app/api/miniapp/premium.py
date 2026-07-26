@@ -6,6 +6,14 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from app.api.miniapp.auth import TelegramMiniAppUser
 from app.api.miniapp.dependencies import get_miniapp_user
+from app.api.miniapp.responses.premium import (
+    PremiumAnalyticsResponse,
+    PremiumContextResponse,
+    PremiumEventResponse,
+    RankingPlansResponse,
+    ReportThemeResponse,
+    YearSummaryResponse,
+)
 from app.repositories.vip_product_events import ALLOWED_EVENT_TYPES
 from app.services.premium_policy import PREMIUM_REPORT_THEMES
 
@@ -71,7 +79,7 @@ async def _require_member(request: Request, chat_id: int, user_id: int) -> None:
         )
 
 
-@router.get("/context")
+@router.get("/context", response_model=PremiumContextResponse)
 async def premium_context(
     request: Request,
     user: Annotated[TelegramMiniAppUser, Depends(get_miniapp_user)],
@@ -85,7 +93,7 @@ async def premium_context(
     }
 
 
-@router.get("/year-summary")
+@router.get("/year-summary", response_model=YearSummaryResponse)
 async def premium_year_summary(
     request: Request,
     user: Annotated[TelegramMiniAppUser, Depends(get_miniapp_user)],
@@ -114,7 +122,7 @@ async def premium_year_summary(
     return payload
 
 
-@router.get("/groups/{chat_id}/analytics")
+@router.get("/groups/{chat_id}/analytics", response_model=PremiumAnalyticsResponse)
 async def premium_group_analytics(
     chat_id: int,
     request: Request,
@@ -143,7 +151,7 @@ async def premium_group_analytics(
     return payload
 
 
-@router.get("/groups/{chat_id}/ranking-plans")
+@router.get("/groups/{chat_id}/ranking-plans", response_model=RankingPlansResponse)
 async def ranking_account_plans(
     chat_id: int,
     request: Request,
@@ -168,7 +176,7 @@ async def ranking_account_plans(
     return {"plans": plans}
 
 
-@router.put("/groups/{chat_id}/report-theme")
+@router.put("/groups/{chat_id}/report-theme", response_model=ReportThemeResponse)
 async def premium_report_theme(
     chat_id: int,
     payload: PremiumThemeRequest,
@@ -195,7 +203,11 @@ async def premium_report_theme(
     return {"report_card_theme": payload.theme}
 
 
-@router.post("/events", status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/events",
+    status_code=status.HTTP_201_CREATED,
+    response_model=PremiumEventResponse,
+)
 async def record_premium_event(
     payload: VipProductEventRequest,
     request: Request,

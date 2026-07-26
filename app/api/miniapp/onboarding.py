@@ -4,6 +4,7 @@ from fastapi import APIRouter, Depends, Request
 
 from app.api.miniapp.auth import TelegramMiniAppUser
 from app.api.miniapp.dependencies import get_miniapp_user
+from app.api.miniapp.responses import OnboardingResponse
 from app.repositories.engagement import EngagementRepository
 
 router = APIRouter(prefix="/api/miniapp/v1", tags=["miniapp-onboarding"])
@@ -23,7 +24,7 @@ async def _bot_username(request: Request) -> str | None:
     return username
 
 
-@router.get("/onboarding")
+@router.get("/onboarding", response_model=OnboardingResponse)
 async def onboarding(
     request: Request,
     user: Annotated[TelegramMiniAppUser, Depends(get_miniapp_user)],

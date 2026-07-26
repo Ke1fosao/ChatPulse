@@ -5,6 +5,7 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from app.api.miniapp.auth import TelegramMiniAppUser
 from app.api.miniapp.dependencies import get_miniapp_user
+from app.api.miniapp.responses.common import GenericItemsResponse
 from app.services.profile_cards import render_profile_card
 
 router = APIRouter(prefix="/api/miniapp/v1", tags=["featured-achievements"])
@@ -24,7 +25,7 @@ class FeaturedAchievementUpdate(BaseModel):
     codes: list[str] = Field(default_factory=list, max_length=5)
 
 
-@router.get("/featured-achievements")
+@router.get("/featured-achievements", response_model=GenericItemsResponse)
 async def featured_achievements(
     request: Request,
     user: Annotated[TelegramMiniAppUser, Depends(get_miniapp_user)],
@@ -33,7 +34,7 @@ async def featured_achievements(
     return {"items": items}
 
 
-@router.put("/featured-achievements")
+@router.put("/featured-achievements", response_model=GenericItemsResponse)
 async def update_featured_achievements(
     payload: FeaturedAchievementUpdate,
     request: Request,

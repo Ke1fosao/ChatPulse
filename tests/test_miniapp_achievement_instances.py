@@ -5,7 +5,7 @@ import pytest
 from app.achievement_models import AchievementUnlockRecord
 from app.database import Database
 from app.models import ChatGroup, GroupMember, User
-from app.repositories.miniapp_v2 import AchievementMiniAppRepository
+from app.repositories.miniapp import MiniAppRepository
 
 
 @pytest.mark.asyncio
@@ -73,7 +73,7 @@ async def test_group_achievement_exposes_each_earned_instance(tmp_path) -> None:
             ]
         )
 
-    repository = AchievementMiniAppRepository(database.session_factory)
+    repository = MiniAppRepository(database.session_factory)
     achievements = await repository.get_achievements(501)
     assert achievements is not None
     item = next(value for value in achievements if value["code"] == "messages_100")
