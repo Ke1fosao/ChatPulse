@@ -34,8 +34,32 @@ jobs:
         with:
           name: frontend-test-log
           path: frontend-test.log
-      - run: npm run typecheck
-      - run: npm run build
+      - name: Run TypeScript typecheck
+        run: |
+          set +e
+          npm run typecheck > ../frontend-typecheck.log 2>&1
+          status=$?
+          cat ../frontend-typecheck.log
+          exit $status
+      - name: Upload TypeScript diagnostics
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-typecheck-log
+          path: frontend-typecheck.log
+      - name: Build frontend
+        run: |
+          set +e
+          npm run build > ../frontend-build.log 2>&1
+          status=$?
+          cat ../frontend-build.log
+          exit $status
+      - name: Upload frontend build diagnostics
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-build-log
+          path: frontend-build.log
 
   browser:
     runs-on: ubuntu-latest
@@ -112,6 +136,26 @@ jobs:
           name: backend-test-log
           path: backend-test.log
       - run: python -m compileall app migrations
+
+  architecture-repair-diagnostics:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -q ruff
+      - name: Generate deterministic Ruff repair snapshot
+        run: |
+          ruff check app tests --fix || true
+          ruff format app tests
+      - name: Upload repaired Python sources
+        uses: actions/upload-artifact@v4
+        with:
+          name: ruff-repaired-sources
+          path: |
+            app
+            tests
 
   docker:
     runs-on: ubuntu-latest
