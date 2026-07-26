@@ -6,28 +6,25 @@ import time
 from collections import OrderedDict
 from collections.abc import Awaitable, Callable, Hashable
 from dataclasses import dataclass
-from typing import Generic, TypeVar
 
 logger = logging.getLogger("chatpulse.telegram_access")
 
-T = TypeVar("T")
-
 
 @dataclass(frozen=True, slots=True)
-class CachedTelegramStatus(Generic[T]):
+class CachedTelegramStatus[T]:
     value: T | None
     fresh: bool
     stale: bool
 
 
 @dataclass(slots=True)
-class _CacheEntry(Generic[T]):
+class _CacheEntry[T]:
     value: T | None
     fresh_until: float
     stale_until: float
 
 
-class TelegramAccessCache(Generic[T]):
+class TelegramAccessCache[T]:
     """Small in-memory TTL/LRU cache with stale-on-error and miss coalescing."""
 
     def __init__(
