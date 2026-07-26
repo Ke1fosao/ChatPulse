@@ -14,6 +14,7 @@ class Settings(BaseSettings):
     scheduler_secret: str | None = Field(default=None, min_length=8)
     database_url: str = "sqlite+aiosqlite:///./chatpulse.db"
     default_timezone: str = "Europe/Kyiv"
+    owner_telegram_id: int | None = Field(default=None, gt=0)
 
     @property
     def webhook_path(self) -> str:
