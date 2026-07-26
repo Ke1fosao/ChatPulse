@@ -59,6 +59,6 @@ describe("BottomNav", () => {
     expect(navStyle.display).toBe("grid");
     expect(navStyle.gridTemplateColumns).toContain("repeat(4");
     expect(firstItemStyle.width).toBe("100%");
-    expect(firstItemStyle.maxWidth).toBe("");
+    expect(firstItemStyle.maxWidth).toBe("none");
   });
 });
