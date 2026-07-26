@@ -5,9 +5,31 @@ on:
   pull_request:
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
+  autoformat:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: stability/chatpulse-1-0
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -q "ruff>=0.11,<1"
+      - name: Apply canonical Python formatting
+        run: |
+          ruff format .
+          git checkout HEAD -- .github/workflows/ci.yml
+          git config user.name "ChatPulse Stability Bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add -A
+          git commit -m "style: apply canonical Ruff formatting"
+          git push origin HEAD:stability/chatpulse-1-0
+
   frontend:
     runs-on: ubuntu-latest
     defaults:
