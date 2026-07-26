@@ -137,28 +137,6 @@ jobs:
           path: backend-test.log
       - run: python -m compileall app migrations
 
-  architecture-repair-diagnostics:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
-      - run: pip install -q ruff
-      - name: Generate deterministic Ruff repair snapshot
-        run: |
-          ruff check app tests --fix || true
-          ruff format app tests
-          git diff -- app tests > ruff-repair.patch
-      - name: Upload repaired Python sources and patch
-        uses: actions/upload-artifact@v4
-        with:
-          name: ruff-repair-diagnostics
-          path: |
-            app
-            tests
-            ruff-repair.patch
-
   docker:
     runs-on: ubuntu-latest
     needs: [frontend, browser, backend]
