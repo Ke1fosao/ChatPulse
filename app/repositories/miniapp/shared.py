@@ -8,10 +8,7 @@ from zoneinfo import ZoneInfo
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
-from app.models import (
-    ChatGroup,
-    GroupMember,
-)
+from app.models import ChatGroup, GroupMember
 from app.services.nominations import METRICS
 
 MiniAppPeriod = Literal["week", "month", "all"]
@@ -117,7 +114,7 @@ class MiniAppShared:
             "telegram_chat_id": int(group.telegram_chat_id),
             "title": group.title,
             "username": group.username,
-            "initials": MiniAppRepository._initials(group.title),
+            "initials": MiniAppShared._initials(group.title),
             "timezone": group.timezone,
         }
 
