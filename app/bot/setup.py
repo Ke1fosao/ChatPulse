@@ -13,9 +13,10 @@ from app.repositories.activity import ActivityRepository
 from app.repositories.billing import BillingRepository
 from app.repositories.engagement import EngagementRepository
 from app.repositories.gamification_v2 import AchievementGamificationRepository
-from app.repositories.miniapp_v2 import AchievementMiniAppRepository
+from app.repositories.miniapp import MiniAppRepository
 from app.repositories.owner import OwnerRepository
 from app.repositories.user_control import UserControlRepository
+from app.services.activity_writes import ActivityWriteService
 
 ROUTER_TEMPLATES: tuple[Router, ...] = (
     payments_router,
@@ -51,10 +52,14 @@ def build_dispatcher(
     )
     dispatcher.update.outer_middleware(BlockedUserMiddleware(resolved_user_control_repository))
     dispatcher["repository"] = repository
-    dispatcher["gamification_repository"] = AchievementGamificationRepository(
-        repository._session_factory
+    gamification_repository = AchievementGamificationRepository(repository._session_factory)
+    dispatcher["gamification_repository"] = gamification_repository
+    dispatcher["activity_write_service"] = ActivityWriteService(
+        repository._session_factory,
+        repository,
+        gamification_repository,
     )
-    dispatcher["miniapp_repository"] = AchievementMiniAppRepository(repository._session_factory)
+    dispatcher["miniapp_repository"] = MiniAppRepository(repository._session_factory)
     dispatcher["owner_repository"] = resolved_owner_repository
     dispatcher["billing_repository"] = resolved_billing_repository
     dispatcher["engagement_repository"] = resolved_engagement_repository

@@ -93,7 +93,7 @@ def test_groups_v2_repairs_stale_bot_status(monkeypatch) -> None:
     )
     reconcile = AsyncMock(return_value=True)
     monkeypatch.setattr(
-        "app.api.miniapp.groups_v2.reconcile_group_bot_status",
+        "app.api.miniapp.groups.reconcile_group_bot_status",
         reconcile,
     )
 
@@ -175,7 +175,7 @@ def test_admin_can_pause_resume_and_send_report(monkeypatch) -> None:
     )
     access = SimpleNamespace(check_admin=AsyncMock(return_value=True))
     send_report = AsyncMock(return_value=True)
-    monkeypatch.setattr("app.api.miniapp.groups_v2.send_weekly_report", send_report)
+    monkeypatch.setattr("app.api.miniapp.groups.send_weekly_report", send_report)
 
     with TestClient(app) as client:
         app.state.groups_v2_repository = repository

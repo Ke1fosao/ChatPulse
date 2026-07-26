@@ -7,6 +7,8 @@ import { GroupCard } from "../../components/GroupCard";
 
 interface GroupsPageProps {
   groups: GroupsV2CardData[];
+  loading?: boolean;
+  error?: string;
   onOpenGroup(group: GroupCardData): void;
   onToggleFavorite(group: GroupsV2CardData, nextValue: boolean): Promise<void> | void;
   onRefresh(): void;
@@ -51,6 +53,8 @@ function statusCount(groups: GroupsV2CardData[], status: GroupStatusId): number 
 
 export function GroupsPage({
   groups,
+  loading = false,
+  error = "",
   onOpenGroup,
   onToggleFavorite,
   onRefresh,
@@ -103,6 +107,13 @@ export function GroupsPage({
           <Sparkles size={22} />
         </span>
       </header>
+
+      {error ? (
+        <button className="error-banner" type="button" onClick={onRefresh}>
+          Не все дані оновилися. Натисни, щоб повторити.
+        </button>
+      ) : null}
+      {loading && groups.length > 0 ? <p className="resource-sync-note">Оновлюємо групи…</p> : null}
 
       <section className="groups-summary" aria-label="Короткий огляд груп">
         <article>

@@ -5,6 +5,8 @@ from typing import Any
 from zoneinfo import ZoneInfo
 
 from sqlalchemy import delete, select
+from sqlalchemy.dialects.postgresql import insert as postgresql_insert
+from sqlalchemy.dialects.sqlite import insert as sqlite_insert
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from app.domain import AchievementEarned, GamificationUpdate, MessageActivity
@@ -33,6 +35,7 @@ from app.services.gamification import (
     level_for_xp,
     message_base_xp,
 )
+from app.services.keyed_lock import KeyedAsyncLock
 
 SUMMARY_FIELDS = (
     "messages_count",
@@ -50,6 +53,7 @@ SUMMARY_FIELDS = (
 class GamificationRepository:
     def __init__(self, session_factory: async_sessionmaker[AsyncSession]) -> None:
         self._session_factory = session_factory
+        self._xp_locks = KeyedAsyncLock()
 
     async def get_group_extras(self, chat_id: int) -> dict[str, Any]:
         async with self._session_factory() as session:
@@ -101,13 +105,37 @@ class GamificationRepository:
         total: int | None = None,
     ) -> tuple[int, int]:
         async with self._session_factory() as session, session.begin():
-            author = await session.get(MessageAuthor, (chat_id, message_id))
-            if author is None:
-                return 0, 0
-            previous = int(author.reactions_count)
-            new_total = int(total) if total is not None else previous + int(delta or 0)
-            author.reactions_count = max(0, new_total)
-            return previous, int(author.reactions_count)
+            return await self.update_message_reaction_total_in_session(
+                session,
+                chat_id,
+                message_id,
+                delta=delta,
+                total=total,
+            )
+
+    async def update_message_reaction_total_in_session(
+        self,
+        session: AsyncSession,
+        chat_id: int,
+        message_id: int,
+        *,
+        delta: int | None = None,
+        total: int | None = None,
+    ) -> tuple[int, int]:
+        author = await session.scalar(
+            select(MessageAuthor)
+            .where(
+                MessageAuthor.telegram_chat_id == chat_id,
+                MessageAuthor.message_id == message_id,
+            )
+            .with_for_update()
+        )
+        if author is None:
+            return 0, 0
+        previous = int(author.reactions_count)
+        new_total = int(total) if total is not None else previous + int(delta or 0)
+        author.reactions_count = max(0, new_total)
+        return previous, int(author.reactions_count)
 
     async def award_message_xp(
         self,
@@ -118,18 +146,52 @@ class GamificationRepository:
         activity: MessageActivity,
         occurred_at: datetime,
     ) -> GamificationUpdate:
-        timestamp = occurred_at.astimezone(UTC)
         async with self._session_factory() as session, session.begin():
-            group = await session.get(ChatGroup, chat_id)
-            member = await session.get(GroupMember, (chat_id, user_id))
-            user = await session.get(User, user_id)
-            author = await session.get(MessageAuthor, (chat_id, message_id))
-            if group is None or member is None or user is None or author is None:
+            return await self.award_message_xp_in_session(
+                session,
+                chat_id=chat_id,
+                user_id=user_id,
+                message_id=message_id,
+                activity=activity,
+                occurred_at=occurred_at,
+            )
+
+    async def award_message_xp_in_session(
+        self,
+        session: AsyncSession,
+        *,
+        chat_id: int,
+        user_id: int,
+        message_id: int,
+        activity: MessageActivity,
+        occurred_at: datetime,
+    ) -> GamificationUpdate:
+        timestamp = occurred_at.astimezone(UTC)
+        lock_key = ("message", chat_id, message_id)
+        async with self._xp_locks.hold(lock_key):
+            context = await self._lock_xp_context(
+                session,
+                chat_id=chat_id,
+                user_id=user_id,
+                message_id=message_id,
+            )
+            if context is None:
                 return GamificationUpdate()
+            group, user, member, author = context
+            if int(author.xp_awarded or 0) > 0:
+                return GamificationUpdate(
+                    old_group_level=member.level,
+                    new_group_level=member.level,
+                    old_global_level=user.global_level,
+                    new_global_level=user.global_level,
+                    current_streak=member.current_streak,
+                )
 
             author.content_fingerprint = activity.content_fingerprint
             author.content_simhash = (
-                f"{activity.content_simhash:016x}" if activity.content_simhash is not None else None
+                f"{activity.content_simhash:016x}"
+                if activity.content_simhash is not None
+                else None
             )
             author.content_length = activity.content_length
 
@@ -196,16 +258,47 @@ class GamificationRepository:
     ) -> GamificationUpdate:
         if positive_delta <= 0:
             return GamificationUpdate()
-        timestamp = occurred_at.astimezone(UTC)
         async with self._session_factory() as session, session.begin():
-            group = await session.get(ChatGroup, chat_id)
-            author = await session.get(MessageAuthor, (chat_id, message_id))
-            if group is None or author is None:
+            return await self.award_reaction_xp_in_session(
+                session,
+                chat_id=chat_id,
+                message_id=message_id,
+                positive_delta=positive_delta,
+                occurred_at=occurred_at,
+            )
+
+    async def award_reaction_xp_in_session(
+        self,
+        session: AsyncSession,
+        *,
+        chat_id: int,
+        message_id: int,
+        positive_delta: int,
+        occurred_at: datetime,
+    ) -> GamificationUpdate:
+        if positive_delta <= 0:
+            return GamificationUpdate()
+        timestamp = occurred_at.astimezone(UTC)
+        author_user_id = await session.scalar(
+            select(MessageAuthor.telegram_user_id).where(
+                MessageAuthor.telegram_chat_id == chat_id,
+                MessageAuthor.message_id == message_id,
+            )
+        )
+        if author_user_id is None:
+            return GamificationUpdate()
+
+        lock_key = ("xp", chat_id, int(author_user_id), timestamp.date())
+        async with self._xp_locks.hold(lock_key):
+            context = await self._lock_xp_context(
+                session,
+                chat_id=chat_id,
+                user_id=int(author_user_id),
+                message_id=message_id,
+            )
+            if context is None:
                 return GamificationUpdate()
-            member = await session.get(GroupMember, (chat_id, author.telegram_user_id))
-            user = await session.get(User, author.telegram_user_id)
-            if member is None or user is None:
-                return GamificationUpdate()
+            group, user, member, _author = context
             return await self._apply_xp(
                 session,
                 group=group,
@@ -214,6 +307,42 @@ class GamificationRepository:
                 requested_xp=positive_delta * 3,
                 timestamp=timestamp,
             )
+
+    async def _lock_xp_context(
+        self,
+        session: AsyncSession,
+        *,
+        chat_id: int,
+        user_id: int,
+        message_id: int,
+    ) -> tuple[ChatGroup, User, GroupMember, MessageAuthor] | None:
+        group = await session.scalar(
+            select(ChatGroup)
+            .where(ChatGroup.telegram_chat_id == chat_id)
+            .with_for_update()
+        )
+        user = await session.scalar(
+            select(User).where(User.telegram_id == user_id).with_for_update()
+        )
+        member = await session.scalar(
+            select(GroupMember)
+            .where(
+                GroupMember.telegram_chat_id == chat_id,
+                GroupMember.telegram_user_id == user_id,
+            )
+            .with_for_update()
+        )
+        author = await session.scalar(
+            select(MessageAuthor)
+            .where(
+                MessageAuthor.telegram_chat_id == chat_id,
+                MessageAuthor.message_id == message_id,
+            )
+            .with_for_update()
+        )
+        if group is None or user is None or member is None or author is None:
+            return None
+        return group, user, member, author
 
     async def get_message_author_name(self, chat_id: int, message_id: int) -> str | None:
         async with self._session_factory() as session:
@@ -418,27 +547,23 @@ class GamificationRepository:
         old_group_level = member.level
         old_global_level = user.global_level
         local_date = timestamp.astimezone(ZoneInfo(group.timezone)).date()
-        daily = await session.get(
-            DailyActivity,
-            (group.telegram_chat_id, member.telegram_user_id, local_date),
+        await self._ensure_daily_activity(
+            session,
+            chat_id=group.telegram_chat_id,
+            user_id=member.telegram_user_id,
+            activity_date=local_date,
+        )
+        daily = await session.scalar(
+            select(DailyActivity)
+            .where(
+                DailyActivity.telegram_chat_id == group.telegram_chat_id,
+                DailyActivity.telegram_user_id == member.telegram_user_id,
+                DailyActivity.activity_date == local_date,
+            )
+            .with_for_update()
         )
         if daily is None:
-            daily = DailyActivity(
-                telegram_chat_id=group.telegram_chat_id,
-                telegram_user_id=member.telegram_user_id,
-                activity_date=local_date,
-                messages_count=0,
-                media_count=0,
-                replies_count=0,
-                reactions_received=0,
-                photo_count=0,
-                voice_count=0,
-                night_messages_count=0,
-                morning_messages_count=0,
-                xp_earned=0,
-            )
-            session.add(daily)
-            await session.flush()
+            raise RuntimeError("Daily activity row was not created")
 
         previous_daily_xp = daily.xp_earned
         group_award = min(
@@ -446,15 +571,21 @@ class GamificationRepository:
             max(0, GROUP_DAILY_XP_CAP - daily.xp_earned),
         )
         global_date = timestamp.date()
-        global_daily = await session.get(GlobalDailyXP, (user.telegram_id, global_date))
-        if global_daily is None:
-            global_daily = GlobalDailyXP(
-                telegram_user_id=user.telegram_id,
-                activity_date=global_date,
-                xp_earned=0,
+        await self._ensure_global_daily_xp(
+            session,
+            user_id=user.telegram_id,
+            activity_date=global_date,
+        )
+        global_daily = await session.scalar(
+            select(GlobalDailyXP)
+            .where(
+                GlobalDailyXP.telegram_user_id == user.telegram_id,
+                GlobalDailyXP.activity_date == global_date,
             )
-            session.add(global_daily)
-            await session.flush()
+            .with_for_update()
+        )
+        if global_daily is None:
+            raise RuntimeError("Global daily XP row was not created")
         global_award = min(
             group_award,
             max(0, GLOBAL_DAILY_XP_CAP - global_daily.xp_earned),
@@ -483,6 +614,84 @@ class GamificationRepository:
             current_streak=member.current_streak,
             achievements=tuple(achievements),
         )
+
+    async def _ensure_daily_activity(
+        self,
+        session: AsyncSession,
+        *,
+        chat_id: int,
+        user_id: int,
+        activity_date: date,
+    ) -> None:
+        values = {
+            "telegram_chat_id": chat_id,
+            "telegram_user_id": user_id,
+            "activity_date": activity_date,
+            "messages_count": 0,
+            "media_count": 0,
+            "replies_count": 0,
+            "reactions_received": 0,
+            "photo_count": 0,
+            "voice_count": 0,
+            "night_messages_count": 0,
+            "morning_messages_count": 0,
+            "xp_earned": 0,
+        }
+        dialect = session.bind.dialect.name if session.bind is not None else ""
+        if dialect == "postgresql":
+            statement = postgresql_insert(DailyActivity).values(**values).on_conflict_do_nothing(
+                index_elements=[
+                    DailyActivity.telegram_chat_id,
+                    DailyActivity.telegram_user_id,
+                    DailyActivity.activity_date,
+                ]
+            )
+            await session.execute(statement)
+        elif dialect == "sqlite":
+            statement = sqlite_insert(DailyActivity).values(**values).on_conflict_do_nothing(
+                index_elements=[
+                    DailyActivity.telegram_chat_id,
+                    DailyActivity.telegram_user_id,
+                    DailyActivity.activity_date,
+                ]
+            )
+            await session.execute(statement)
+        elif await session.get(DailyActivity, (chat_id, user_id, activity_date)) is None:
+            session.add(DailyActivity(**values))
+        await session.flush()
+
+    async def _ensure_global_daily_xp(
+        self,
+        session: AsyncSession,
+        *,
+        user_id: int,
+        activity_date: date,
+    ) -> None:
+        values = {
+            "telegram_user_id": user_id,
+            "activity_date": activity_date,
+            "xp_earned": 0,
+        }
+        dialect = session.bind.dialect.name if session.bind is not None else ""
+        if dialect == "postgresql":
+            statement = postgresql_insert(GlobalDailyXP).values(**values).on_conflict_do_nothing(
+                index_elements=[
+                    GlobalDailyXP.telegram_user_id,
+                    GlobalDailyXP.activity_date,
+                ]
+            )
+            await session.execute(statement)
+        elif dialect == "sqlite":
+            statement = sqlite_insert(GlobalDailyXP).values(**values).on_conflict_do_nothing(
+                index_elements=[
+                    GlobalDailyXP.telegram_user_id,
+                    GlobalDailyXP.activity_date,
+                ]
+            )
+            await session.execute(statement)
+        elif await session.get(GlobalDailyXP, (user_id, activity_date)) is None:
+            session.add(GlobalDailyXP(**values))
+        await session.flush()
 
     async def _advance_streak(
         self,

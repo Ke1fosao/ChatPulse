@@ -3,6 +3,7 @@ from aiogram.types import MessageReactionCountUpdated, MessageReactionUpdated
 
 from app.repositories.activity import ActivityRepository
 from app.repositories.gamification import GamificationRepository
+from app.services.activity_writes import ActivityWriteService, ReactionWriteResult
 from app.services.gamification import format_gamification_announcement
 
 router = Router(name="reactions")
@@ -41,15 +42,48 @@ async def _announce_update(
         await bot.send_message(event.chat.id, announcement)
 
 
+
+
+async def _announce_result(
+    bot: Bot,
+    event: MessageReactionUpdated | MessageReactionCountUpdated,
+    gamification_repository: GamificationRepository,
+    result: ReactionWriteResult,
+) -> None:
+    if not result.tracked or result.positive_delta <= 0:
+        return
+    display_name = await gamification_repository.get_message_author_name(
+        event.chat.id,
+        event.message_id,
+    )
+    announcement = format_gamification_announcement(
+        display_name or "Учасник",
+        result.gamification,
+    )
+    if announcement:
+        await bot.send_message(event.chat.id, announcement)
+
+
 @router.message_reaction()
 async def reaction_changed(
     event: MessageReactionUpdated,
     bot: Bot,
     repository: ActivityRepository,
     gamification_repository: GamificationRepository,
+    activity_write_service: ActivityWriteService | None = None,
 ) -> None:
     old_reactions = [reaction_key(item) for item in event.old_reaction]
     new_reactions = [reaction_key(item) for item in event.new_reaction]
+    if activity_write_service is not None:
+        result = await activity_write_service.record_reaction(
+            chat_id=event.chat.id,
+            message_id=event.message_id,
+            old_reactions=old_reactions,
+            new_reactions=new_reactions,
+            occurred_at=event.date,
+        )
+        await _announce_result(bot, event, gamification_repository, result)
+        return
     tracked = await repository.record_reaction(
         chat_id=event.chat.id,
         message_id=event.message_id,
@@ -73,8 +107,18 @@ async def reaction_count_changed(
     bot: Bot,
     repository: ActivityRepository,
     gamification_repository: GamificationRepository,
+    activity_write_service: ActivityWriteService | None = None,
 ) -> None:
     reaction_counts = {reaction_key(item.type): item.total_count for item in event.reactions}
+    if activity_write_service is not None:
+        result = await activity_write_service.record_reaction_count(
+            chat_id=event.chat.id,
+            message_id=event.message_id,
+            reaction_counts=reaction_counts,
+            occurred_at=event.date,
+        )
+        await _announce_result(bot, event, gamification_repository, result)
+        return
     tracked = await repository.record_reaction_count(
         chat_id=event.chat.id,
         message_id=event.message_id,

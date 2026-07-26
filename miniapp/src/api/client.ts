@@ -10,13 +10,11 @@ import type {
   Achievement,
   AchievementEventPayload,
   ApiErrorBody,
-  GroupDashboard,
   GroupSettings,
   HomePayload,
   Metric,
   OnboardingPayload,
   Period,
-  RankingPayload,
 } from "./types";
 import { getInitData } from "../telegram/sdk";
 
@@ -85,17 +83,12 @@ async function requestBlob(path: string): Promise<Blob> {
 }
 
 export const api = {
-  home: async (): Promise<HomePayload> => {
-    const [home, onboarding] = await Promise.all([
-      request<Omit<HomePayload, "onboarding">>("/home"),
-      request<OnboardingPayload>("/onboarding"),
-    ]);
-    return { ...home, onboarding };
-  },
-  onboarding: () => request<OnboardingPayload>("/onboarding"),
+  homeCore: (init?: RequestInit): Promise<Omit<HomePayload, "onboarding">> =>
+    request<Omit<HomePayload, "onboarding">>("/home", init),
+  onboarding: (init?: RequestInit) => request<OnboardingPayload>("/onboarding", init),
   levels: () => request<LevelsPayload>("/levels"),
-  groups: async () =>
-    (await request<{ groups: GroupsV2CardData[] }>("/groups-v2")).groups,
+  groups: async (init?: RequestInit) =>
+    (await request<{ groups: GroupsV2CardData[] }>("/groups-v2", init)).groups,
   setGroupFavorite: (chatId: number, isFavorite: boolean) =>
     request<{ telegram_chat_id: number; is_favorite: boolean }>(
       `/groups/${chatId}/favorite`,
@@ -126,15 +119,9 @@ export const api = {
       `/groups/${chatId}/analytics/resume`,
       { method: "POST" },
     ),
-  group: (chatId: number, period: Period) =>
-    request<GroupDashboard>(`/groups/${chatId}?period=${period}`),
-  rankings: (chatId: number, metric: Metric, period: Period) =>
-    request<RankingPayload>(
-      `/groups/${chatId}/rankings?metric=${metric}&period=${period}`,
-    ),
-  achievements: async (chatId?: number) => {
+  achievements: async (chatId?: number, init?: RequestInit) => {
     const query = chatId === undefined ? "" : `?chat_id=${chatId}`;
-    return (await request<{ achievements: Achievement[] }>(`/achievements${query}`))
+    return (await request<{ achievements: Achievement[] }>(`/achievements${query}`, init))
       .achievements;
   },
   achievementEvents: async (limit = 10) =>

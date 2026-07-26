@@ -1,0 +1,28 @@
+phase=verify_chunks
+chunk=architecture-batch.part00 bytes=10000
+chunk=architecture-batch.part01 bytes=10000
+chunk=architecture-batch.part02 bytes=10000
+chunk=architecture-batch.part03a bytes=2500
+chunk=architecture-batch.part03b bytes=2500
+chunk=architecture-batch.part03c bytes=2500
+chunk=architecture-batch.part03d bytes=2500
+chunk=architecture-batch.part04 bytes=10000
+chunk=architecture-batch.part05a bytes=2500
+chunk=architecture-batch.part05b bytes=2500
+chunk=architecture-batch.part05c bytes=2500
+chunk=architecture-batch.part05d bytes=2500
+chunk=architecture-batch.part06 bytes=10000
+chunk=architecture-batch.part07 bytes=7404
+phase=decode_base64
+encoded_bytes=77404 archive_bytes=58051 archive_sha256=4af8ec7883c8e2dda60b549f4415464ae70c69f2705cdf9d4e2f25b6ee48e0b5
+phase=extract_archive
+archive_members=66
+phase=apply_manifest
+deleted=app/api/miniapp/groups_v2.py
+deleted=app/api/miniapp/routes.py
+deleted=app/repositories/activity.py
+deleted=app/repositories/miniapp.py
+deleted=app/repositories/miniapp_v2.py
+deleted=miniapp/src/app/hooks/useAppBootstrap.ts
+phase=cleanup_transport
+architecture_package_applied=true

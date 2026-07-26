@@ -15,6 +15,7 @@ from app.bot.keyboards_stats import period_keyboard
 from app.domain import GroupData, MessageActivity, StatsPeriod, UserData
 from app.repositories.activity import ActivityRepository
 from app.repositories.gamification import GamificationRepository
+from app.services.activity_writes import ActivityWriteService
 from app.services.gamification import (
     content_fingerprints,
     format_comparison,
@@ -327,6 +328,7 @@ async def track_group_message(
     repository: ActivityRepository,
     default_timezone: str,
     gamification_repository: GamificationRepository | None = None,
+    activity_write_service: ActivityWriteService | None = None,
     fingerprint_secret: str | None = None,
 ) -> None:
     activity = classify_message(message, fingerprint_secret)
@@ -342,22 +344,34 @@ async def track_group_message(
         repository,
         _group_data(message, default_timezone),
     )
-    tracked = await repository.record_message(
-        chat_id=message.chat.id,
-        user=user,
-        activity=activity,
-        occurred_at=occurred_at,
-        message_id=message.message_id,
-    )
-    if not tracked or gamification_repository is None:
-        return
-    update = await gamification_repository.award_message_xp(
-        chat_id=message.chat.id,
-        user_id=user.telegram_id,
-        message_id=message.message_id,
-        activity=activity,
-        occurred_at=occurred_at,
-    )
+    if activity_write_service is not None:
+        result = await activity_write_service.record_message(
+            chat_id=message.chat.id,
+            user=user,
+            activity=activity,
+            occurred_at=occurred_at,
+            message_id=message.message_id,
+        )
+        if not result.tracked:
+            return
+        update = result.gamification
+    else:
+        tracked = await repository.record_message(
+            chat_id=message.chat.id,
+            user=user,
+            activity=activity,
+            occurred_at=occurred_at,
+            message_id=message.message_id,
+        )
+        if not tracked or gamification_repository is None:
+            return
+        update = await gamification_repository.award_message_xp(
+            chat_id=message.chat.id,
+            user_id=user.telegram_id,
+            message_id=message.message_id,
+            activity=activity,
+            occurred_at=occurred_at,
+        )
     announcement = format_gamification_announcement(user.display_name, update)
     if announcement:
         await message.answer(announcement)
