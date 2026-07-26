@@ -80,7 +80,19 @@ jobs:
           cache: pip
       - run: pip install -q -e ".[dev]" -c requirements.lock
       - run: python -m pip check
-      - run: ruff check .
+      - name: Run Ruff lint
+        run: |
+          set +e
+          ruff check . --output-format=concise > ruff-check.log 2>&1
+          status=$?
+          cat ruff-check.log
+          exit $status
+      - name: Upload Ruff diagnostics
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ruff-check-log
+          path: ruff-check.log
       - run: ruff format --check .
       - run: pytest -q
       - name: Repeat concurrency-sensitive tests
@@ -142,7 +154,19 @@ jobs:
           cache: pip
       - run: pip install -q -e ".[dev]" -c requirements.lock
       - run: locust -f load/locustfile.py --list
-      - run: python -m scripts.load_smoke
+      - name: Run local load smoke
+        run: |
+          set +e
+          python -m scripts.load_smoke > load-smoke.log 2>&1
+          status=$?
+          cat load-smoke.log
+          exit $status
+      - name: Upload load-smoke diagnostics
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: load-smoke-log
+          path: load-smoke.log
 
   security:
     runs-on: ubuntu-latest
@@ -161,7 +185,19 @@ jobs:
           cache: npm
           cache-dependency-path: miniapp/package-lock.json
       - run: pip install -q -e ".[dev]" -c requirements.lock
-      - run: pip-audit --strict
+      - name: Audit Python dependencies
+        run: |
+          set +e
+          pip-audit --strict > pip-audit.log 2>&1
+          status=$?
+          cat pip-audit.log
+          exit $status
+      - name: Upload Python audit diagnostics
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pip-audit-log
+          path: pip-audit.log
       - run: npm ci --prefix miniapp --no-audit --no-fund
       - run: npm audit --prefix miniapp --omit=dev --audit-level=high
       - name: Reject committed secrets and generated artifacts
