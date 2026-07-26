@@ -16,8 +16,14 @@ jobs:
         with:
           node-version: "22"
           cache: npm
-          cache-dependency-path: miniapp/package.json
-      - run: npm install --no-audit --no-fund
+          cache-dependency-path: miniapp/package-lock.json
+      - name: Refresh dependency lock during stability work
+        run: npm install --no-audit --no-fund
+      - name: Upload refreshed package lock
+        uses: actions/upload-artifact@v4
+        with:
+          name: miniapp-package-lock
+          path: miniapp/package-lock.json
       - name: Run frontend tests
         id: frontend_tests
         shell: bash
@@ -25,7 +31,7 @@ jobs:
           set +e
           npm test -- --run > ../frontend-test.log 2>&1
           status=$?
-          tail -n 160 ../frontend-test.log
+          tail -n 200 ../frontend-test.log
           exit $status
       - name: Upload frontend test log
         if: failure()
@@ -40,6 +46,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Upload source snapshot
+        uses: actions/upload-artifact@v4
+        with:
+          name: stability-source-snapshot
+          path: |
+            .
+            !.git
+            !miniapp/node_modules
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
@@ -66,7 +80,7 @@ jobs:
           set +e
           pytest -q > backend-test.log 2>&1
           status=$?
-          tail -n 240 backend-test.log
+          tail -n 300 backend-test.log
           exit $status
       - name: Upload backend test log
         if: failure()
@@ -74,7 +88,7 @@ jobs:
         with:
           name: backend-test-log
           path: backend-test.log
-      - run: python -m compileall app
+      - run: python -m compileall app migrations
 
   docker:
     runs-on: ubuntu-latest
