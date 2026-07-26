@@ -24,15 +24,16 @@ def validate_member(member: tarfile.TarInfo) -> None:
 def main() -> None:
     print("phase=verify_chunks", flush=True)
     encoded_parts: list[bytes] = []
+    invalid: list[str] = []
     for index, path in enumerate(CHUNKS):
         data = path.read_bytes()
         expected_size = FINAL_CHUNK_SIZE if index == 30 else 2500
         print(f"chunk={path.name} bytes={len(data)}", flush=True)
         if len(data) != expected_size:
-            raise RuntimeError(
-                f"Invalid chunk size for {path}: expected {expected_size}, got {len(data)}"
-            )
+            invalid.append(f"{path}: expected {expected_size}, got {len(data)}")
         encoded_parts.append(data)
+    if invalid:
+        raise RuntimeError("Invalid chunk sizes: " + "; ".join(invalid))
 
     print("phase=decode_archive", flush=True)
     archive = base64.b64decode(b"".join(encoded_parts), validate=True)
