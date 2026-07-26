@@ -5,28 +5,9 @@ on:
   pull_request:
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
-  cleanup-generated:
-    if: github.actor != 'github-actions[bot]'
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          ref: stability/chatpulse-1-0
-          fetch-depth: 0
-      - name: Remove generated package build output
-        run: |
-          rm -rf build
-          grep -qxF 'build/' .gitignore || printf '\nbuild/\n' >> .gitignore
-          grep -qxF 'build/' .dockerignore || printf '\nbuild/\n' >> .dockerignore
-          git config user.name "ChatPulse Stability Bot"
-          git config user.email "actions@users.noreply.github.com"
-          git add -A
-          git commit -m "chore: remove generated package build output"
-          git push origin HEAD:stability/chatpulse-1-0
-
   frontend:
     runs-on: ubuntu-latest
     defaults:
