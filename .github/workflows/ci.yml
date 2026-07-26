@@ -17,11 +17,48 @@ jobs:
         with:
           ref: architecture/chatpulse-2-0
           fetch-depth: 0
-      - name: Decode and apply architecture package
+      - name: Verify, decode and apply architecture package
         shell: bash
         run: |
           set -euo pipefail
-          cat tools/architecture-batch.part0* | base64 --decode > /tmp/architecture-batch.tar.gz
+          while read -r expected path; do
+            actual="$(git hash-object "$path")"
+            if [ "$actual" != "$expected" ]; then
+              echo "Invalid architecture chunk: $path expected=$expected actual=$actual"
+              exit 1
+            fi
+          done <<'EOF'
+          3e00028547cdbb5ef4613e9ce7b3478f1d7c1be6 tools/architecture-batch.part00
+          27e7d18c577d989406b9660361ae88db0261f9d1 tools/architecture-batch.part01
+          7d933dd735c5f4219402806cf5f27575b761f534 tools/architecture-batch.part02
+          3d54a6f9e5e555f607dd36225209b7f33855b58b tools/architecture-batch.part03a
+          de812842f9627fb8c5d309dab9372be54cb1d1b4 tools/architecture-batch.part03b
+          598de1bec7e6cf85acddf58c676184c7f28713e4 tools/architecture-batch.part03c
+          014f35003b39c123310a6c2058bafae0b4726d28 tools/architecture-batch.part03d
+          993f553cadcdc7157ad36c9ba0919186f2984358 tools/architecture-batch.part04
+          3b4988cc2fc3c9d85e7ca1793de83feffba42db5 tools/architecture-batch.part05a
+          83311b9300e6a2f41011c87ee6386f5afcfff6dd tools/architecture-batch.part05b
+          8287f0ec7edb9f8fb1dd9b183599f504802ff1b0 tools/architecture-batch.part05c
+          6a421eab5246bc7bc7d06eca6e01d68dc6672322 tools/architecture-batch.part05d
+          ba08ce5765da8ac3138597de75a7484ef532131f tools/architecture-batch.part06
+          6c51c221e77d45cc5724d018418774018d5eccfa tools/architecture-batch.part07
+          EOF
+          cat \
+            tools/architecture-batch.part00 \
+            tools/architecture-batch.part01 \
+            tools/architecture-batch.part02 \
+            tools/architecture-batch.part03a \
+            tools/architecture-batch.part03b \
+            tools/architecture-batch.part03c \
+            tools/architecture-batch.part03d \
+            tools/architecture-batch.part04 \
+            tools/architecture-batch.part05a \
+            tools/architecture-batch.part05b \
+            tools/architecture-batch.part05c \
+            tools/architecture-batch.part05d \
+            tools/architecture-batch.part06 \
+            tools/architecture-batch.part07 \
+            | base64 --decode > /tmp/architecture-batch.tar.gz
           echo "4af8ec7883c8e2dda60b549f4415464ae70c69f2705cdf9d4e2f25b6ee48e0b5  /tmp/architecture-batch.tar.gz" | sha256sum --check
           tar -xzf /tmp/architecture-batch.tar.gz
           python - <<'PY'
@@ -36,7 +73,7 @@ jobs:
                   path.unlink()
           manifest_path.unlink()
           PY
-          rm -f tools/architecture-batch.part0*
+          rm -f tools/architecture-batch.part*
       - name: Commit atomic Architecture 2.0 implementation
         shell: bash
         run: |
