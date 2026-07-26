@@ -1,24 +1,14 @@
-from collections import Counter
-from collections.abc import Sequence
-from datetime import UTC, date, datetime, timedelta
+from datetime import date, datetime, timedelta
 from typing import Any
-from zoneinfo import ZoneInfo
 
-from sqlalchemy import delete, func, select
-from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
-from app.domain import GroupData, MessageActivity, StatsPeriod, UserData
+from app.domain import StatsPeriod, UserData
 from app.models import (
     ChatGroup,
     DailyActivity,
-    DailyReactionEmoji,
     GroupMember,
-    MessageAuthor,
-    MessageReactionState,
-    ProcessedUpdate,
     User,
-    utc_now,
 )
 
 MemberStats = dict[str, Any]

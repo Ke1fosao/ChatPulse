@@ -18,6 +18,9 @@ dependencies = [
   "asyncpg>=0.30,<1",
   "pydantic-settings>=2.8,<3",
   "pillow>=11,<12",
+  "redis>=5,<6",
+  "prometheus-client>=0.21,<1",
+  "sentry-sdk[fastapi]>=2,<3",
 ]
 
 [project.optional-dependencies]
@@ -26,6 +29,8 @@ dev = [
   "pytest-asyncio>=0.26,<1",
   "httpx>=0.28,<1",
   "ruff>=0.11,<1",
+  "locust>=2.37,<3",
+  "pip-audit>=2.7,<3",
 ]
 
 [tool.setuptools.dynamic]

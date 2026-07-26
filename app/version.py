@@ -11,3 +11,4 @@ def _read_version() -> str:
 
 
 APP_VERSION = _read_version()
+APP_SCHEMA_REVISION = "20260726_0003"

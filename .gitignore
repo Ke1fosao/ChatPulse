@@ -5,6 +5,8 @@ __pycache__/
 .venv/
 .env
 *.db
+*.sqlite
+*.sqlite3
 .coverage
 htmlcov/
 .DS_Store
@@ -14,5 +16,6 @@ miniapp/dist/
 miniapp/coverage/
 miniapp/playwright-report/
 miniapp/test-results/
-
+load-report*.csv
+load-report*.html
 build/

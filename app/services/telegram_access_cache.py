@@ -6,28 +6,26 @@ import time
 from collections import OrderedDict
 from collections.abc import Awaitable, Callable, Hashable
 from dataclasses import dataclass
-from typing import Generic, TypeVar
+from typing import Any
 
 logger = logging.getLogger("chatpulse.telegram_access")
 
-T = TypeVar("T")
-
 
 @dataclass(frozen=True, slots=True)
-class CachedTelegramStatus(Generic[T]):
+class CachedTelegramStatus[T]:
     value: T | None
     fresh: bool
     stale: bool
 
 
 @dataclass(slots=True)
-class _CacheEntry(Generic[T]):
+class _CacheEntry[T]:
     value: T | None
     fresh_until: float
     stale_until: float
 
 
-class TelegramAccessCache(Generic[T]):
+class TelegramAccessCache[T]:
     """Small in-memory TTL/LRU cache with stale-on-error and miss coalescing."""
 
     def __init__(
@@ -35,14 +33,20 @@ class TelegramAccessCache(Generic[T]):
         *,
         max_entries: int = 10_000,
         clock: Callable[[], float] = time.monotonic,
+        metrics: Any = None,
     ) -> None:
         if max_entries < 1:
             raise ValueError("max_entries must be positive")
         self._max_entries = max_entries
         self._clock = clock
+        self._metrics = metrics
         self._entries: OrderedDict[Hashable, _CacheEntry[T]] = OrderedDict()
         self._inflight: dict[Hashable, asyncio.Task[T | None]] = {}
         self._lock = asyncio.Lock()
+
+    def _record(self, outcome: str) -> None:
+        if self._metrics is not None:
+            self._metrics.telegram_cache.labels(outcome=outcome).inc()
 
     async def get_or_load(
         self,
@@ -65,6 +69,7 @@ class TelegramAccessCache(Generic[T]):
                 if now <= entry.fresh_until:
                     self._entries.move_to_end(key)
                     logger.debug("telegram_access_cache_hit key=%r", key)
+                    self._record("hit")
                     return CachedTelegramStatus(entry.value, fresh=True, stale=False)
                 if now <= entry.stale_until:
                     stale_entry = entry
@@ -77,6 +82,9 @@ class TelegramAccessCache(Generic[T]):
                 self._inflight[key] = task
                 created = True
                 logger.debug("telegram_access_cache_miss key=%r", key)
+                self._record("miss")
+            else:
+                self._record("coalesced")
 
         try:
             value = await task
@@ -90,8 +98,10 @@ class TelegramAccessCache(Generic[T]):
                     self._entries.move_to_end(key)
             if stale_entry is not None:
                 logger.warning("telegram_access_cache_stale key=%r", key)
+                self._record("stale")
                 return CachedTelegramStatus(stale_entry.value, fresh=False, stale=True)
             logger.warning("telegram_access_cache_load_failed key=%r", key)
+            self._record("load_failed")
             return CachedTelegramStatus(None, fresh=False, stale=False)
 
         now = self._clock()
@@ -109,6 +119,7 @@ class TelegramAccessCache(Generic[T]):
             while len(self._entries) > self._max_entries:
                 evicted_key, _ = self._entries.popitem(last=False)
                 logger.debug("telegram_access_cache_evicted key=%r", evicted_key)
+                self._record("evicted")
         return CachedTelegramStatus(value, fresh=True, stale=False)
 
     async def invalidate(self, predicate: Callable[[Hashable], bool]) -> None:
@@ -118,10 +129,9 @@ class TelegramAccessCache(Generic[T]):
 
     async def invalidate_user(self, chat_id: int, user_id: int) -> None:
         await self.invalidate(
-            lambda key: isinstance(key, tuple)
-            and len(key) >= 3
-            and key[1] == chat_id
-            and key[2] == user_id
+            lambda key: (
+                isinstance(key, tuple) and len(key) >= 3 and key[1] == chat_id and key[2] == user_id
+            )
         )
 
     async def invalidate_group(self, chat_id: int) -> None:

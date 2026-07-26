@@ -1,36 +1,14 @@
 from __future__ import annotations
 
 from collections.abc import Sequence
-from datetime import UTC, date, datetime, timedelta
+from datetime import date, datetime, timedelta
 from typing import Any, Literal
 from zoneinfo import ZoneInfo
 
-from sqlalchemy import func, select
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
-from app.achievement_models import AchievementUnlockRecord
-from app.achievements.catalog import ACHIEVEMENTS as CANONICAL_ACHIEVEMENTS
-from app.achievements.presentation import achievement_progress_payload
-from app.models import (
-    ChatGroup,
-    DailyActivity,
-    DailyReactionEmoji,
-    GlobalDailyXP,
-    GroupMember,
-    MemberAchievement,
-    MessageAuthor,
-    StreakProtectionUsage,
-    User,
-    utc_now,
-)
-from app.services.gamification import (
-    ACHIEVEMENT_BY_CODE,
-    ACHIEVEMENTS,
-    MONTHLY_PROTECTION_DAYS,
-    level_progress,
-    level_tier,
-)
-from app.services.miniapp import message_link, percentage_change
+from app.models import ChatGroup, GroupMember
 from app.services.nominations import METRICS
 
 MiniAppPeriod = Literal["week", "month", "all"]
@@ -136,7 +114,7 @@ class MiniAppShared:
             "telegram_chat_id": int(group.telegram_chat_id),
             "title": group.title,
             "username": group.username,
-            "initials": MiniAppRepository._initials(group.title),
+            "initials": MiniAppShared._initials(group.title),
             "timezone": group.timezone,
         }
 

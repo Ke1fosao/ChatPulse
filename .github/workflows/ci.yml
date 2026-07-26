@@ -5,58 +5,16 @@ on:
   pull_request:
 
 permissions:
-  contents: write
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
-  apply-architecture:
-    if: github.actor != 'github-actions[bot]' && ((github.event_name == 'push' && github.ref == 'refs/heads/architecture/chatpulse-2-0') || (github.event_name == 'pull_request' && github.head_ref == 'architecture/chatpulse-2-0'))
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          ref: architecture/chatpulse-2-0
-          fetch-depth: 0
-      - name: Verify and apply Architecture 2.0 package
-        run: |
-          set +e
-          python tools/apply_architecture.py > architecture-apply.log 2>&1
-          status=$?
-          cat architecture-apply.log
-          exit $status
-      - name: Upload architecture apply diagnostics
-        if: failure()
-        uses: actions/upload-artifact@v4
-        with:
-          name: architecture-apply-log
-          path: architecture-apply.log
-      - name: Commit atomic Architecture 2.0 implementation
-        run: |
-          set -euo pipefail
-          git checkout HEAD -- .github/workflows/ci.yml
-          git config user.name "ChatPulse Architecture Bot"
-          git config user.email "actions@users.noreply.github.com"
-          git add -A
-          git commit -m "architecture: implement ChatPulse 2.0"
-          git push origin HEAD:architecture/chatpulse-2-0
-
-  source-snapshot:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/upload-artifact@v4
-        with:
-          name: architecture-source-snapshot
-          path: |
-            .
-            !.git
-            !miniapp/node_modules
-            !miniapp/dist
-            !miniapp/playwright-report
-            !miniapp/test-results
-
   frontend:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     defaults:
       run:
         working-directory: miniapp
@@ -68,24 +26,13 @@ jobs:
           cache: npm
           cache-dependency-path: miniapp/package-lock.json
       - run: npm ci --no-audit --no-fund
-      - name: Run frontend tests
-        run: |
-          set +e
-          npm test -- --run > ../frontend-test.log 2>&1
-          status=$?
-          tail -n 200 ../frontend-test.log
-          exit $status
-      - name: Upload frontend test log
-        if: failure()
-        uses: actions/upload-artifact@v4
-        with:
-          name: frontend-test-log
-          path: frontend-test.log
+      - run: npm test -- --run
       - run: npm run typecheck
       - run: npm run build
 
   browser:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     defaults:
       run:
         working-directory: miniapp
@@ -112,6 +59,19 @@ jobs:
 
   backend:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
+    services:
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+    env:
+      TEST_REDIS_URL: redis://127.0.0.1:6379/15
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -119,62 +79,162 @@ jobs:
           python-version: "3.12"
           cache: pip
       - run: pip install -q -e ".[dev]" -c requirements.lock
-      - name: Run backend lint
+      - run: python -m pip check
+      - name: Run Ruff lint
         run: |
           set +e
-          ruff check . > backend-lint.log 2>&1
+          ruff check . --output-format=concise > ruff-check.log 2>&1
           status=$?
-          cat backend-lint.log
+          cat ruff-check.log
           exit $status
-      - name: Upload backend lint log
+      - name: Upload Ruff diagnostics
         if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name: backend-lint-log
-          path: backend-lint.log
-      - name: Check backend formatting
+          name: ruff-check-log
+          path: ruff-check.log
+      - run: ruff format --check .
+      - run: pytest -q
+      - name: Repeat concurrency-sensitive tests
+        run: |
+          set -euo pipefail
+          for run in 1 2 3 4 5; do
+            echo "concurrency verification run=$run"
+            pytest -q \
+              tests/test_rate_limits_integration.py \
+              tests/test_distributed_leases.py \
+              tests/test_telegram_access_cache.py \
+              tests/test_webhook_security.py
+          done
+      - run: python -m compileall app migrations load scripts tests
+
+  migrations:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: pip install -q -e ".[dev]" -c requirements.lock
+      - name: Upgrade an empty database
+        env:
+          DATABASE_URL: sqlite+aiosqlite:///./migration-empty.db
+        run: alembic upgrade head
+      - name: Upgrade from previous release schema
+        env:
+          DATABASE_URL: sqlite+aiosqlite:///./migration-previous.db
+        run: |
+          alembic upgrade 20260726_0002
+          alembic upgrade head
+      - name: Verify exact migration head
+        run: test "$(alembic heads | awk '{print $1}')" = "20260726_0003"
+
+  load-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    services:
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+    env:
+      TEST_REDIS_URL: redis://127.0.0.1:6379/14
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: pip install -q -e ".[dev]" -c requirements.lock
+      - run: locust -f load/locustfile.py --list
+      - name: Run local load smoke
         run: |
           set +e
-          ruff format --check --diff . > backend-format.log 2>&1
+          python -m scripts.load_smoke > load-smoke.log 2>&1
           status=$?
-          cat backend-format.log
+          cat load-smoke.log
           exit $status
-      - name: Upload backend formatting diff
+      - name: Upload load-smoke diagnostics
         if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name: backend-format-log
-          path: backend-format.log
-      - name: Run backend tests
+          name: load-smoke-log
+          path: load-smoke.log
+
+  security:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: miniapp/package-lock.json
+      - run: pip install -q -e ".[dev]" -c requirements.lock
+      - name: Audit Python dependencies
         run: |
           set +e
-          pytest -q > backend-test.log 2>&1
+          pip-audit --strict > pip-audit.log 2>&1
           status=$?
-          tail -n 300 backend-test.log
+          cat pip-audit.log
           exit $status
-      - name: Upload backend test log
+      - name: Upload Python audit diagnostics
         if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name: backend-test-log
-          path: backend-test.log
-      - run: python -m compileall app migrations
+          name: pip-audit-log
+          path: pip-audit.log
+      - run: npm ci --prefix miniapp --no-audit --no-fund
+      - run: npm audit --prefix miniapp --omit=dev --audit-level=high
+      - name: Reject committed secrets and generated artifacts
+        run: |
+          set -euo pipefail
+          pytest -q tests/test_production_contracts.py tests/test_artifact_cleanliness.py
+          ! git grep -nEI \
+            '(sk-proj-[A-Za-z0-9_-]{20,}|BEGIN (RSA|OPENSSH|EC) PRIVATE KEY|BOT_TOKEN=[0-9]+:[A-Za-z0-9_-]{20,}|postgres(ql)?://[^[:space:]]+:[^[:space:]@]+@)' \
+            -- ':!docs/**' ':!.env.example' ':!tests/**'
 
   docker:
     runs-on: ubuntu-latest
-    needs: [frontend, browser, backend]
+    timeout-minutes: 20
+    needs: [frontend, browser, backend, migrations, load-smoke, security]
     steps:
       - uses: actions/checkout@v4
-      - name: Build production image
+      - run: docker build -t chatpulse:${{ github.sha }} .
+      - name: Verify non-root production image
         run: |
-          set +e
-          docker build -t chatpulse-miniapp:test . > docker-build.log 2>&1
-          status=$?
-          tail -n 240 docker-build.log
-          exit $status
-      - name: Upload Docker build log
-        if: failure()
-        uses: actions/upload-artifact@v4
-        with:
-          name: docker-build-log
-          path: docker-build.log
+          test "$(docker image inspect chatpulse:${{ github.sha }} --format '{{.Config.User}}')" = "chatpulse"
+          test "$(docker run --rm --entrypoint id chatpulse:${{ github.sha }} -u)" != "0"
+      - name: Smoke-test production image
+        run: |
+          docker run -d --rm --name chatpulse-smoke -p 18080:8080 \
+            -e BOT_TOKEN=123456:test-token \
+            -e WEBHOOK_PATH_SECRET=container-path-secret \
+            -e WEBHOOK_HEADER_SECRET=container-header-secret \
+            -e DATABASE_URL=sqlite+aiosqlite:////tmp/chatpulse-smoke.db \
+            -e ENVIRONMENT=test \
+            chatpulse:${{ github.sha }}
+          trap 'docker logs chatpulse-smoke; docker stop chatpulse-smoke || true' EXIT
+          for attempt in $(seq 1 30); do
+            if curl --fail --silent http://127.0.0.1:18080/health; then
+              curl --fail --silent http://127.0.0.1:18080/ready
+              curl --fail --silent http://127.0.0.1:18080/openapi.json >/dev/null
+              exit 0
+            fi
+            sleep 1
+          done
+          exit 1

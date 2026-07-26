@@ -42,8 +42,6 @@ async def _announce_update(
         await bot.send_message(event.chat.id, announcement)
 
 
-
-
 async def _announce_result(
     bot: Bot,
     event: MessageReactionUpdated | MessageReactionCountUpdated,

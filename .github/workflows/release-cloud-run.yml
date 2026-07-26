@@ -1,0 +1,85 @@
+name: Release Cloud Run
+
+on:
+  workflow_dispatch:
+    inputs:
+      image:
+        description: Immutable image digest, for example region-docker.pkg.dev/project/repo/chatpulse@sha256:...
+        required: true
+      service:
+        description: Cloud Run service name
+        required: true
+      region:
+        description: Cloud Run region
+        required: true
+      migration_job:
+        description: Cloud Run migration job name
+        required: true
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  release:
+    environment: production
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+      - uses: google-github-actions/setup-gcloud@v2
+      - name: Record previous revision
+        id: previous
+        run: |
+          revision=$(gcloud run services describe "${{ inputs.service }}" --region "${{ inputs.region }}" --format='value(status.latestReadyRevisionName)')
+          echo "revision=$revision" >> "$GITHUB_OUTPUT"
+      - name: Run migrations once with the release image
+        run: |
+          gcloud run jobs update "${{ inputs.migration_job }}" \
+            --region "${{ inputs.region }}" \
+            --image "${{ inputs.image }}" \
+            --command alembic \
+            --args upgrade,head
+          gcloud run jobs execute "${{ inputs.migration_job }}" --region "${{ inputs.region }}" --wait
+      - name: Deploy zero-traffic revision
+        id: deploy
+        run: |
+          gcloud run deploy "${{ inputs.service }}" \
+            --region "${{ inputs.region }}" \
+            --image "${{ inputs.image }}" \
+            --no-traffic \
+            --tag candidate
+          gcloud run services describe "${{ inputs.service }}" \
+            --region "${{ inputs.region }}" \
+            --format=json > /tmp/chatpulse-service.json
+          url=$(python - <<'PY'
+          import json
+
+          with open('/tmp/chatpulse-service.json', encoding='utf-8') as file:
+              service = json.load(file)
+          traffic = service.get('status', {}).get('traffic', [])
+          candidate = next((item.get('url') for item in traffic if item.get('tag') == 'candidate'), None)
+          if not candidate:
+              raise SystemExit('Candidate revision URL was not published')
+          print(candidate)
+          PY
+          )
+          echo "url=$url" >> "$GITHUB_OUTPUT"
+      - name: Candidate smoke checks
+        run: |
+          curl --fail --retry 10 --retry-delay 3 "${{ steps.deploy.outputs.url }}/health"
+          curl --fail --retry 10 --retry-delay 3 "${{ steps.deploy.outputs.url }}/ready"
+          curl --fail --retry 10 --retry-delay 3 "${{ steps.deploy.outputs.url }}/openapi.json"
+          curl --fail --retry 10 --retry-delay 3 "${{ steps.deploy.outputs.url }}/miniapp"
+      - name: Shift traffic
+        run: gcloud run services update-traffic "${{ inputs.service }}" --region "${{ inputs.region }}" --to-latest
+      - name: Rollback command
+        if: failure()
+        run: |
+          echo "Rollback revision: ${{ steps.previous.outputs.revision }}"
+          gcloud run services update-traffic "${{ inputs.service }}" \
+            --region "${{ inputs.region }}" \
+            --to-revisions "${{ steps.previous.outputs.revision }}=100"

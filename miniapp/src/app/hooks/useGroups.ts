@@ -3,8 +3,12 @@ import { api } from "../../api/client";
 import type { GroupsV2CardData } from "../../api/groups-v2";
 import { notify } from "../../telegram/sdk";
 
+type UpdateGroups = (
+  updater: (current: GroupsV2CardData[]) => GroupsV2CardData[],
+) => void;
+
 export function useGroups(
-  setGroups: React.Dispatch<React.SetStateAction<GroupsV2CardData[]>>,
+  setGroups: UpdateGroups,
   setError: (message: string) => void,
 ) {
   const toggleFavorite = useCallback(async (group: GroupsV2CardData, nextValue: boolean) => {

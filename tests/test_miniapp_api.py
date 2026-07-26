@@ -4,9 +4,9 @@ from unittest.mock import AsyncMock
 import pytest
 from fastapi.testclient import TestClient
 
+from app.api.miniapp.access import is_current_admin as _is_current_admin
 from app.api.miniapp.auth import TelegramMiniAppUser
 from app.api.miniapp.dependencies import get_miniapp_user
-from app.api.miniapp.access import is_current_admin as _is_current_admin
 from app.config import Settings
 from app.main import create_app
 

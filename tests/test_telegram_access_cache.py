@@ -28,20 +28,33 @@ async def test_cache_uses_positive_and_negative_ttls() -> None:
         calls += 1
         return "member"
 
-    assert (await cache.get_or_load(
-        ("member", 1, 2), positive,
-        positive_ttl=60, negative_ttl=15, stale_grace=300,
-    )).value == "member"
+    assert (
+        await cache.get_or_load(
+            ("member", 1, 2),
+            positive,
+            positive_ttl=60,
+            negative_ttl=15,
+            stale_grace=300,
+        )
+    ).value == "member"
     clock.advance(59)
-    assert (await cache.get_or_load(
-        ("member", 1, 2), positive,
-        positive_ttl=60, negative_ttl=15, stale_grace=300,
-    )).fresh is True
+    assert (
+        await cache.get_or_load(
+            ("member", 1, 2),
+            positive,
+            positive_ttl=60,
+            negative_ttl=15,
+            stale_grace=300,
+        )
+    ).fresh is True
     assert calls == 1
     clock.advance(2)
     await cache.get_or_load(
-        ("member", 1, 2), positive,
-        positive_ttl=60, negative_ttl=15, stale_grace=300,
+        ("member", 1, 2),
+        positive,
+        positive_ttl=60,
+        negative_ttl=15,
+        stale_grace=300,
     )
     assert calls == 2
 
@@ -53,19 +66,28 @@ async def test_cache_uses_positive_and_negative_ttls() -> None:
         return None
 
     await cache.get_or_load(
-        ("member", 2, 3), negative,
-        positive_ttl=60, negative_ttl=15, stale_grace=300,
+        ("member", 2, 3),
+        negative,
+        positive_ttl=60,
+        negative_ttl=15,
+        stale_grace=300,
     )
     clock.advance(14)
     await cache.get_or_load(
-        ("member", 2, 3), negative,
-        positive_ttl=60, negative_ttl=15, stale_grace=300,
+        ("member", 2, 3),
+        negative,
+        positive_ttl=60,
+        negative_ttl=15,
+        stale_grace=300,
     )
     assert negative_calls == 1
     clock.advance(2)
     await cache.get_or_load(
-        ("member", 2, 3), negative,
-        positive_ttl=60, negative_ttl=15, stale_grace=300,
+        ("member", 2, 3),
+        negative,
+        positive_ttl=60,
+        negative_ttl=15,
+        stale_grace=300,
     )
     assert negative_calls == 2
 
@@ -83,13 +105,21 @@ async def test_cache_coalesces_concurrent_misses() -> None:
         return "administrator"
 
     tasks = [
-        asyncio.create_task(cache.get_or_load(
-            ("member", 1, 2), loader,
-            positive_ttl=60, negative_ttl=15, stale_grace=300,
-        ))
+        asyncio.create_task(
+            cache.get_or_load(
+                ("member", 1, 2),
+                loader,
+                positive_ttl=60,
+                negative_ttl=15,
+                stale_grace=300,
+            )
+        )
         for _ in range(20)
     ]
-    await asyncio.sleep(0)
+    for _ in range(10):
+        await asyncio.sleep(0)
+        if calls == 1:
+            break
     assert calls == 1
     release.set()
     results = await asyncio.gather(*tasks)
@@ -105,8 +135,11 @@ async def test_cache_uses_stale_value_when_loader_fails() -> None:
         return "member"
 
     await cache.get_or_load(
-        ("member", 1, 2), initial,
-        positive_ttl=60, negative_ttl=15, stale_grace=300,
+        ("member", 1, 2),
+        initial,
+        positive_ttl=60,
+        negative_ttl=15,
+        stale_grace=300,
     )
     clock.advance(61)
 
@@ -114,8 +147,11 @@ async def test_cache_uses_stale_value_when_loader_fails() -> None:
         raise RuntimeError("Telegram unavailable")
 
     result = await cache.get_or_load(
-        ("member", 1, 2), failing,
-        positive_ttl=60, negative_ttl=15, stale_grace=300,
+        ("member", 1, 2),
+        failing,
+        positive_ttl=60,
+        negative_ttl=15,
+        stale_grace=300,
     )
     assert result.value == "member"
     assert result.stale is True
@@ -123,8 +159,11 @@ async def test_cache_uses_stale_value_when_loader_fails() -> None:
 
     clock.advance(301)
     result = await cache.get_or_load(
-        ("member", 1, 2), failing,
-        positive_ttl=60, negative_ttl=15, stale_grace=300,
+        ("member", 1, 2),
+        failing,
+        positive_ttl=60,
+        negative_ttl=15,
+        stale_grace=300,
     )
     assert result.value is None
     assert result.stale is False
@@ -139,16 +178,25 @@ async def test_cache_evicts_lru_and_supports_invalidation() -> None:
 
     for key, value in [(("member", 1, 1), "a"), (("member", 1, 2), "b")]:
         await cache.get_or_load(
-            key, lambda value=value: load(value),
-            positive_ttl=60, negative_ttl=15, stale_grace=300,
+            key,
+            lambda value=value: load(value),
+            positive_ttl=60,
+            negative_ttl=15,
+            stale_grace=300,
         )
     await cache.get_or_load(
-        ("member", 1, 1), lambda: load("a"),
-        positive_ttl=60, negative_ttl=15, stale_grace=300,
+        ("member", 1, 1),
+        lambda: load("a"),
+        positive_ttl=60,
+        negative_ttl=15,
+        stale_grace=300,
     )
     await cache.get_or_load(
-        ("member", 2, 3), lambda: load("c"),
-        positive_ttl=60, negative_ttl=15, stale_grace=300,
+        ("member", 2, 3),
+        lambda: load("c"),
+        positive_ttl=60,
+        negative_ttl=15,
+        stale_grace=300,
     )
     assert await cache.size() == 2
 

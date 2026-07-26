@@ -25,6 +25,7 @@ class Base(DeclarativeBase):
 
 class User(Base):
     __tablename__ = "users"
+    __table_args__ = (Index("ix_users_last_activity", "last_activity_at"),)
 
     telegram_id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
     username: Mapped[str | None] = mapped_column(String(64), nullable=True)
@@ -93,6 +94,17 @@ class OwnerAuditLog(Base):
 
 class ChatGroup(Base):
     __tablename__ = "chat_groups"
+    __table_args__ = (
+        Index(
+            "ix_chat_groups_report_due",
+            "is_active",
+            "is_paused",
+            "weekly_reports_enabled",
+            "report_weekday",
+            "report_hour",
+            "report_minute",
+        ),
+    )
 
     telegram_chat_id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
     title: Mapped[str] = mapped_column(String(255))
@@ -119,6 +131,10 @@ class ChatGroup(Base):
 
 class GroupMember(Base):
     __tablename__ = "group_members"
+    __table_args__ = (
+        Index("ix_group_members_user_seen", "telegram_user_id", "last_seen_at"),
+        Index("ix_group_members_chat_xp", "telegram_chat_id", "xp_total"),
+    )
 
     telegram_chat_id: Mapped[int] = mapped_column(
         BigInteger,

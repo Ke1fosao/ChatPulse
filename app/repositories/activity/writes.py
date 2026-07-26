@@ -4,21 +4,16 @@ from datetime import UTC, date, datetime, timedelta
 from typing import Any
 from zoneinfo import ZoneInfo
 
-from sqlalchemy import delete, func, select
-from sqlalchemy.exc import IntegrityError
-from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.domain import GroupData, MessageActivity, StatsPeriod, UserData
+from app.domain import MessageActivity, StatsPeriod, UserData
 from app.models import (
     ChatGroup,
-    DailyActivity,
     DailyReactionEmoji,
     GroupMember,
     MessageAuthor,
     MessageReactionState,
-    ProcessedUpdate,
-    User,
-    utc_now,
 )
 
 MemberStats = dict[str, Any]

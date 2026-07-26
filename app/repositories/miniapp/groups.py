@@ -1,37 +1,22 @@
 from __future__ import annotations
 
-from collections.abc import Sequence
-from datetime import UTC, date, datetime, timedelta
+from datetime import UTC, date, datetime
 from typing import Any, Literal
-from zoneinfo import ZoneInfo
 
 from sqlalchemy import func, select
-from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
+from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.achievement_models import AchievementUnlockRecord
-from app.achievements.catalog import ACHIEVEMENTS as CANONICAL_ACHIEVEMENTS
-from app.achievements.presentation import achievement_progress_payload
 from app.models import (
     ChatGroup,
     DailyActivity,
-    DailyReactionEmoji,
-    GlobalDailyXP,
     GroupMember,
-    MemberAchievement,
-    MessageAuthor,
-    StreakProtectionUsage,
-    User,
     utc_now,
 )
 from app.services.gamification import (
-    ACHIEVEMENT_BY_CODE,
-    ACHIEVEMENTS,
-    MONTHLY_PROTECTION_DAYS,
     level_progress,
     level_tier,
 )
-from app.services.miniapp import message_link, percentage_change
-from app.services.nominations import METRICS
+from app.services.miniapp import percentage_change
 
 MiniAppPeriod = Literal["week", "month", "all"]
 RankingMetric = Literal["xp", "messages", "reactions", "replies", "streak"]

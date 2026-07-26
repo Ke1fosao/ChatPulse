@@ -66,6 +66,7 @@ class EngagementNotification(Base):
         ),
         Index("ix_engagement_notifications_sent", "sent_at"),
         Index("ix_engagement_notifications_type", "notification_type", "claimed_at"),
+        Index("ix_engagement_notifications_status_claimed", "status", "claimed_at"),
     )
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
