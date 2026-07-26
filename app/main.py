@@ -12,14 +12,14 @@ from fastapi.responses import FileResponse, HTMLResponse
 
 from app.api.billing.routes import router as billing_router
 from app.api.internal_achievements import router as internal_achievement_router
-from app.api.miniapp.featured import router as featured_achievement_router
 from app.api.miniapp.achievements import router as miniapp_achievements_router
+from app.api.miniapp.featured import router as featured_achievement_router
 from app.api.miniapp.group_settings import router as miniapp_group_settings_router
 from app.api.miniapp.groups import router as miniapp_groups_router
 from app.api.miniapp.home import router as miniapp_home_router
-from app.api.miniapp.profile import router as miniapp_profile_router
 from app.api.miniapp.onboarding import router as onboarding_router
 from app.api.miniapp.premium import router as premium_router
+from app.api.miniapp.profile import router as miniapp_profile_router
 from app.api.owner.revenue import router as owner_revenue_router
 from app.api.owner.routes import router as owner_router
 from app.bot.setup import build_dispatcher
@@ -31,8 +31,8 @@ from app.repositories.billing import BillingRepository
 from app.repositories.engagement import EngagementRepository
 from app.repositories.featured_achievements import FeaturedAchievementRepository
 from app.repositories.groups_v2 import GroupsV2Repository
-from app.repositories.miniapp_gamification import MiniAppGamificationRepository
 from app.repositories.miniapp import MiniAppRepository
+from app.repositories.miniapp_gamification import MiniAppGamificationRepository
 from app.repositories.owner import OwnerRepository
 from app.repositories.owner_panel import OwnerPanelRepository
 from app.repositories.owner_revenue import OwnerRevenueRepository

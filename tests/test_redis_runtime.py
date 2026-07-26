@@ -109,9 +109,7 @@ async def test_required_redis_failure_fails_startup(monkeypatch: pytest.MonkeyPa
     )
 
     with pytest.raises(RuntimeError, match="Required Redis"):
-        await RedisRuntime.create(
-            settings(redis_url="rediss://unavailable", redis_required=True)
-        )
+        await RedisRuntime.create(settings(redis_url="rediss://unavailable", redis_required=True))
 
     assert fake.closed is True
 

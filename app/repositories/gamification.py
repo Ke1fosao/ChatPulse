@@ -189,9 +189,7 @@ class GamificationRepository:
 
             author.content_fingerprint = activity.content_fingerprint
             author.content_simhash = (
-                f"{activity.content_simhash:016x}"
-                if activity.content_simhash is not None
-                else None
+                f"{activity.content_simhash:016x}" if activity.content_simhash is not None else None
             )
             author.content_length = activity.content_length
 
@@ -317,9 +315,7 @@ class GamificationRepository:
         message_id: int,
     ) -> tuple[ChatGroup, User, GroupMember, MessageAuthor] | None:
         group = await session.scalar(
-            select(ChatGroup)
-            .where(ChatGroup.telegram_chat_id == chat_id)
-            .with_for_update()
+            select(ChatGroup).where(ChatGroup.telegram_chat_id == chat_id).with_for_update()
         )
         user = await session.scalar(
             select(User).where(User.telegram_id == user_id).with_for_update()
@@ -639,21 +635,29 @@ class GamificationRepository:
         }
         dialect = session.bind.dialect.name if session.bind is not None else ""
         if dialect == "postgresql":
-            statement = postgresql_insert(DailyActivity).values(**values).on_conflict_do_nothing(
-                index_elements=[
-                    DailyActivity.telegram_chat_id,
-                    DailyActivity.telegram_user_id,
-                    DailyActivity.activity_date,
-                ]
+            statement = (
+                postgresql_insert(DailyActivity)
+                .values(**values)
+                .on_conflict_do_nothing(
+                    index_elements=[
+                        DailyActivity.telegram_chat_id,
+                        DailyActivity.telegram_user_id,
+                        DailyActivity.activity_date,
+                    ]
+                )
             )
             await session.execute(statement)
         elif dialect == "sqlite":
-            statement = sqlite_insert(DailyActivity).values(**values).on_conflict_do_nothing(
-                index_elements=[
-                    DailyActivity.telegram_chat_id,
-                    DailyActivity.telegram_user_id,
-                    DailyActivity.activity_date,
-                ]
+            statement = (
+                sqlite_insert(DailyActivity)
+                .values(**values)
+                .on_conflict_do_nothing(
+                    index_elements=[
+                        DailyActivity.telegram_chat_id,
+                        DailyActivity.telegram_user_id,
+                        DailyActivity.activity_date,
+                    ]
+                )
             )
             await session.execute(statement)
         elif await session.get(DailyActivity, (chat_id, user_id, activity_date)) is None:
@@ -674,19 +678,27 @@ class GamificationRepository:
         }
         dialect = session.bind.dialect.name if session.bind is not None else ""
         if dialect == "postgresql":
-            statement = postgresql_insert(GlobalDailyXP).values(**values).on_conflict_do_nothing(
-                index_elements=[
-                    GlobalDailyXP.telegram_user_id,
-                    GlobalDailyXP.activity_date,
-                ]
+            statement = (
+                postgresql_insert(GlobalDailyXP)
+                .values(**values)
+                .on_conflict_do_nothing(
+                    index_elements=[
+                        GlobalDailyXP.telegram_user_id,
+                        GlobalDailyXP.activity_date,
+                    ]
+                )
             )
             await session.execute(statement)
         elif dialect == "sqlite":
-            statement = sqlite_insert(GlobalDailyXP).values(**values).on_conflict_do_nothing(
-                index_elements=[
-                    GlobalDailyXP.telegram_user_id,
-                    GlobalDailyXP.activity_date,
-                ]
+            statement = (
+                sqlite_insert(GlobalDailyXP)
+                .values(**values)
+                .on_conflict_do_nothing(
+                    index_elements=[
+                        GlobalDailyXP.telegram_user_id,
+                        GlobalDailyXP.activity_date,
+                    ]
+                )
             )
             await session.execute(statement)
         elif await session.get(GlobalDailyXP, (user_id, activity_date)) is None:

@@ -7,7 +7,7 @@ from app.database import Database
 from app.domain import GroupData, MessageActivity, UserData
 from app.repositories.activity import ActivityRepository
 from app.repositories.gamification import GamificationRepository
-from app.services.gamification import GROUP_DAILY_XP_CAP, GLOBAL_DAILY_XP_CAP, level_for_xp
+from app.services.gamification import GLOBAL_DAILY_XP_CAP, GROUP_DAILY_XP_CAP, level_for_xp
 
 
 async def _register(
@@ -48,16 +48,18 @@ async def test_same_message_receives_xp_at_most_once(tmp_path) -> None:
     occurred = datetime(2026, 7, 26, 10, tzinfo=UTC)
     payload = await _register(activity, message_id=1, occurred_at=occurred)
 
-    updates = await asyncio.gather(*[
-        repository.award_message_xp(
-            chat_id=-1001,
-            user_id=101,
-            message_id=1,
-            activity=payload,
-            occurred_at=occurred,
-        )
-        for _ in range(20)
-    ])
+    updates = await asyncio.gather(
+        *[
+            repository.award_message_xp(
+                chat_id=-1001,
+                user_id=101,
+                message_id=1,
+                activity=payload,
+                occurred_at=occurred,
+            )
+            for _ in range(20)
+        ]
+    )
     assert sum(update.group_xp_awarded > 0 for update in updates) == 1
     profile = await repository.get_profile(-1001, 101)
     assert profile is not None
@@ -79,15 +81,17 @@ async def test_parallel_reaction_awards_respect_caps_and_levels(tmp_path) -> Non
     occurred = datetime(2026, 7, 26, 10, tzinfo=UTC)
     await _register(activity, message_id=1, occurred_at=occurred)
 
-    updates = await asyncio.gather(*[
-        repository.award_reaction_xp(
-            chat_id=-1001,
-            message_id=1,
-            positive_delta=4,
-            occurred_at=occurred + timedelta(seconds=index),
-        )
-        for index in range(60)
-    ])
+    updates = await asyncio.gather(
+        *[
+            repository.award_reaction_xp(
+                chat_id=-1001,
+                message_id=1,
+                positive_delta=4,
+                occurred_at=occurred + timedelta(seconds=index),
+            )
+            for index in range(60)
+        ]
+    )
     profile = await repository.get_profile(-1001, 101)
     assert profile is not None
     awarded = sum(update.group_xp_awarded for update in updates)

@@ -119,9 +119,7 @@ class GroupSettingsService:
                 )
                 await self._checkpoint("activity_deleted", session)
                 await session.execute(
-                    delete(MemberAchievement).where(
-                        MemberAchievement.telegram_chat_id == chat_id
-                    )
+                    delete(MemberAchievement).where(MemberAchievement.telegram_chat_id == chat_id)
                 )
                 await session.execute(
                     delete(StreakProtectionUsage).where(

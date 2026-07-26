@@ -118,10 +118,9 @@ class TelegramAccessCache(Generic[T]):
 
     async def invalidate_user(self, chat_id: int, user_id: int) -> None:
         await self.invalidate(
-            lambda key: isinstance(key, tuple)
-            and len(key) >= 3
-            and key[1] == chat_id
-            and key[2] == user_id
+            lambda key: (
+                isinstance(key, tuple) and len(key) >= 3 and key[1] == chat_id and key[2] == user_id
+            )
         )
 
     async def invalidate_group(self, chat_id: int) -> None:

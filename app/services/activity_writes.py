@@ -102,7 +102,10 @@ class ActivityWriteService:
                 )
                 if not tracked:
                     return ReactionWriteResult(tracked=False)
-                previous, current = await self._gamification.update_message_reaction_total_in_session(
+                (
+                    previous,
+                    current,
+                ) = await self._gamification.update_message_reaction_total_in_session(
                     session,
                     chat_id,
                     message_id,
@@ -143,7 +146,10 @@ class ActivityWriteService:
                 )
                 if not tracked:
                     return ReactionWriteResult(tracked=False)
-                previous, current = await self._gamification.update_message_reaction_total_in_session(
+                (
+                    previous,
+                    current,
+                ) = await self._gamification.update_message_reaction_total_in_session(
                     session,
                     chat_id,
                     message_id,
