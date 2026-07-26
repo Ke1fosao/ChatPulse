@@ -1,6 +1,7 @@
 FROM node:22-slim AS miniapp-builder
 
 WORKDIR /build/miniapp
+COPY VERSION /build/VERSION
 COPY miniapp/package.json miniapp/package-lock.json ./
 RUN npm ci --no-audit --no-fund
 COPY miniapp ./
