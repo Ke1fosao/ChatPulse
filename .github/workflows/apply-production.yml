@@ -1,0 +1,30 @@
+name: Apply Production 3.0 Package
+
+on:
+  push:
+    branches:
+      - production/chatpulse-3-0
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: production/chatpulse-3-0
+          fetch-depth: 0
+      - name: Verify and apply package
+        run: python tools/apply_production.py
+      - name: Commit clean Production 3.0 implementation
+        run: |
+          set -euo pipefail
+          git config user.name "ChatPulse Production Bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add -A
+          git commit -m "production: implement ChatPulse 3.0 hardening"
+          git push origin HEAD:production/chatpulse-3-0

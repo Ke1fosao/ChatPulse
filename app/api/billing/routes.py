@@ -9,6 +9,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response,
 from app.api.billing.schemas import CreateInvoiceRequest, ExportPeriod, SubscriptionUpdateRequest
 from app.api.miniapp.auth import TelegramMiniAppUser
 from app.api.miniapp.dependencies import get_miniapp_user
+from app.api.rate_limit import enforce_rate_limit
 from app.repositories.billing import BillingRepository
 from app.repositories.miniapp import MiniAppRepository
 from app.repositories.owner import OwnerRepository
@@ -86,6 +87,7 @@ async def create_invoice(
     request: Request,
     user: Annotated[TelegramMiniAppUser, Depends(get_miniapp_user)],
 ) -> dict[str, str]:
+    await enforce_rate_limit(request, "billing", str(user.telegram_id))
     access = await _account_access(request, user.telegram_id)
     if access.is_owner:
         raise HTTPException(

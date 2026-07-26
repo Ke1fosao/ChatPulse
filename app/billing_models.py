@@ -21,6 +21,7 @@ class VipInvoiceIntent(Base):
     __table_args__ = (
         CheckConstraint("stars_amount > 0", name="ck_vip_invoice_positive_amount"),
         Index("ix_vip_invoice_user_created", "telegram_user_id", "created_at"),
+        Index("ix_vip_invoice_status_created", "status", "created_at"),
     )
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)

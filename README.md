@@ -171,7 +171,7 @@ Dockerfile має два етапи:
 
 1. Node 22 збирає `miniapp/dist`;
 2. Python 3.12 встановлює backend, шрифти DejaVu й копіює frontend у `/app/miniapp_dist`;
-3. контейнер запускається від непривілейованого користувача, виконує `alembic upgrade head` і лише після успішної міграції стартує Uvicorn.
+3. контейнер запускається від непривілейованого користувача й одразу стартує Uvicorn; міграції виконує окремий release job до перемикання трафіку.
 
 ```bash
 docker build -t chatpulse .
@@ -232,4 +232,10 @@ python -m compileall app migrations
 alembic upgrade head
 ```
 
-GitHub Actions паралельно виконує unit-тести, TypeScript, production build, WebKit-перевірки, backend lint/tests, міграційні smoke-тести та Docker-збірку.
+GitHub Actions паралельно виконує unit та concurrency-тести, TypeScript, production build, WebKit-перевірки, Ruff, Alembic upgrade з порожньої й попередньої схеми, dependency/secret audit, load smoke та non-root Docker smoke.
+
+## Production runtime 0.15.0
+
+Production requires a PostgreSQL/Supabase database and Redis coordination layer. Set `ENVIRONMENT=production`, `REDIS_REQUIRED=true`, `REDIS_URL` (TLS `rediss://`), strong webhook/scheduler/metrics secrets, and the explicit database pool settings from `.env.example`.
+
+The application image does **not** run migrations on startup. Use the protected Cloud Run release workflow to run Alembic once, deploy a zero-traffic revision, smoke-test it, and then shift traffic. See `docs/OPERATIONS.md`, `docs/OBSERVABILITY.md`, and `docs/LOAD_TESTING.md`.
