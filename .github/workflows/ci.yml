@@ -88,7 +88,20 @@ jobs:
         with:
           name: backend-lint-log
           path: backend-lint.log
-      - run: ruff format --check .
+      - name: Check backend formatting
+        shell: bash
+        run: |
+          set +e
+          ruff format --check --diff . > backend-format.log 2>&1
+          status=$?
+          cat backend-format.log
+          exit $status
+      - name: Upload backend formatting diff
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-format-log
+          path: backend-format.log
       - name: Run backend tests
         shell: bash
         run: |
