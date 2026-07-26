@@ -14,3 +14,5 @@ miniapp/playwright-report
 miniapp/test-results
 *.db
 *.pyc
+
+build/

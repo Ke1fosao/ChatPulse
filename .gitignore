@@ -14,3 +14,5 @@ miniapp/dist/
 miniapp/coverage/
 miniapp/playwright-report/
 miniapp/test-results/
+
+build/
