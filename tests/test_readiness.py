@@ -34,3 +34,19 @@ def test_health_does_not_depend_on_database_startup() -> None:
 
     assert response.status_code == 200
     assert response.json()["status"] == "ok"
+
+def test_ready_returns_safe_503_when_database_probe_fails(tmp_path) -> None:
+    from unittest.mock import AsyncMock
+
+    app = create_app(_settings(f"sqlite+aiosqlite:///{tmp_path / 'ready-fail.db'}"))
+    with TestClient(app, raise_server_exceptions=False) as client:
+        app.state.database.ping = AsyncMock(side_effect=RuntimeError("database secret details"))
+        response = client.get("/ready")
+    assert response.status_code == 503
+    assert response.json() == {
+        "detail": {
+            "status": "not_ready",
+            "components": {"application": "ready", "database": "unavailable"},
+        }
+    }
+    assert "secret details" not in response.text

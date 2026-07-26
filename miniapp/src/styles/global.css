@@ -2015,49 +2015,6 @@ img {
   backdrop-filter: blur(15px);
 }
 
-.bottom-nav {
-  position: fixed;
-  z-index: 50;
-  right: 0;
-  bottom: 0;
-  left: 0;
-  display: grid;
-  grid-template-columns: repeat(5, 1fr);
-  width: min(100%, 620px);
-  min-height: calc(72px + env(safe-area-inset-bottom));
-  margin: 0 auto;
-  padding: 8px 8px calc(8px + env(safe-area-inset-bottom));
-  border-top: 1px solid rgba(255, 255, 255, 0.07);
-  background: rgba(10, 12, 20, 0.88);
-  box-shadow: 0 -14px 40px rgba(0, 0, 0, 0.24);
-  backdrop-filter: blur(24px);
-}
-
-.bottom-nav__item {
-  display: grid;
-  gap: 3px;
-  place-items: center;
-  min-height: 52px;
-  padding: 5px 2px;
-  border: 0;
-  border-radius: 14px;
-  background: transparent;
-  color: #697084;
-  font-size: 7px;
-  font-weight: 700;
-  cursor: pointer;
-  transition: color 0.16s ease, background 0.16s ease, transform 0.16s ease;
-}
-
-.bottom-nav__item.is-active {
-  background: linear-gradient(145deg, rgba(141, 112, 255, 0.14), rgba(76, 201, 255, 0.04));
-  color: #c4b7ff;
-}
-
-.bottom-nav__item:active {
-  transform: scale(0.94);
-}
-
 .spin {
   animation: spin 0.9s linear infinite;
 }
@@ -2113,7 +2070,6 @@ img {
   .group-hero > .group-avatar { display: none; }
   .level-orbit { grid-template-columns: 70px 1fr; gap: 13px; }
   .level-orbit__number { width: 70px; height: 70px; }
-  .bottom-nav__item span { font-size: 6px; }
 }
 
 @media (min-width: 500px) {

@@ -37,3 +37,23 @@ def test_scheduler_endpoint_rejects_invalid_secret() -> None:
 
     assert response.status_code == 403
     assert response.json() == {"detail": "Invalid scheduler secret"}
+
+def test_failed_update_returns_retryable_error_and_second_delivery_succeeds() -> None:
+    from unittest.mock import AsyncMock
+
+    settings = build_settings()
+    app = create_app(settings)
+    headers = {"X-Telegram-Bot-Api-Secret-Token": settings.webhook_header_secret}
+    payload = {"update_id": 77}
+    with TestClient(app, raise_server_exceptions=False) as client:
+        dispatcher = app.state.dispatcher
+        dispatcher.feed_update = AsyncMock(side_effect=[RuntimeError("boom"), None])
+        failed = client.post(settings.webhook_path, headers=headers, json=payload)
+        retried = client.post(settings.webhook_path, headers=headers, json=payload)
+        duplicate = client.post(settings.webhook_path, headers=headers, json=payload)
+    assert failed.status_code == 500
+    assert retried.status_code == 200
+    assert retried.json() == {"ok": True}
+    assert duplicate.status_code == 200
+    assert duplicate.json() == {"ok": True, "duplicate": True}
+    assert dispatcher.feed_update.await_count == 2

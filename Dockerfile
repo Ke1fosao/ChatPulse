@@ -19,18 +19,16 @@ RUN apt-get update \
     && apt-get install -y --no-install-recommends fonts-dejavu-core \
     && rm -rf /var/lib/apt/lists/*
 
-COPY pyproject.toml README.md VERSION alembic.ini ./
+COPY pyproject.toml README.md VERSION alembic.ini requirements.lock ./
 COPY migrations ./migrations
 COPY app ./app
 COPY --from=miniapp-builder /build/miniapp/dist ./miniapp_dist
 
 RUN pip install --upgrade pip \
-    && pip install . \
+    && pip install --constraint requirements.lock . \
     && useradd --create-home --uid 10001 chatpulse \
     && chown -R chatpulse:chatpulse /app
 
 USER chatpulse
-
 EXPOSE 8080
-
 CMD ["sh", "-c", "alembic upgrade head && uvicorn app.main:create_app --factory --host 0.0.0.0 --port ${PORT:-8080}"]

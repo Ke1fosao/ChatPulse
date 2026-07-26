@@ -10,12 +10,12 @@ from app.repositories.owner import OwnerClaimResult, OwnerRepository
 async def owner_repository(tmp_path):
     database = Database(f"sqlite+aiosqlite:///{tmp_path / 'owner.db'}")
     await database.create_schema()
-    yield OwnerRepository(database.session_factory)
+    yield OwnerRepository(database.session_factory, allowed_owner_id=101)
     await database.dispose()
 
 
 @pytest.mark.asyncio
-async def test_veheblya_can_claim_owner_once(owner_repository) -> None:
+async def test_configured_telegram_id_can_claim_owner_once(owner_repository) -> None:
     claimed_at = datetime(2026, 7, 22, 9, 0, tzinfo=UTC)
 
     result = await owner_repository.claim_owner(
@@ -30,14 +30,14 @@ async def test_veheblya_can_claim_owner_once(owner_repository) -> None:
 
 
 @pytest.mark.asyncio
-async def test_wrong_username_cannot_claim_owner(owner_repository) -> None:
+async def test_wrong_telegram_id_cannot_claim_owner(owner_repository) -> None:
     result = await owner_repository.claim_owner(
-        telegram_user_id=101,
-        username="someone_else",
+        telegram_user_id=202,
+        username="veheblya",
     )
 
-    assert result is OwnerClaimResult.USERNAME_MISMATCH
-    assert await owner_repository.is_owner(101) is False
+    assert result is OwnerClaimResult.ID_MISMATCH
+    assert await owner_repository.is_owner(202) is False
 
 
 @pytest.mark.asyncio

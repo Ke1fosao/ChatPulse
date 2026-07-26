@@ -1,7 +1,7 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
-import "../styles/bottom-nav-v2.css";
+import "../styles/bottom-nav-stable.css";
 import "../styles/global.css";
 import { BottomNav } from "./BottomNav";
 
@@ -56,9 +56,9 @@ describe("BottomNav", () => {
     const navStyle = getComputedStyle(nav!);
     const firstItemStyle = getComputedStyle(items[0]);
 
-    expect(navStyle.display).toBe("flex");
-    expect(navStyle.gridTemplateColumns).not.toContain("repeat(5");
-    expect(firstItemStyle.width).toBe("25%");
-    expect(firstItemStyle.maxWidth).toBe("25%");
+    expect(navStyle.display).toBe("grid");
+    expect(navStyle.gridTemplateColumns).toContain("repeat(4");
+    expect(firstItemStyle.width).toBe("100%");
+    expect(firstItemStyle.maxWidth).toBe("");
   });
 });
