@@ -116,7 +116,10 @@ async def test_cache_coalesces_concurrent_misses() -> None:
         )
         for _ in range(20)
     ]
-    await asyncio.sleep(0)
+    for _ in range(10):
+        await asyncio.sleep(0)
+        if calls == 1:
+            break
     assert calls == 1
     release.set()
     results = await asyncio.gather(*tasks)

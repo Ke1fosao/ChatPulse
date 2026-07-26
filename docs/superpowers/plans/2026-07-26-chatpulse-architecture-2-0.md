@@ -114,6 +114,7 @@ class CachedTelegramStatus:
     fresh: bool
     stale: bool
 
+
 class TelegramAccessCache:
     async def get_or_load(
         self,

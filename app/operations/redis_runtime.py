@@ -17,13 +17,15 @@ class RedisRuntime:
     _client: Redis | None
     key_prefix: str
     required: bool
+    metrics: Any = None
 
     @classmethod
-    async def create(cls, settings: Settings) -> RedisRuntime:
+    async def create(cls, settings: Settings, *, metrics: Any = None) -> "RedisRuntime":
+        prefix = settings.redis_key_prefix.rstrip(":")
         if not settings.redis_url:
             if settings.redis_required:
                 raise RuntimeError("Redis is required but REDIS_URL is not configured")
-            return cls(_client=None, key_prefix=settings.redis_key_prefix, required=False)
+            return cls(_client=None, key_prefix=prefix, required=False, metrics=metrics)
 
         client = Redis.from_url(
             settings.redis_url,
@@ -36,8 +38,9 @@ class RedisRuntime:
         )
         runtime = cls(
             _client=client,
-            key_prefix=settings.redis_key_prefix.rstrip(":"),
+            key_prefix=prefix,
             required=settings.redis_required,
+            metrics=metrics,
         )
         try:
             await runtime.ping()
@@ -48,13 +51,11 @@ class RedisRuntime:
                 settings.redis_required,
                 error.__class__.__name__,
             )
+            if metrics is not None:
+                metrics.redis_failures.labels(operation="startup").inc()
             if settings.redis_required:
                 raise RuntimeError("Required Redis dependency is unavailable") from error
-            return cls(
-                _client=None,
-                key_prefix=settings.redis_key_prefix.rstrip(":"),
-                required=False,
-            )
+            return cls(_client=None, key_prefix=prefix, required=False, metrics=metrics)
         return runtime
 
     @property
@@ -76,8 +77,16 @@ class RedisRuntime:
     async def ping(self) -> float:
         client = self.client
         started = time.perf_counter()
-        await client.ping()
-        return (time.perf_counter() - started) * 1000
+        try:
+            await client.ping()
+        except Exception:
+            if self.metrics is not None:
+                self.metrics.redis_failures.labels(operation="ping").inc()
+            raise
+        duration = time.perf_counter() - started
+        if self.metrics is not None:
+            self.metrics.redis_latency.labels(operation="ping").observe(duration)
+        return duration * 1000
 
     async def close(self) -> None:
         client, self._client = self._client, None
@@ -85,4 +94,15 @@ class RedisRuntime:
             await client.aclose()
 
     async def execute(self, command: str, *args: Any) -> Any:
-        return await self.client.execute_command(command, *args)
+        started = time.perf_counter()
+        try:
+            return await self.client.execute_command(command, *args)
+        except Exception:
+            if self.metrics is not None:
+                self.metrics.redis_failures.labels(operation=command.casefold()).inc()
+            raise
+        finally:
+            if self.metrics is not None:
+                self.metrics.redis_latency.labels(operation=command.casefold()).observe(
+                    time.perf_counter() - started
+                )

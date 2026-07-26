@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import time
 from dataclasses import dataclass
 from typing import Any
 
@@ -39,11 +40,18 @@ class TelegramAccessService:
         *,
         owner_repository: OwnerRepository | None = None,
         cache: TelegramAccessCache[TelegramMemberSnapshot] | None = None,
+        metrics: Any = None,
     ) -> None:
         self._bot = bot
         self._owner_repository = owner_repository
         self._bot_id: int | None = None
-        self._cache = cache or TelegramAccessCache(max_entries=10_000)
+        self._metrics = metrics
+        self._cache = cache or TelegramAccessCache(max_entries=10_000, metrics=metrics)
+
+    def _record_call(self, operation: str, outcome: str, duration: float) -> None:
+        if self._metrics is not None:
+            self._metrics.telegram_calls.labels(operation=operation, outcome=outcome).inc()
+            self._metrics.telegram_duration.labels(operation=operation).observe(duration)
 
     async def get_member_snapshot(
         self,
@@ -96,10 +104,13 @@ class TelegramAccessService:
     async def _resolve_bot_id(self) -> int | None:
         if self._bot_id is not None:
             return self._bot_id
+        started = time.perf_counter()
         try:
             bot_info = await self._bot.get_me()
         except Exception:
+            self._record_call("get_me", "failed", time.perf_counter() - started)
             return None
+        self._record_call("get_me", "success", time.perf_counter() - started)
         resolved = getattr(bot_info, "id", None)
         if resolved is None:
             return None
@@ -107,7 +118,13 @@ class TelegramAccessService:
         return self._bot_id
 
     async def _load_member(self, chat_id: int, user_id: int) -> TelegramMemberSnapshot:
-        member = await self._bot.get_chat_member(chat_id, user_id)
+        started = time.perf_counter()
+        try:
+            member = await self._bot.get_chat_member(chat_id, user_id)
+        except Exception:
+            self._record_call("get_chat_member", "failed", time.perf_counter() - started)
+            raise
+        self._record_call("get_chat_member", "success", time.perf_counter() - started)
         return TelegramMemberSnapshot(
             status=self._status_value(member),
             is_member=getattr(member, "is_member", None),
