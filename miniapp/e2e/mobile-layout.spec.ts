@@ -111,6 +111,14 @@ async function installTelegramAndApi(page: Page): Promise<void> {
     };
   });
 
+  await page.route("**/telegram-web-app.js", async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: "application/javascript",
+      body: "",
+    });
+  });
+
   await page.route("**/api/**", async (route) => {
     const path = new URL(route.request().url()).pathname;
     let status = 200;
